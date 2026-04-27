@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import type { PlannedMeal, FeedbackType } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { Clock, Users, ThumbsUp, ThumbsDown, X } from "lucide-react";
+import { Clock, Users, ThumbsUp, ThumbsDown, X, Shuffle } from "lucide-react";
 import { clsx } from "clsx";
 
 const CUISINE_COLORS: Record<string, "green" | "blue" | "orange" | "purple" | "gray"> = {
@@ -35,9 +35,10 @@ const FOOD_IMAGES: Record<string, string> = {
 
 interface RecipeCardProps {
   meal: PlannedMeal;
+  onSwapRequest?: () => void;
 }
 
-export function RecipeCard({ meal }: RecipeCardProps) {
+export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
   const router = useRouter();
   const addFeedback = useAppStore((s) => s.addFeedback);
   const { recipe } = meal;
@@ -101,6 +102,17 @@ export function RecipeCard({ meal }: RecipeCardProps) {
             {recipe.cuisine}
           </Badge>
         </div>
+
+        {/* Swap button */}
+        {onSwapRequest && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSwapRequest(); }}
+            className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/40 hover:bg-black/60 text-white text-xs px-2.5 py-1.5 rounded-full transition-colors"
+          >
+            <Shuffle className="w-3 h-3" />
+            Swap
+          </button>
+        )}
       </div>
 
       {/* Content */}

@@ -7,9 +7,10 @@ import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { RecipeCard } from "@/components/plan/RecipeCard";
+import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import type { WeeklyMealPlan, PlannedMeal } from "@/types";
+import type { WeeklyMealPlan, PlannedMeal as PlannedMealType } from "@/types";
 import { RefreshCw, ShoppingCart, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -27,6 +28,7 @@ export default function PlanPage() {
   const evolution = useMemo(() => computePreferenceEvolution(feedbackHistory), [feedbackHistory]);
   const [activeDay, setActiveDay] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [swappingMeal, setSwappingMeal] = useState<PlannedMealType | null>(null);
 
   useEffect(() => {
     if (!preferences) {
@@ -164,7 +166,7 @@ export default function PlanPage() {
                   <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Dinner</p>
                 )}
                 {dinners.map((meal) => (
-                  <RecipeCard key={meal.id} meal={meal} />
+                  <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
                 ))}
               </div>
             )}
@@ -173,7 +175,7 @@ export default function PlanPage() {
               <div>
                 <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Lunch</p>
                 {lunches.map((meal) => (
-                  <RecipeCard key={meal.id} meal={meal} />
+                  <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
                 ))}
               </div>
             )}
@@ -208,6 +210,10 @@ export default function PlanPage() {
       </div>
 
       <BottomNav />
+
+      {swappingMeal && (
+        <SwapSheet meal={swappingMeal} onClose={() => setSwappingMeal(null)} />
+      )}
     </div>
   );
 }
