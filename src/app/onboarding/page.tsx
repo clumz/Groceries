@@ -6,9 +6,9 @@ import { useAppStore } from "@/store/useAppStore";
 import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { clsx } from "clsx";
-import { Check, ChevronRight, ShoppingBag } from "lucide-react";
+import { Check, ChevronRight, ShoppingBag, Clock } from "lucide-react";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const DIETARY_OPTIONS: { value: DietaryRequirement; label: string }[] = [
   { value: "vegan", label: "Vegan" },
@@ -45,6 +45,28 @@ const PROTEIN_OPTIONS: { value: ProteinPreference; label: string; emoji: string 
   { value: "tofu", label: "Tofu / Plant-Based", emoji: "🌱" },
   { value: "eggs", label: "Eggs", emoji: "🥚" },
   { value: "no-preference", label: "No Preference", emoji: "✨" },
+];
+
+const TASTE_RECIPES: {
+  id: string;
+  name: string;
+  cuisine: string;
+  protein: string;
+  cookTime: number;
+  image: string;
+}[] = [
+  { id: "chicken-tikka-masala", name: "Chicken Tikka Masala", cuisine: "Indian", protein: "chicken", cookTime: 40, image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80" },
+  { id: "spaghetti-bolognese", name: "Spaghetti Bolognese", cuisine: "Italian", protein: "beef", cookTime: 45, image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&q=80" },
+  { id: "thai-green-curry", name: "Thai Green Curry", cuisine: "Thai", protein: "chicken", cookTime: 25, image: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=400&q=80" },
+  { id: "beef-tacos", name: "Smoky Beef Tacos", cuisine: "Mexican", protein: "beef", cookTime: 20, image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80" },
+  { id: "salmon-traybake", name: "Lemon Herb Salmon", cuisine: "Australian", protein: "seafood", cookTime: 30, image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&q=80" },
+  { id: "greek-lamb-salad", name: "Greek Lamb Salad", cuisine: "Greek", protein: "lamb", cookTime: 20, image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&q=80" },
+  { id: "pork-stir-fry", name: "Pork Stir-Fry Noodles", cuisine: "Asian", protein: "pork", cookTime: 20, image: "https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=400&q=80" },
+  { id: "lamb-kofta", name: "Lamb Kofta & Hummus", cuisine: "Middle Eastern", protein: "lamb", cookTime: 30, image: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=400&q=80" },
+  { id: "mushroom-risotto", name: "Mushroom Risotto", cuisine: "Italian", protein: "vegetarian", cookTime: 35, image: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&q=80" },
+  { id: "chicken-schnitzel", name: "Chicken Schnitzel", cuisine: "Australian", protein: "chicken", cookTime: 25, image: "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400&q=80" },
+  { id: "teriyaki-salmon", name: "Teriyaki Salmon Bowl", cuisine: "Japanese", protein: "seafood", cookTime: 20, image: "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=400&q=80" },
+  { id: "butter-chicken", name: "Butter Chicken", cuisine: "Indian", protein: "chicken", cookTime: 35, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400&q=80" },
 ];
 
 function MultiSelectPill<T extends string>({
@@ -128,6 +150,7 @@ function RadioCard<T extends string>({
 export default function OnboardingPage() {
   const router = useRouter();
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+  const addFeedback = useAppStore((s) => s.addFeedback);
   const [step, setStep] = useState(0);
 
   const [store, setStore] = useState<StorePreference>("woolworths");
@@ -138,6 +161,7 @@ export default function OnboardingPage() {
   const [dietary, setDietary] = useState<DietaryRequirement[]>([]);
   const [cuisines, setCuisines] = useState<CuisinePreference[]>([]);
   const [proteins, setProteins] = useState<ProteinPreference[]>([]);
+  const [likedRecipes, setLikedRecipes] = useState<string[]>([]);
   const [householdSize, setHouseholdSize] = useState(2);
   const [servings, setServings] = useState(2);
   const [budget, setBudget] = useState<BudgetRange>("150-250");
@@ -148,15 +172,14 @@ export default function OnboardingPage() {
   function isValidAustralianPostcode(pc: string): boolean {
     if (pc.length !== 4) return false;
     const n = parseInt(pc, 10);
-    // Australian postcode ranges by state
     return (
-      (n >= 1000 && n <= 2999) || // NSW/ACT
-      (n >= 3000 && n <= 3999) || // VIC
-      (n >= 4000 && n <= 4999) || // QLD
-      (n >= 5000 && n <= 5999) || // SA
-      (n >= 6000 && n <= 6999) || // WA
-      (n >= 7000 && n <= 7999) || // TAS
-      (n >= 800  && n <= 999)     // NT
+      (n >= 1000 && n <= 2999) ||
+      (n >= 3000 && n <= 3999) ||
+      (n >= 4000 && n <= 4999) ||
+      (n >= 5000 && n <= 5999) ||
+      (n >= 6000 && n <= 6999) ||
+      (n >= 7000 && n <= 7999) ||
+      (n >= 800  && n <= 999)
     );
   }
 
@@ -169,19 +192,14 @@ export default function OnboardingPage() {
         setPostcodeError("Please enter a valid Australian postcode");
         return;
       }
-      // Auto-lookup suburb from postcodes.com.au open API
       setPostcodeLoading(true);
       try {
         const res = await fetch(`https://v0.postcodeapi.com.au/suburbs/${digits}.json`);
         if (res.ok) {
           const data = await res.json();
-          if (data.length > 0 && !suburb) {
-            setSuburb(data[0].name);
-          }
+          if (data.length > 0 && !suburb) setSuburb(data[0].name);
         }
-      } catch {
-        // Lookup failed silently — user can type suburb manually
-      } finally {
+      } catch { /* silent fail */ } finally {
         setPostcodeLoading(false);
       }
     }
@@ -195,6 +213,9 @@ export default function OnboardingPage() {
   }
   function toggleProtein(v: ProteinPreference) {
     setProteins((prev) => prev.includes(v) ? prev.filter((p) => p !== v) : [...prev, v]);
+  }
+  function toggleRecipe(id: string) {
+    setLikedRecipes((prev) => prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]);
   }
 
   function handleFinish() {
@@ -213,16 +234,33 @@ export default function OnboardingPage() {
       includeSnacks,
     };
     completeOnboarding(prefs);
+
+    // Seed feedback history from taste selections
+    likedRecipes.forEach((recipeId) => {
+      const recipe = TASTE_RECIPES.find((r) => r.id === recipeId);
+      if (recipe) {
+        addFeedback({
+          recipeId,
+          recipeName: recipe.name,
+          feedback: "thumbs-up",
+          timestamp: Date.now(),
+          cuisineType: recipe.cuisine.toLowerCase(),
+          primaryProtein: recipe.protein,
+        });
+      }
+    });
+
     router.replace("/plan");
   }
 
   const canAdvance = [
     postcode.length === 4 && isValidAustralianPostcode(postcode) && !postcodeLoading,
-    dietary.length >= 0, // dietary optional
+    true, // dietary optional
     cuisines.length > 0,
     proteins.length > 0,
-    true, // household size always valid
-    true, // budget + cook time always valid
+    likedRecipes.length >= 3, // must pick at least 3
+    true, // household
+    true, // budget + cook time
   ][step];
 
   const stepContent = [
@@ -252,7 +290,7 @@ export default function OnboardingPage() {
           </button>
         ))}
       </div>
-      <p className="text-xs text-ink-tertiary text-center">We'll support price comparison across both stores soon</p>
+      <p className="text-xs text-ink-tertiary text-center">Price comparison across both stores coming soon</p>
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">Suburb</label>
@@ -289,9 +327,7 @@ export default function OnboardingPage() {
               <Check className="absolute right-3 top-3.5 w-4 h-4 text-brand-500" />
             )}
           </div>
-          {postcodeError && (
-            <p className="text-xs text-red-500 mt-1.5">{postcodeError}</p>
-          )}
+          {postcodeError && <p className="text-xs text-red-500 mt-1.5">{postcodeError}</p>}
         </div>
       </div>
     </div>,
@@ -326,8 +362,69 @@ export default function OnboardingPage() {
       <MultiSelectPill options={PROTEIN_OPTIONS} selected={proteins} onToggle={toggleProtein} />
     </div>,
 
-    // Step 4: Household
-    <div key="step4" className="animate-slide-up space-y-6">
+    // Step 4: Taste selection (NEW)
+    <div key="step4" className="animate-slide-up space-y-5">
+      <div>
+        <h2 className="text-xl font-bold text-ink mb-1">Pick dishes you'd love</h2>
+        <p className="text-sm text-ink-secondary">
+          Select at least 3 — we use this to personalise your first meal plan
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-ink-tertiary">{likedRecipes.length} selected</span>
+        <span className="text-xs font-medium text-brand-600">
+          {likedRecipes.length < 3 ? `${3 - likedRecipes.length} more to go` : "Looking good!"}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {TASTE_RECIPES.map((recipe) => {
+          const selected = likedRecipes.includes(recipe.id);
+          return (
+            <button
+              key={recipe.id}
+              onClick={() => toggleRecipe(recipe.id)}
+              className={clsx(
+                "relative rounded-2xl overflow-hidden text-left transition-all duration-150",
+                selected ? "ring-2 ring-brand-500 ring-offset-1" : "ring-0"
+              )}
+            >
+              <div className="relative h-28">
+                <img
+                  src={recipe.image}
+                  alt={recipe.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+                {/* Selected overlay */}
+                {selected && (
+                  <div className="absolute inset-0 bg-brand-600/20 flex items-start justify-end p-2">
+                    <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                  <p className="text-white text-xs font-semibold leading-tight">{recipe.name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-white/70 text-[10px]">{recipe.cuisine}</span>
+                    <span className="text-white/40 text-[10px]">·</span>
+                    <Clock className="w-2.5 h-2.5 text-white/70" />
+                    <span className="text-white/70 text-[10px]">{recipe.cookTime}m</span>
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>,
+
+    // Step 5: Household
+    <div key="step5" className="animate-slide-up space-y-6">
       <div>
         <h2 className="text-xl font-bold text-ink mb-1">Your household</h2>
         <p className="text-sm text-ink-secondary">We'll scale recipes and quantities to match</p>
@@ -370,8 +467,8 @@ export default function OnboardingPage() {
       </div>
     </div>,
 
-    // Step 5: Budget + Cook Time
-    <div key="step5" className="animate-slide-up space-y-6">
+    // Step 6: Budget + Cook Time
+    <div key="step6" className="animate-slide-up space-y-6">
       <div>
         <h2 className="text-xl font-bold text-ink mb-1">Budget & time</h2>
         <p className="text-sm text-ink-secondary">We'll keep recommendations practical</p>
@@ -409,8 +506,8 @@ export default function OnboardingPage() {
       {/* Header */}
       <div className="px-5 pt-14 pb-4">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="text-xs font-medium text-ink-tertiary uppercase tracking-wider">Step {step + 1} of {TOTAL_STEPS}</div>
+          <div className="text-xs font-medium text-ink-tertiary uppercase tracking-wider">
+            Step {step + 1} of {TOTAL_STEPS}
           </div>
           <div className="flex gap-1.5">
             {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -428,7 +525,7 @@ export default function OnboardingPage() {
         {step === 0 && (
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-ink">Welcome to <span className="text-brand-600">Plate</span></h1>
-            <p className="text-ink-secondary mt-1.5">Your weekly meals, planned and shopped in minutes.</p>
+            <p className="text-ink-secondary mt-1.5">Your weekly meals, planned and personalised.</p>
           </div>
         )}
       </div>
@@ -453,7 +550,7 @@ export default function OnboardingPage() {
             disabled={!canAdvance}
             onClick={() => step === TOTAL_STEPS - 1 ? handleFinish() : setStep(step + 1)}
           >
-            {step === TOTAL_STEPS - 1 ? "Let's go" : "Next"}
+            {step === TOTAL_STEPS - 1 ? "Build my plan" : "Next"}
             {step < TOTAL_STEPS - 1 && <ChevronRight className="w-4 h-4" />}
           </Button>
         </div>
