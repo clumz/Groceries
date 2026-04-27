@@ -133,6 +133,8 @@ export default function OnboardingPage() {
   const [store, setStore] = useState<StorePreference>("woolworths");
   const [suburb, setSuburb] = useState("");
   const [postcode, setPostcode] = useState("");
+  const [postcodeError, setPostcodeError] = useState("");
+  const [postcodeLoading, setPostcodeLoading] = useState(false);
   const [dietary, setDietary] = useState<DietaryRequirement[]>([]);
   const [cuisines, setCuisines] = useState<CuisinePreference[]>([]);
   const [proteins, setProteins] = useState<ProteinPreference[]>([]);
@@ -142,6 +144,48 @@ export default function OnboardingPage() {
   const [cookTime, setCookTime] = useState<CookTimePreference>("20-40");
   const [includeLunches, setIncludeLunches] = useState(false);
   const [includeSnacks, setIncludeSnacks] = useState(true);
+
+  function isValidAustralianPostcode(pc: string): boolean {
+    if (pc.length !== 4) return false;
+    const n = parseInt(pc, 10);
+    // Australian postcode ranges by state
+    return (
+      (n >= 1000 && n <= 2999) || // NSW/ACT
+      (n >= 3000 && n <= 3999) || // VIC
+      (n >= 4000 && n <= 4999) || // QLD
+      (n >= 5000 && n <= 5999) || // SA
+      (n >= 6000 && n <= 6999) || // WA
+      (n >= 7000 && n <= 7999) || // TAS
+      (n >= 800  && n <= 999)     // NT
+    );
+  }
+
+  async function handlePostcodeChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    setPostcode(digits);
+    setPostcodeError("");
+    if (digits.length === 4) {
+      if (!isValidAustralianPostcode(digits)) {
+        setPostcodeError("Please enter a valid Australian postcode");
+        return;
+      }
+      // Auto-lookup suburb from postcodes.com.au open API
+      setPostcodeLoading(true);
+      try {
+        const res = await fetch(`https://v0.postcodeapi.com.au/suburbs/${digits}.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.length > 0 && !suburb) {
+            setSuburb(data[0].name);
+          }
+        }
+      } catch {
+        // Lookup failed silently — user can type suburb manually
+      } finally {
+        setPostcodeLoading(false);
+      }
+    }
+  }
 
   function toggleDietary(v: DietaryRequirement) {
     setDietary((prev) => prev.includes(v) ? prev.filter((d) => d !== v) : [...prev, v]);
@@ -173,7 +217,7 @@ export default function OnboardingPage() {
   }
 
   const canAdvance = [
-    true, // store always valid
+    postcode.length === 4 && isValidAustralianPostcode(postcode) && !postcodeLoading,
     dietary.length >= 0, // dietary optional
     cuisines.length > 0,
     proteins.length > 0,
@@ -222,14 +266,32 @@ export default function OnboardingPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">Postcode</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={postcode}
-            onChange={(e) => setPostcode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            placeholder="e.g. 2010"
-            className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={postcode}
+              onChange={(e) => handlePostcodeChange(e.target.value)}
+              placeholder="e.g. 2010"
+              className={clsx(
+                "w-full px-4 py-3 rounded-2xl border text-sm bg-white focus:outline-none focus:ring-1",
+                postcodeError
+                  ? "border-red-400 focus:border-red-400 focus:ring-red-400"
+                  : postcode.length === 4 && isValidAustralianPostcode(postcode)
+                  ? "border-brand-400 focus:border-brand-400 focus:ring-brand-400"
+                  : "border-slate-200 focus:border-brand-400 focus:ring-brand-400"
+              )}
+            />
+            {postcodeLoading && (
+              <div className="absolute right-3 top-3.5 w-4 h-4 rounded-full border-2 border-brand-400 border-t-transparent animate-spin" />
+            )}
+            {!postcodeLoading && postcode.length === 4 && isValidAustralianPostcode(postcode) && (
+              <Check className="absolute right-3 top-3.5 w-4 h-4 text-brand-500" />
+            )}
+          </div>
+          {postcodeError && (
+            <p className="text-xs text-red-500 mt-1.5">{postcodeError}</p>
+          )}
         </div>
       </div>
     </div>,
