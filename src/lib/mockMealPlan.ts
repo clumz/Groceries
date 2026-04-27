@@ -1,5 +1,19 @@
 import type { WeeklyMealPlan, PlannedMeal, SnackItem, UserPreferences, Recipe } from "@/types";
 
+// Full recipe library — server-only (not bundled client-side)
+let _recipeLibrary: Recipe[] | null = null;
+function getRecipeLibrary(): Recipe[] {
+  if (!_recipeLibrary) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _recipeLibrary = require("../data/recipes.json") as Recipe[];
+    } catch {
+      _recipeLibrary = null;
+    }
+  }
+  return _recipeLibrary ?? MOCK_RECIPES;
+}
+
 export const MOCK_RECIPES: Recipe[] = [
   {
     id: "chicken-tikka-masala",
@@ -906,9 +920,10 @@ const MOCK_SNACKS: SnackItem[] = [
 
 export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPlan {
   const planId = `mock-plan-${Date.now()}`;
+  const library = getRecipeLibrary();
 
   // Filter recipes by dietary requirements and protein preferences
-  let pool = [...MOCK_RECIPES];
+  let pool = [...library];
 
   if (preferences.proteinPreferences.length > 0 && !preferences.proteinPreferences.includes("no-preference")) {
     const filtered = pool.filter(
@@ -919,12 +934,13 @@ export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPl
 
   if (preferences.dietaryRequirements.includes("vegan") || preferences.dietaryRequirements.includes("vegetarian")) {
     pool = pool.filter((r) => r.tags.includes("vegan") || r.tags.includes("vegetarian") || r.primaryProtein === "tofu");
-    if (pool.length === 0) pool = MOCK_RECIPES; // fallback
+    if (pool.length === 0) pool = library;
   }
 
-  // Pick 7 dinners, cycling through pool
+  // Shuffle pool for variety then pick 7 distinct dinners
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const dinners: PlannedMeal[] = Array.from({ length: 7 }, (_, i) => {
-    const recipe = pool[i % pool.length];
+    const recipe = shuffled[i % shuffled.length];
     return {
       id: `meal-${planId}-${i}`,
       dayIndex: i,
@@ -937,7 +953,7 @@ export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPl
   // Pick 5 lunches if requested (simpler versions)
   const lunches: PlannedMeal[] = preferences.includeLunches
     ? Array.from({ length: 5 }, (_, i) => {
-        const recipe = pool[(i + 3) % pool.length];
+        const recipe = shuffled[(i + 3) % shuffled.length];
         return {
           id: `lunch-${planId}-${i}`,
           dayIndex: i,

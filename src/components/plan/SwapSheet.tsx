@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
-import { MOCK_RECIPES } from "@/lib/mockMealPlan";
-import type { PlannedMeal } from "@/types";
+import type { PlannedMeal, Recipe } from "@/types";
 import { X, Clock, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -33,6 +32,8 @@ const CUISINE_IMAGES: Record<string, string> = {
   greek: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=300&q=70",
 };
 
+const ALL_CUISINES = Object.keys(CUISINE_LABELS);
+
 interface SwapSheetProps {
   meal: PlannedMeal;
   onClose: () => void;
@@ -41,18 +42,43 @@ interface SwapSheetProps {
 export function SwapSheet({ meal, onClose }: SwapSheetProps) {
   const swapMeal = useAppStore((s) => s.swapMeal);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const cache = useRef<Map<string, Recipe[]>>(new Map());
 
-  const availableCuisines = Array.from(new Set(MOCK_RECIPES.map((r) => r.cuisine))).sort();
+  async function loadRecipes(cuisine: string | null) {
+    const cacheKey = cuisine ?? "all";
+    if (cache.current.has(cacheKey)) {
+      setRecipes(cache.current.get(cacheKey)!);
+      return;
+    }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "40", exclude: meal.recipe.id });
+      if (cuisine) params.set("cuisine", cuisine);
+      const res = await fetch(`/api/recipes?${params}`);
+      if (!res.ok) throw new Error("fetch failed");
+      const data = await res.json();
+      cache.current.set(cacheKey, data.recipes);
+      setRecipes(data.recipes);
+    } catch {
+      setRecipes([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const options = MOCK_RECIPES.filter((r) => {
-    if (r.id === meal.recipe.id) return false;
-    if (selectedCuisine && r.cuisine !== selectedCuisine) return false;
-    return true;
-  });
+  useEffect(() => {
+    loadRecipes(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function handleSwap(recipeId: string) {
-    const recipe = MOCK_RECIPES.find((r) => r.id === recipeId);
-    if (!recipe) return;
+  function handleCuisineSelect(cuisine: string | null) {
+    setSelectedCuisine(cuisine);
+    loadRecipes(cuisine);
+  }
+
+  function handleSwap(recipe: Recipe) {
     const newMeal: PlannedMeal = {
       id: meal.id,
       dayIndex: meal.dayIndex,
@@ -93,17 +119,13 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
         {/* Cuisine filter */}
         <div className="flex-shrink-0 px-5 pb-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
-            <CuisineChip
-              label="All"
-              active={selectedCuisine === null}
-              onClick={() => setSelectedCuisine(null)}
-            />
-            {availableCuisines.map((c) => (
+            <CuisineChip label="All" active={selectedCuisine === null} onClick={() => handleCuisineSelect(null)} />
+            {ALL_CUISINES.map((c) => (
               <CuisineChip
                 key={c}
-                label={CUISINE_LABELS[c] ?? c}
+                label={CUISINE_LABELS[c]}
                 active={selectedCuisine === c}
-                onClick={() => setSelectedCuisine(c)}
+                onClick={() => handleCuisineSelect(c)}
               />
             ))}
           </div>
@@ -111,18 +133,21 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
 
         {/* Recipe list */}
         <div className="overflow-y-auto flex-1 px-5 pb-8 space-y-1">
-          {options.length === 0 && (
+          {loading && <SkeletonList />}
+
+          {!loading && recipes.length === 0 && (
             <p className="text-center text-ink-tertiary text-sm py-10">
-              No other {selectedCuisine ? (CUISINE_LABELS[selectedCuisine] ?? selectedCuisine) : ""} recipes available
+              No {selectedCuisine ? (CUISINE_LABELS[selectedCuisine] ?? selectedCuisine) : ""} recipes available
             </p>
           )}
-          {options.map((recipe) => {
+
+          {!loading && recipes.map((recipe) => {
             const totalTime = recipe.cookTimeMinutes + recipe.prepTimeMinutes;
             const image = CUISINE_IMAGES[recipe.cuisine] ?? CUISINE_IMAGES.australian;
             return (
               <button
                 key={recipe.id}
-                onClick={() => handleSwap(recipe.id)}
+                onClick={() => handleSwap(recipe)}
                 className="flex items-center gap-3 w-full p-3 rounded-2xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
               >
                 <img
@@ -157,15 +182,24 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
   );
 }
 
-function CuisineChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function SkeletonList() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-3">
+          <div className="w-16 h-16 rounded-xl bg-slate-100 animate-pulse flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 bg-slate-100 rounded animate-pulse w-3/4" />
+            <div className="h-3 bg-slate-100 rounded animate-pulse w-1/2" />
+            <div className="h-3 bg-slate-100 rounded animate-pulse w-5/6" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function CuisineChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
