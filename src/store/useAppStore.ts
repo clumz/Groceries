@@ -200,6 +200,7 @@ export const useAppStore = create<Store>()(
     {
       name: "plate-app-storage",
       storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
     }
   )
 );

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { StoreHydration } from "@/components/ui/StoreHydration";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={geist.variable}>
       <body className="min-h-screen bg-surface">
+        <StoreHydration />
         <div className="mx-auto max-w-[430px] min-h-screen relative">
           {children}
         </div>
