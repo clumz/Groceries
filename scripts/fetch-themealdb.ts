@@ -200,7 +200,7 @@ function transformMeal(meal: MealDetail, cuisine: string): any {
     difficulty,
     ingredients,
     method: instructions,
-    tags: [...new Set(tags)],
+    tags: Array.from(new Set(tags)),
     imageUrl: meal.strMealThumb,
     imageQuery: meal.strMeal.toLowerCase(),
     estimatedCost: 18 + ingredients.length,
