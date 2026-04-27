@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import type { PlannedMeal, FeedbackType } from "@/types";
@@ -22,17 +22,18 @@ const FOOD_IMAGES: Record<string, string> = {
   greek: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=800&q=80",
 };
 
-export default function RecipeDetailPage({ params }: { params: { id: string } }) {
+export default function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mealId = searchParams.get("mealId");
+  const { id } = use(params);
 
   const currentMealPlan = useAppStore((s) => s.currentMealPlan);
   const addFeedback = useAppStore((s) => s.addFeedback);
   const updateServings = useAppStore((s) => s.updateServings);
 
   const meal: PlannedMeal | undefined = currentMealPlan?.meals.find(
-    (m) => m.id === mealId || m.recipe.id === params.id
+    (m) => m.id === mealId || m.recipe.id === id
   );
 
   const [localServings, setLocalServings] = useState(meal?.servings ?? 2);
