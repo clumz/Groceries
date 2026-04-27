@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore, selectPreferenceEvolution } from "@/store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";
+import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { RecipeCard } from "@/components/plan/RecipeCard";
@@ -23,7 +24,7 @@ export default function PlanPage() {
   const isGeneratingPlan = useAppStore((s) => s.isGeneratingPlan);
   const setMealPlan = useAppStore((s) => s.setMealPlan);
   const setGeneratingPlan = useAppStore((s) => s.setGeneratingPlan);
-  const evolution = useAppStore(selectPreferenceEvolution);
+  const evolution = useMemo(() => computePreferenceEvolution(feedbackHistory), [feedbackHistory]);
   const [activeDay, setActiveDay] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
