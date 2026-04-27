@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { buildMealPlanSystemPrompt } from "@/lib/prompts";
+import { generateMockMealPlan } from "@/lib/mockMealPlan";
 import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal } from "@/types";
-
-const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
   try {
     const body: GeneratePlanRequest = await req.json();
     const { preferences, feedbackHistory, preferenceEvolution } = body;
+
+    // Fall back to mock data if no API key is configured
+    if (!process.env.ANTHROPIC_API_KEY) {
+      const mealPlan = generateMockMealPlan(preferences);
+      return NextResponse.json({ mealPlan, mock: true });
+    }
+
+    const Anthropic = (await import("@anthropic-ai/sdk")).default;
+    const client = new Anthropic();
 
     const systemPrompt = buildMealPlanSystemPrompt(
       preferences,
@@ -29,8 +36,6 @@ export async function POST(req: NextRequest) {
     });
 
     const text = message.content[0].type === "text" ? message.content[0].text : "";
-
-    // Strip any accidental markdown fences
     const cleaned = text.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
     const parsed = JSON.parse(cleaned);
 
