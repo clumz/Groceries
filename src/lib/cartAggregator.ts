@@ -1,4 +1,5 @@
-import type { PlannedMeal, SnackItem, CartItem, Product } from "@/types";
+import type { PlannedMeal, SnackItem, CartItem, Product, PantryItem } from "@/types";
+import { isStaple, checkPantryContribution } from "@/lib/pantryManager";
 
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -43,7 +44,9 @@ function normalizeIngredientName(name: string): string {
 export function aggregateIngredients(
   meals: PlannedMeal[],
   snacks: SnackItem[],
-  productMappings: Map<string, { product: Product | null; confidence: number }>
+  productMappings: Map<string, { product: Product | null; confidence: number }>,
+  stapleIngredientList?: string[],
+  pantryItems?: PantryItem[]
 ): CartItem[] {
   const totals = new Map<string, IngredientTotal>();
 
@@ -90,15 +93,23 @@ export function aggregateIngredients(
     const product = mapping?.product ?? null;
     const confidence = mapping?.confidence ?? 0;
 
+    const totalQty = Math.ceil(total.totalQuantity * 10) / 10;
+    const staple = stapleIngredientList ? isStaple(total.name, stapleIngredientList) : false;
+    const { contribution } = pantryItems && !staple
+      ? checkPantryContribution(total.name, totalQty, total.unit, pantryItems)
+      : { contribution: 0 };
+
     items.push({
       id: generateId(),
       ingredientName: total.name,
-      totalQuantity: Math.ceil(total.totalQuantity * 10) / 10,
+      totalQuantity: totalQty,
       unit: total.unit,
       matchedProduct: product,
       matchConfidence: confidence,
       sourceRecipeIds: Array.from(new Set(total.sourceRecipeIds)),
       isUnavailable: product !== null && !product.available,
+      isStaple: staple,
+      pantryContribution: staple ? totalQty : contribution,
     });
   });
 
@@ -112,8 +123,20 @@ export function aggregateIngredients(
 
 export function estimateCartTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => {
+    if (item.isStaple) return sum;
+    const net = item.totalQuantity - (item.pantryContribution ?? 0);
+    if (net <= 0) return sum;
     if (!item.matchedProduct) return sum;
     const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
     return sum + product.price;
+  }, 0);
+}
+
+export function estimatePantrySavings(items: CartItem[]): number {
+  return items.reduce((sum, item) => {
+    if (!item.matchedProduct) return sum;
+    const covered = item.isStaple || (item.pantryContribution ?? 0) >= item.totalQuantity;
+    if (!covered) return sum;
+    return sum + item.matchedProduct.price;
   }, 0);
 }

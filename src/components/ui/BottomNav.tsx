@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { CalendarDays, ShoppingCart, User } from "lucide-react";
+import { CalendarDays, ShoppingCart, User, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/plan", label: "Plan", icon: CalendarDays },
   { href: "/cart", label: "Cart", icon: ShoppingCart },
+  { href: "/settings", label: "Pantry", icon: Settings },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

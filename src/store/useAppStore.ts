@@ -15,8 +15,10 @@ import type {
   Retailer,
   CartItem,
   Product,
+  PantryItem,
 } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
+import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
 
 const EMPTY_FEEDBACK: FeedbackHistory = {
   items: [],
@@ -39,6 +41,10 @@ interface AppActions {
   rejectSubstitute: (cartItemId: string) => void;
   setOrder: (order: Order) => void;
   reset: () => void;
+  toggleStaple: (name: string) => void;
+  clearPantryItem: (ingredientName: string) => void;
+  adjustPantryItem: (ingredientName: string, quantity: number) => void;
+  setPantryFromOrder: (orderId: string, cartItems: CartItem[]) => void;
 }
 
 type Store = AppState & AppActions;
@@ -55,6 +61,8 @@ export const useAppStore = create<Store>()(
       currentOrder: null,
       isGeneratingPlan: false,
       isBuildingCart: false,
+      pantryItems: [],
+      stapleIngredients: DEFAULT_STAPLES,
 
       // ─── Actions ───────────────────────────────────────────────────────────
       completeOnboarding: (prefs) =>
@@ -185,7 +193,50 @@ export const useAppStore = create<Store>()(
           };
         }),
 
-      setOrder: (order) => set({ currentOrder: order }),
+      setOrder: (order) => {
+        set({ currentOrder: order });
+        const cart = get().currentCart;
+        if (cart) get().setPantryFromOrder(order.id, cart.items);
+      },
+
+      toggleStaple: (name) =>
+        set((s) => {
+          const norm = name.toLowerCase().trim();
+          const has = s.stapleIngredients.includes(norm);
+          return {
+            stapleIngredients: has
+              ? s.stapleIngredients.filter((x) => x !== norm)
+              : [...s.stapleIngredients, norm],
+            currentCart: null,
+          };
+        }),
+
+      clearPantryItem: (ingredientName) =>
+        set((s) => ({
+          pantryItems: s.pantryItems.filter(
+            (p) => p.ingredientName.toLowerCase() !== ingredientName.toLowerCase()
+          ),
+          currentCart: null,
+        })),
+
+      adjustPantryItem: (ingredientName, quantity) =>
+        set((s) => {
+          const norm = ingredientName.toLowerCase();
+          if (quantity <= 0) {
+            return { pantryItems: s.pantryItems.filter((p) => p.ingredientName !== norm), currentCart: null };
+          }
+          return {
+            pantryItems: s.pantryItems.map((p) =>
+              p.ingredientName === norm ? { ...p, quantity } : p
+            ),
+            currentCart: null,
+          };
+        }),
+
+      setPantryFromOrder: (orderId, cartItems) =>
+        set((s) => ({
+          pantryItems: updatePantryAfterOrder(cartItems, s.pantryItems, orderId),
+        })),
 
       reset: () =>
         set({
@@ -195,6 +246,8 @@ export const useAppStore = create<Store>()(
           currentMealPlan: null,
           currentCart: null,
           currentOrder: null,
+          pantryItems: [],
+          stapleIngredients: DEFAULT_STAPLES,
         }),
     }),
     {

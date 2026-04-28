@@ -135,6 +135,14 @@ export interface SnackItem {
   estimatedCost: number;
 }
 
+export interface PantryItem {
+  ingredientName: string;  // normalized lowercase key
+  quantity: number;
+  unit: string;            // normalized unit (g, ml, each, etc.)
+  addedAt: number;         // timestamp
+  sourceOrderId?: string;
+}
+
 // ─── Products & Catalogue ─────────────────────────────────────────────────────
 
 export type Retailer = "woolworths" | "coles";
@@ -180,6 +188,8 @@ export interface CartItem {
   substitute?: Product;
   substituteApproved?: boolean;
   isUnavailable: boolean;
+  isStaple?: boolean;
+  pantryContribution?: number;
 }
 
 export interface Cart {
@@ -218,6 +228,8 @@ export interface AppState {
   currentOrder: Order | null;
   isGeneratingPlan: boolean;
   isBuildingCart: boolean;
+  pantryItems: PantryItem[];
+  stapleIngredients: string[];
 }
 
 // ─── API Payloads ─────────────────────────────────────────────────────────────

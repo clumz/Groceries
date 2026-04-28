@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { aggregateIngredients, estimateCartTotal } from "@/lib/cartAggregator";
+import { aggregateIngredients, estimateCartTotal, estimatePantrySavings } from "@/lib/cartAggregator";
 import { matchAllIngredients, findSubstitute } from "@/lib/skuMatcher";
 import type { Cart, CartItem } from "@/types";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X } from "lucide-react";
+import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings } from "lucide-react";
 import { clsx } from "clsx";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -38,9 +38,14 @@ export default function CartPage() {
   const switchRetailer = useAppStore((s) => s.switchRetailer);
   const approveSubstitute = useAppStore((s) => s.approveSubstitute);
   const rejectSubstitute = useAppStore((s) => s.rejectSubstitute);
+  const pantryItems = useAppStore((s) => s.pantryItems);
+  const stapleIngredients = useAppStore((s) => s.stapleIngredients);
+
+  const [pantryExpanded, setPantryExpanded] = useState(false);
 
   useEffect(() => {
     if (currentMealPlan && !currentCart) buildCart();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMealPlan]);
 
   function buildCart() {
@@ -53,9 +58,14 @@ export default function CartPage() {
       const productMappings = new Map(
         Array.from(mappings.entries()).map(([key, val]) => [key, { product: val.product, confidence: val.confidence }])
       );
-      const items = aggregateIngredients(currentMealPlan.meals, currentMealPlan.snacks, productMappings);
+      const items = aggregateIngredients(
+        currentMealPlan.meals,
+        currentMealPlan.snacks,
+        productMappings,
+        stapleIngredients,
+        pantryItems
+      );
 
-      // Add substitutes for unavailable items
       const itemsWithSubs: CartItem[] = items.map((item) => {
         if (item.isUnavailable && item.matchedProduct) {
           const sub = findSubstitute(item.matchedProduct, retailer);
@@ -78,16 +88,23 @@ export default function CartPage() {
     }
   }
 
-  const groupedItems = currentCart
-    ? currentCart.items.reduce<Record<string, CartItem[]>>((acc, item) => {
-        const cat = item.matchedProduct?.category ?? "pantry";
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(item);
-        return acc;
-      }, {})
-    : {};
+  // Split items: things to buy vs things already covered
+  const toBuyItems = currentCart?.items.filter(
+    (i) => !i.isStaple && (i.pantryContribution ?? 0) < i.totalQuantity
+  ) ?? [];
+  const alreadyHaveItems = currentCart?.items.filter(
+    (i) => i.isStaple || (i.pantryContribution ?? 0) >= i.totalQuantity
+  ) ?? [];
 
-  const unavailableItems = currentCart?.items.filter((i) => i.isUnavailable) ?? [];
+  const groupedItems = toBuyItems.reduce<Record<string, CartItem[]>>((acc, item) => {
+    const cat = item.matchedProduct?.category ?? "pantry";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const savings = currentCart ? estimatePantrySavings(currentCart.items) : 0;
+  const unavailableItems = toBuyItems.filter((i) => i.isUnavailable);
 
   if (!currentMealPlan) {
     return (
@@ -135,7 +152,7 @@ export default function CartPage() {
         </div>
         {currentCart && (
           <p className="text-xs text-ink-tertiary mt-1">
-            {currentCart.items.length} items · {currentMealPlan.meals.length} meals
+            {toBuyItems.length} items to buy · {currentMealPlan.meals.length} meals
           </p>
         )}
       </div>
@@ -150,6 +167,27 @@ export default function CartPage() {
 
         {!isBuildingCart && currentCart && (
           <>
+            {/* Pantry savings banner */}
+            {savings > 0 && (
+              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
+                <Leaf className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-emerald-800">
+                    Saved A${savings.toFixed(2)} using your pantry
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    {alreadyHaveItems.length} ingredient{alreadyHaveItems.length !== 1 ? "s" : ""} covered by staples or carry-forward stock
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/settings")}
+                  className="flex-shrink-0"
+                >
+                  <Settings className="w-4 h-4 text-emerald-600" />
+                </button>
+              </div>
+            )}
+
             {/* Substitution alerts */}
             {unavailableItems.filter((i) => i.substituteApproved === undefined).map((item) => (
               <div key={item.id} className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
@@ -198,6 +236,39 @@ export default function CartPage() {
                 </div>
               </div>
             ))}
+
+            {/* Already have section */}
+            {alreadyHaveItems.length > 0 && (
+              <div className="bg-white rounded-3xl overflow-hidden shadow-card">
+                <button
+                  onClick={() => setPantryExpanded((v) => !v)}
+                  className="w-full px-4 py-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                    <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
+                      Already in your kitchen ({alreadyHaveItems.length})
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); router.push("/settings"); }}
+                      className="text-xs text-ink-tertiary hover:text-brand-600"
+                    >
+                      Edit
+                    </button>
+                    <ChevronDown className={clsx("w-4 h-4 text-ink-tertiary transition-transform", pantryExpanded && "rotate-180")} />
+                  </div>
+                </button>
+                {pantryExpanded && (
+                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                    {alreadyHaveItems.map((item) => (
+                      <PantryItemRow key={item.id} item={item} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -208,7 +279,12 @@ export default function CartPage() {
           <div className="bg-white rounded-3xl shadow-elevated px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-ink-secondary">Estimated total</span>
-              <span className="text-xl font-bold text-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
+              <div className="text-right">
+                {savings > 0 && (
+                  <p className="text-xs text-emerald-600 font-medium">A${savings.toFixed(2)} saved</p>
+                )}
+                <span className="text-xl font-bold text-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
+              </div>
             </div>
             <Button
               fullWidth
@@ -230,6 +306,7 @@ export default function CartPage() {
 
 function CartItemRow({ item }: { item: CartItem }) {
   const activeProduct = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+  const netQty = item.totalQuantity - (item.pantryContribution ?? 0);
 
   return (
     <div className={clsx("px-4 py-3 flex items-center gap-3", item.isUnavailable && item.substituteApproved === false && "opacity-40")}>
@@ -240,9 +317,14 @@ function CartItemRow({ item }: { item: CartItem }) {
         ) : (
           <p className="text-xs text-orange-500 mt-0.5">No match found</p>
         )}
+        {(item.pantryContribution ?? 0) > 0 && (
+          <p className="text-xs text-emerald-600 mt-0.5">
+            {item.pantryContribution?.toFixed(1)} {item.unit} from pantry
+          </p>
+        )}
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-xs text-ink-tertiary">{item.totalQuantity.toFixed(1)} {item.unit}</p>
+        <p className="text-xs text-ink-tertiary">{netQty.toFixed(1)} {item.unit}</p>
         {activeProduct && (
           <p className="text-sm font-semibold text-ink">A${activeProduct.price.toFixed(2)}</p>
         )}
@@ -250,6 +332,25 @@ function CartItemRow({ item }: { item: CartItem }) {
       {item.substituteApproved === true && (
         <Badge variant="orange" className="ml-1 flex-shrink-0">Sub</Badge>
       )}
+    </div>
+  );
+}
+
+function PantryItemRow({ item }: { item: CartItem }) {
+  const product = item.matchedProduct;
+  return (
+    <div className="px-4 py-3 flex items-center gap-3 opacity-60">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-ink truncate line-through">{item.ingredientName}</p>
+        <p className="text-xs text-emerald-600 mt-0.5">
+          {item.isStaple ? "Kitchen staple" : `${item.pantryContribution?.toFixed(1)} ${item.unit} in pantry`}
+        </p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        {product && (
+          <p className="text-sm text-ink-tertiary line-through">A${product.price.toFixed(2)}</p>
+        )}
+      </div>
     </div>
   );
 }
