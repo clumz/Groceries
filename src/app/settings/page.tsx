@@ -3,206 +3,442 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { STAPLE_GROUPS, DEFAULT_STAPLES } from "@/lib/pantryManager";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { ChevronLeft, Plus, Trash2, RotateCcw } from "lucide-react";
+import {
+  Sun, Moon, Monitor, ChevronRight, Leaf, User, MapPin,
+  Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
+  UtensilsCrossed, ChevronDown, Check
+} from "lucide-react";
 import { clsx } from "clsx";
+import type { BudgetRange, CookTimePreference } from "@/types";
+
+const BUDGET_OPTIONS: { value: BudgetRange; label: string; sublabel: string }[] = [
+  { value: "under-150", label: "Under A$150", sublabel: "Budget-friendly" },
+  { value: "150-250", label: "A$150 – 250", sublabel: "Most popular" },
+  { value: "250-350", label: "A$250 – 350", sublabel: "Comfortable" },
+  { value: "350-plus", label: "A$350+", sublabel: "No limits" },
+];
+
+const COOK_TIME_OPTIONS: { value: CookTimePreference; label: string; sublabel: string }[] = [
+  { value: "under-20", label: "Under 20 min", sublabel: "Quick & easy" },
+  { value: "20-40", label: "20 – 40 min", sublabel: "Balanced" },
+  { value: "40-plus", label: "40+ min", sublabel: "Worth the effort" },
+];
+
+const BUDGET_LABELS: Record<BudgetRange, string> = {
+  "under-150": "Under A$150",
+  "150-250": "A$150 – 250",
+  "250-350": "A$250 – 350",
+  "350-plus": "A$350+",
+};
+
+const COOK_TIME_LABELS: Record<CookTimePreference, string> = {
+  "under-20": "Under 20 min",
+  "20-40": "20 – 40 min",
+  "40-plus": "40+ min",
+};
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={clsx("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", checked ? "bg-brand-600" : "bg-slate-200")}
+    >
+      <div className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow transition-all duration-150", checked ? "left-[calc(100%-1.375rem)]" : "left-0.5")} />
+    </button>
+  );
+}
+
+function SettingsRow({
+  icon, label, value, onPress, danger, rightEl,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  danger?: boolean;
+  rightEl?: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onPress}
+      disabled={!onPress && !rightEl}
+      className={clsx(
+        "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
+        onPress ? "hover:bg-surface-tertiary/60 active:bg-surface-tertiary" : "cursor-default",
+        danger ? "text-red-500" : "text-ink"
+      )}
+    >
+      <span className={clsx("flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center", danger ? "bg-red-50 text-red-500" : "bg-surface-tertiary text-ink-secondary")}>
+        {icon}
+      </span>
+      <span className={clsx("flex-1 text-sm font-medium", danger ? "text-red-500" : "text-ink")}>{label}</span>
+      {rightEl ?? (
+        value !== undefined ? (
+          <span className="text-xs text-ink-tertiary mr-1">{value}</span>
+        ) : null
+      )}
+      {onPress && <ChevronRight className={clsx("w-4 h-4 flex-shrink-0", danger ? "text-red-400" : "text-ink-tertiary")} />}
+    </button>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2 px-1">{title}</p>
+      <div className="bg-surface rounded-3xl overflow-hidden shadow-card divide-y divide-slate-100">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const router = useRouter();
-  const stapleIngredients = useAppStore((s) => s.stapleIngredients);
-  const pantryItems = useAppStore((s) => s.pantryItems);
-  const toggleStaple = useAppStore((s) => s.toggleStaple);
-  const clearPantryItem = useAppStore((s) => s.clearPantryItem);
-  const adjustPantryItem = useAppStore((s) => s.adjustPantryItem);
-  const set = useAppStore.setState;
+  const theme = useAppStore((s) => s.theme);
+  const setTheme = useAppStore((s) => s.setTheme);
+  const preferences = useAppStore((s) => s.preferences);
+  const updatePreferences = useAppStore((s) => s.updatePreferences);
+  const clearOrderHistory = useAppStore((s) => s.clearOrderHistory);
+  const reset = useAppStore((s) => s.reset);
 
-  const [customInput, setCustomInput] = useState("");
-  const [activeTab, setActiveTab] = useState<"staples" | "pantry">("staples");
+  const [budgetSheetOpen, setBudgetSheetOpen] = useState(false);
+  const [cookTimeSheetOpen, setCookTimeSheetOpen] = useState(false);
+  const [locationExpanded, setLocationExpanded] = useState(false);
+  const [clearHistorySheet, setClearHistorySheet] = useState(false);
+  const [resetSheet, setResetSheet] = useState(false);
+  const [suburb, setSuburb] = useState(preferences?.suburb ?? "");
+  const [postcode, setPostcode] = useState(preferences?.postcode ?? "");
 
-  function addCustomStaple() {
-    const val = customInput.trim().toLowerCase();
-    if (!val) return;
-    if (!stapleIngredients.includes(val)) {
-      toggleStaple(val);
-    }
-    setCustomInput("");
+  function saveLocation() {
+    if (!suburb.trim() || !postcode.trim()) return;
+    updatePreferences({ suburb: suburb.trim(), postcode: postcode.trim() });
+    setLocationExpanded(false);
   }
 
-  function resetToDefaults() {
-    set({ stapleIngredients: DEFAULT_STAPLES, currentCart: null });
+  function handleReset() {
+    reset();
+    router.replace("/onboarding");
   }
+
+  if (!preferences) return null;
 
   return (
     <div className="min-h-screen bg-surface-secondary pb-24">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-tertiary text-ink-secondary"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <h1 className="text-xl font-bold text-ink">Pantry & Staples</h1>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mt-4 bg-surface-tertiary rounded-xl p-1">
-          {(["staples", "pantry"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                "flex-1 py-2 rounded-lg text-sm font-medium transition-all",
-                activeTab === tab
-                  ? "bg-white text-ink shadow-sm"
-                  : "text-ink-secondary"
-              )}
-            >
-              {tab === "staples" ? "Kitchen Staples" : `Pantry Stock${pantryItems.length > 0 ? ` (${pantryItems.length})` : ""}`}
-            </button>
-          ))}
-        </div>
+      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+        <h1 className="text-2xl font-bold text-ink">Settings</h1>
       </div>
 
-      <div className="px-4 py-4 space-y-4">
-        {activeTab === "staples" && (
-          <>
-            <p className="text-sm text-ink-secondary px-1">
-              Toggle ingredients you always have at home. These are excluded from your cart and estimated cost.
-            </p>
+      <div className="px-4 py-4 space-y-5">
 
-            {STAPLE_GROUPS.map((group) => (
-              <div key={group.label} className="bg-white rounded-3xl overflow-hidden shadow-card">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">{group.label}</p>
-                </div>
-                <div className="divide-y divide-slate-50">
-                  {group.items.map((item) => {
-                    const active = stapleIngredients.includes(item);
-                    return (
-                      <button
-                        key={item}
-                        onClick={() => toggleStaple(item)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors text-left"
-                      >
-                        <span className={clsx("text-sm capitalize", active ? "text-ink font-medium" : "text-ink-secondary")}>{item}</span>
-                        <div className={clsx(
-                          "w-11 h-6 rounded-full transition-colors relative flex-shrink-0",
-                          active ? "bg-brand-600" : "bg-slate-200"
-                        )}>
-                          <div className={clsx(
-                            "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-150",
-                            active ? "left-[calc(100%-1.375rem)]" : "left-0.5"
-                          )} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+        {/* Appearance */}
+        <SectionCard title="Appearance">
+          <div className="px-4 py-4">
+            <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-3">Theme</p>
+            <div className="flex gap-2">
+              {([
+                { value: "light", icon: <Sun className="w-4 h-4" />, label: "Light" },
+                { value: "dark", icon: <Moon className="w-4 h-4" />, label: "Dark" },
+                { value: "system", icon: <Monitor className="w-4 h-4" />, label: "System" },
+              ] as const).map(({ value, icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setTheme(value)}
+                  className={clsx(
+                    "flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 text-xs font-medium transition-all",
+                    theme === value
+                      ? "border-brand-600 bg-brand-50 text-brand-700"
+                      : "border-slate-200 text-ink-secondary hover:border-slate-300"
+                  )}
+                >
+                  {icon}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </SectionCard>
 
-            {/* Custom staple input */}
-            <div className="bg-white rounded-3xl shadow-card px-4 py-4">
-              <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-3">Add Custom Staple</p>
-              <div className="flex gap-2">
+        {/* Meal Planning */}
+        <SectionCard title="Meal Planning">
+          {/* Store toggle */}
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+              <UtensilsCrossed className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-ink">Preferred store</span>
+            <div className="flex rounded-xl overflow-hidden border border-slate-200 text-xs font-medium">
+              {(["woolworths", "coles"] as const).map((store) => (
+                <button
+                  key={store}
+                  onClick={() => updatePreferences({ preferredStore: store })}
+                  className={clsx(
+                    "px-3 py-1.5 capitalize transition-colors",
+                    preferences.preferredStore === store
+                      ? store === "woolworths" ? "bg-green-600 text-white" : "bg-red-500 text-white"
+                      : "text-ink-secondary hover:bg-surface-tertiary"
+                  )}
+                >
+                  {store === "woolworths" ? "Woolies" : "Coles"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Include lunches */}
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+              <Clock className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-ink">Include weekday lunches</span>
+            <Toggle checked={preferences.includeLunches} onChange={(v) => updatePreferences({ includeLunches: v })} />
+          </div>
+
+          {/* Include snacks */}
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+              <Leaf className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-ink">Include snacks section</span>
+            <Toggle checked={preferences.includeSnacks} onChange={(v) => updatePreferences({ includeSnacks: v })} />
+          </div>
+
+          {/* Default servings */}
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+              <Users className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-ink">Default servings</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => updatePreferences({ defaultServings: Math.max(1, preferences.defaultServings - 1) })}
+                className="w-7 h-7 rounded-full bg-surface-secondary border border-slate-200 text-ink font-bold text-sm flex items-center justify-center"
+              >−</button>
+              <span className="text-sm font-bold text-ink w-5 text-center">{preferences.defaultServings}</span>
+              <button
+                onClick={() => updatePreferences({ defaultServings: Math.min(12, preferences.defaultServings + 1) })}
+                className="w-7 h-7 rounded-full bg-surface-secondary border border-slate-200 text-ink font-bold text-sm flex items-center justify-center"
+              >+</button>
+            </div>
+          </div>
+
+          {/* Weekly budget */}
+          <SettingsRow
+            icon={<DollarSign className="w-4 h-4" />}
+            label="Weekly budget"
+            value={BUDGET_LABELS[preferences.budgetRange]}
+            onPress={() => setBudgetSheetOpen(true)}
+          />
+
+          {/* Cook time */}
+          <SettingsRow
+            icon={<Clock className="w-4 h-4" />}
+            label="Cook time preference"
+            value={COOK_TIME_LABELS[preferences.cookTimePreference]}
+            onPress={() => setCookTimeSheetOpen(true)}
+          />
+        </SectionCard>
+
+        {/* Kitchen */}
+        <SectionCard title="Kitchen">
+          <SettingsRow
+            icon={<Leaf className="w-4 h-4" />}
+            label="Kitchen staples & pantry stock"
+            onPress={() => router.push("/settings/pantry")}
+          />
+        </SectionCard>
+
+        {/* Taste Profile */}
+        <SectionCard title="Taste Profile">
+          <SettingsRow
+            icon={<User className="w-4 h-4" />}
+            label="Dietary requirements"
+            value={preferences.dietaryRequirements.length > 0 ? `${preferences.dietaryRequirements.length} active` : "None"}
+            onPress={() => router.push("/profile")}
+          />
+          <SettingsRow
+            icon={<UtensilsCrossed className="w-4 h-4" />}
+            label="Cuisines & proteins"
+            value={preferences.cuisinePreferences.slice(0, 2).join(", ")}
+            onPress={() => router.push("/profile")}
+          />
+        </SectionCard>
+
+        {/* Account */}
+        <SectionCard title="Account">
+          {/* Location */}
+          <div>
+            <button
+              onClick={() => setLocationExpanded((v) => !v)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-tertiary/60 transition-colors"
+            >
+              <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-4 h-4" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-ink text-left">Location</span>
+              <span className="text-xs text-ink-tertiary mr-1">{preferences.suburb}</span>
+              <ChevronDown className={clsx("w-4 h-4 text-ink-tertiary transition-transform", locationExpanded && "rotate-180")} />
+            </button>
+            {locationExpanded && (
+              <div className="px-4 pb-4 space-y-2 border-t border-slate-100">
                 <input
                   type="text"
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addCustomStaple()}
-                  placeholder="e.g. curry leaves"
-                  className="flex-1 bg-surface-secondary rounded-xl px-3 py-2.5 text-sm text-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-brand-300"
+                  value={suburb}
+                  onChange={(e) => setSuburb(e.target.value)}
+                  placeholder="Suburb"
+                  className="w-full mt-3 bg-surface-secondary rounded-xl px-3 py-2.5 text-sm text-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <input
+                  type="text"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value)}
+                  placeholder="Postcode"
+                  maxLength={4}
+                  className="w-full bg-surface-secondary rounded-xl px-3 py-2.5 text-sm text-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-brand-300"
                 />
                 <button
-                  onClick={addCustomStaple}
-                  className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center flex-shrink-0"
+                  onClick={saveLocation}
+                  className="w-full py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold"
                 >
-                  <Plus className="w-4 h-4" />
+                  Save location
                 </button>
               </div>
-              {/* Custom staples (not in default groups) */}
-              {stapleIngredients.filter(
-                (s) => !STAPLE_GROUPS.flatMap((g) => g.items).includes(s)
-              ).length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {stapleIngredients
-                    .filter((s) => !STAPLE_GROUPS.flatMap((g) => g.items).includes(s))
-                    .map((s) => (
-                      <span key={s} className="flex items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-medium px-3 py-1.5 rounded-full">
-                        {s}
-                        <button onClick={() => toggleStaple(s)}>
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                </div>
-              )}
-            </div>
-
-            {/* Reset button */}
-            <button
-              onClick={resetToDefaults}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-slate-200 text-sm text-ink-secondary hover:bg-surface-tertiary transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset to defaults
-            </button>
-          </>
-        )}
-
-        {activeTab === "pantry" && (
-          <>
-            <p className="text-sm text-ink-secondary px-1">
-              Carry-forward stock from previous orders. We'll deduct these from your next cart.
-            </p>
-
-            {pantryItems.length === 0 ? (
-              <div className="bg-white rounded-3xl shadow-card px-5 py-12 flex flex-col items-center gap-3 text-center">
-                <span className="text-4xl">🧺</span>
-                <p className="font-semibold text-ink">No pantry stock yet</p>
-                <p className="text-sm text-ink-secondary">
-                  After your first order is placed, leftover stock from purchased items will appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-3xl overflow-hidden shadow-card divide-y divide-slate-100">
-                {pantryItems.map((p) => (
-                  <div key={p.ingredientName} className="px-4 py-3.5 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink capitalize">{p.ingredientName}</p>
-                      <p className="text-xs text-ink-tertiary mt-0.5">
-                        Added {new Date(p.addedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={p.quantity.toFixed(1)}
-                        onChange={(e) => adjustPantryItem(p.ingredientName, parseFloat(e.target.value) || 0)}
-                        className="w-16 text-right bg-surface-secondary rounded-lg px-2 py-1.5 text-sm text-ink outline-none focus:ring-2 focus:ring-brand-300"
-                      />
-                      <span className="text-xs text-ink-tertiary w-6">{p.unit}</span>
-                      <button
-                        onClick={() => clearPantryItem(p.ingredientName)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-tertiary hover:text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
-          </>
-        )}
+          </div>
+
+          <SettingsRow
+            icon={<Trash2 className="w-4 h-4" />}
+            label="Clear order history"
+            onPress={() => setClearHistorySheet(true)}
+          />
+          <SettingsRow
+            icon={<RotateCcw className="w-4 h-4" />}
+            label="Reset all data"
+            danger
+            onPress={() => setResetSheet(true)}
+          />
+        </SectionCard>
+
+        {/* About */}
+        <SectionCard title="About">
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="flex-1 text-sm font-medium text-ink">Version</span>
+            <span className="text-xs text-ink-tertiary">1.0.0</span>
+          </div>
+          <a
+            href="#"
+            className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-tertiary/60 transition-colors"
+          >
+            <span className="flex-1 text-sm font-medium text-ink">Privacy policy</span>
+            <ExternalLink className="w-4 h-4 text-ink-tertiary" />
+          </a>
+          <a
+            href="#"
+            className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-tertiary/60 transition-colors"
+          >
+            <span className="flex-1 text-sm font-medium text-ink">Help & feedback</span>
+            <ExternalLink className="w-4 h-4 text-ink-tertiary" />
+          </a>
+        </SectionCard>
       </div>
 
       <BottomNav />
+
+      {/* Budget sheet */}
+      {budgetSheetOpen && (
+        <Sheet onClose={() => setBudgetSheetOpen(false)} title="Weekly budget">
+          {BUDGET_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { updatePreferences({ budgetRange: opt.value }); setBudgetSheetOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
+            >
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-ink">{opt.label}</p>
+                <p className="text-xs text-ink-tertiary">{opt.sublabel}</p>
+              </div>
+              {preferences.budgetRange === opt.value && <Check className="w-4 h-4 text-brand-600" />}
+            </button>
+          ))}
+        </Sheet>
+      )}
+
+      {/* Cook time sheet */}
+      {cookTimeSheetOpen && (
+        <Sheet onClose={() => setCookTimeSheetOpen(false)} title="Cook time preference">
+          {COOK_TIME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { updatePreferences({ cookTimePreference: opt.value }); setCookTimeSheetOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
+            >
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-ink">{opt.label}</p>
+                <p className="text-xs text-ink-tertiary">{opt.sublabel}</p>
+              </div>
+              {preferences.cookTimePreference === opt.value && <Check className="w-4 h-4 text-brand-600" />}
+            </button>
+          ))}
+        </Sheet>
+      )}
+
+      {/* Clear history confirmation */}
+      {clearHistorySheet && (
+        <Sheet onClose={() => setClearHistorySheet(false)} title="Clear order history?">
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-sm text-ink-secondary">This will permanently delete all your past orders. Your meal plan and cart won't be affected.</p>
+            <button
+              onClick={() => { clearOrderHistory(); setClearHistorySheet(false); }}
+              className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-semibold text-sm"
+            >
+              Clear history
+            </button>
+            <button onClick={() => setClearHistorySheet(false)} className="w-full py-3 text-sm text-ink-secondary">
+              Cancel
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {/* Reset all data confirmation */}
+      {resetSheet && (
+        <Sheet onClose={() => setResetSheet(false)} title="Reset all data?">
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-sm text-ink-secondary">
+              This will delete your profile, meal plan, cart, order history, and pantry. You'll restart the onboarding flow. This cannot be undone.
+            </p>
+            <button
+              onClick={handleReset}
+              className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-semibold text-sm"
+            >
+              Reset everything
+            </button>
+            <button onClick={() => setResetSheet(false)} className="w-full py-3 text-sm text-ink-secondary">
+              Cancel
+            </button>
+          </div>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-surface rounded-t-3xl overflow-hidden">
+        <div className="px-5 pt-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="w-10 h-1 rounded-full bg-slate-200 absolute left-1/2 -translate-x-1/2 top-3" />
+          <h3 className="font-bold text-ink text-base mt-2">{title}</h3>
+          <button onClick={onClose} className="text-ink-tertiary hover:text-ink transition-colors mt-2">
+            <ChevronDown className="w-5 h-5 rotate-180" />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

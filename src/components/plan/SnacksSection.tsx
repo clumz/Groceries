@@ -6,7 +6,7 @@ interface SnacksSectionProps {
 
 export function SnacksSection({ snacks }: SnacksSectionProps) {
   return (
-    <div className="bg-white rounded-3xl p-4 shadow-card mt-3">
+    <div className="bg-surface rounded-3xl p-4 shadow-card mt-3">
       <h3 className="font-bold text-ink mb-3">Weekly Snacks</h3>
       <div className="space-y-2.5">
         {snacks.map((snack) => (

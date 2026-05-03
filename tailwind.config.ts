@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -22,15 +23,15 @@ const config: Config = {
           900: "#14532d",
         },
         surface: {
-          DEFAULT: "#ffffff",
-          secondary: "#f8fafc",
-          tertiary: "#f1f5f9",
+          DEFAULT: "var(--color-surface)",
+          secondary: "var(--color-surface-secondary)",
+          tertiary: "var(--color-surface-tertiary)",
         },
         ink: {
-          DEFAULT: "#0f172a",
-          secondary: "#475569",
-          tertiary: "#94a3b8",
-          inverse: "#ffffff",
+          DEFAULT: "var(--color-ink)",
+          secondary: "var(--color-ink-secondary)",
+          tertiary: "var(--color-ink-tertiary)",
+          inverse: "var(--color-ink-inverse)",
         },
       },
       fontFamily: {

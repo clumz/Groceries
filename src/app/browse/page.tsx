@@ -97,7 +97,7 @@ export default function BrowsePage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-24">
       {/* Header */}
-      <div className="bg-white px-4 pt-14 pb-3 sticky top-0 z-10 border-b border-slate-100 space-y-3">
+      <div className="bg-surface px-4 pt-14 pb-3 sticky top-0 z-10 border-b border-slate-100 space-y-3">
         <h1 className="text-2xl font-bold text-ink">Browse Recipes</h1>
 
         {/* Search */}
@@ -125,7 +125,7 @@ export default function BrowsePage() {
               onClick={() => setCuisine(key)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap",
-                cuisine === key ? "bg-brand-600 border-brand-600 text-white" : "bg-white border-slate-200 text-ink-secondary"
+                cuisine === key ? "bg-brand-600 border-brand-600 text-white" : "bg-surface border-slate-200 text-ink-secondary"
               )}
             >
               {label}
@@ -141,7 +141,7 @@ export default function BrowsePage() {
               onClick={() => setProtein(key)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap",
-                protein === key ? "bg-slate-800 border-slate-800 text-white" : "bg-white border-slate-200 text-ink-secondary"
+                protein === key ? "bg-slate-800 border-slate-800 text-white" : "bg-surface border-slate-200 text-ink-secondary"
               )}
             >
               {label}
@@ -153,7 +153,7 @@ export default function BrowsePage() {
               onClick={() => setDifficulty(difficulty === d ? "all" : d)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border capitalize transition-all whitespace-nowrap",
-                difficulty === d ? "bg-orange-500 border-orange-500 text-white" : "bg-white border-slate-200 text-ink-secondary"
+                difficulty === d ? "bg-orange-500 border-orange-500 text-white" : "bg-surface border-slate-200 text-ink-secondary"
               )}
             >
               {d}
@@ -172,7 +172,7 @@ export default function BrowsePage() {
         {loading && (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-card">
+              <div key={i} className="bg-surface rounded-2xl overflow-hidden shadow-card">
                 <div className="h-32 bg-slate-100 animate-pulse" />
                 <div className="p-3 space-y-2">
                   <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
@@ -208,7 +208,7 @@ export default function BrowsePage() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="w-full mt-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-white transition-colors disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface transition-colors disabled:opacity-50"
               >
                 {loadingMore ? "Loading…" : `Load more (${total - recipes.length} remaining)`}
               </button>
@@ -226,7 +226,7 @@ function RecipeBrowseCard({ recipe, onClick }: { recipe: Recipe; onClick: () => 
   const image = FOOD_IMAGES[recipe.cuisine] ?? FOOD_IMAGES.australian;
   const totalTime = recipe.cookTimeMinutes + recipe.prepTimeMinutes;
   return (
-    <button onClick={onClick} className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow text-left">
+    <button onClick={onClick} className="bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow text-left">
       <div className="relative h-32 overflow-hidden">
         <img src={image} alt={recipe.name} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />

@@ -90,7 +90,7 @@ function MultiSelectPill<T extends string>({
               "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-medium border transition-all duration-150 select-none",
               active
                 ? "bg-brand-600 border-brand-600 text-white"
-                : "bg-white border-slate-200 text-ink-secondary hover:border-brand-300"
+                : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-300"
             )}
           >
             {opt.emoji && <span>{opt.emoji}</span>}
@@ -122,7 +122,7 @@ function RadioCard<T extends string>({
             "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-150",
             value === opt.value
               ? "bg-brand-50 border-brand-400 text-ink"
-              : "bg-white border-slate-200 text-ink-secondary hover:border-brand-200"
+              : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
           )}
         >
           <div
@@ -281,7 +281,7 @@ export default function OnboardingPage() {
                 ? s === "woolworths"
                   ? "bg-green-50 border-green-500 text-green-800"
                   : "bg-red-50 border-red-400 text-red-800"
-                : "bg-white border-slate-200 text-ink-secondary hover:border-slate-300"
+                : "bg-surface border-slate-200 text-ink-secondary hover:border-slate-300"
             )}
           >
             <ShoppingBag className={clsx("w-8 h-8", s === "woolworths" ? "text-green-600" : "text-red-500")} />
@@ -299,7 +299,7 @@ export default function OnboardingPage() {
             value={suburb}
             onChange={(e) => setSuburb(e.target.value)}
             placeholder="e.g. Surry Hills"
-            className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm bg-surface focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
           />
         </div>
         <div>
@@ -312,7 +312,7 @@ export default function OnboardingPage() {
               onChange={(e) => handlePostcodeChange(e.target.value)}
               placeholder="e.g. 2010"
               className={clsx(
-                "w-full px-4 py-3 rounded-2xl border text-sm bg-white focus:outline-none focus:ring-1",
+                "w-full px-4 py-3 rounded-2xl border text-sm bg-surface focus:outline-none focus:ring-1",
                 postcodeError
                   ? "border-red-400 focus:border-red-400 focus:ring-red-400"
                   : postcode.length === 4 && isValidAustralianPostcode(postcode)
@@ -459,7 +459,7 @@ export default function OnboardingPage() {
                 onClick={() => set(!value)}
                 className={clsx("w-12 h-6 rounded-full transition-colors relative", value ? "bg-brand-600" : "bg-slate-200")}
               >
-                <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", value ? "translate-x-6" : "translate-x-0.5")} />
+                <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow transition-transform", value ? "translate-x-6" : "translate-x-0.5")} />
               </button>
             </div>
           ))}
@@ -536,7 +536,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 pb-8 pt-4 bg-white/90 backdrop-blur-sm border-t border-slate-100">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 pb-8 pt-4 bg-surface/90 backdrop-blur-sm border-t border-slate-100">
         <div className="flex gap-3">
           {step > 0 && (
             <Button variant="secondary" size="lg" onClick={() => setStep(step - 1)} className="w-14 flex-shrink-0">

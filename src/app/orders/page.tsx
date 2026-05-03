@@ -32,7 +32,7 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-24">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
         <h1 className="text-2xl font-bold text-ink">Order History</h1>
         <p className="text-xs text-ink-tertiary mt-0.5">{orderHistory.length} order{orderHistory.length !== 1 ? "s" : ""} total</p>
       </div>
@@ -40,7 +40,7 @@ export default function OrdersPage() {
       <div className="px-4 py-4 space-y-3">
         {/* Budget summary */}
         {orderHistory.length > 0 && (
-          <div className="bg-white rounded-3xl shadow-card p-5">
+          <div className="bg-surface rounded-3xl shadow-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-brand-600" />
               <p className="text-sm font-semibold text-ink">This month</p>
@@ -103,7 +103,7 @@ export default function OrdersPage() {
 
         {/* Empty state */}
         {orderHistory.length === 0 && (
-          <div className="bg-white rounded-3xl shadow-card px-5 py-16 flex flex-col items-center gap-3 text-center">
+          <div className="bg-surface rounded-3xl shadow-card px-5 py-16 flex flex-col items-center gap-3 text-center">
             <span className="text-5xl">🧺</span>
             <p className="font-semibold text-ink text-lg">No orders yet</p>
             <p className="text-sm text-ink-secondary">
@@ -137,7 +137,7 @@ function OrderRow({ order, expanded, onToggle }: { order: Order; expanded: boole
     : order.estimatedDeliveryDate;
 
   return (
-    <div className="bg-white rounded-3xl shadow-card overflow-hidden">
+    <div className="bg-surface rounded-3xl shadow-card overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-4"

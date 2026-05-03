@@ -87,7 +87,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-24">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 border-b border-slate-100">
+      <div className="bg-surface px-5 pt-14 pb-4 border-b border-slate-100">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-ink">Profile</h1>
           {!editing ? (
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                   "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
                   draft.preferredStore === store
                     ? store === "woolworths" ? "bg-green-100 border-green-400 text-green-800" : "bg-red-100 border-red-400 text-red-800"
-                    : "bg-white border-slate-200 text-ink-secondary",
+                    : "bg-surface border-slate-200 text-ink-secondary",
                   !editing && "pointer-events-none"
                 )}
               >
@@ -155,7 +155,7 @@ export default function ProfilePage() {
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
                     draft.dietaryRequirements.includes(d)
                       ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-white border-slate-200 text-ink-secondary"
+                      : "bg-surface border-slate-200 text-ink-secondary"
                   )}
                 >
                   {DIETARY_LABELS[d]}
@@ -187,7 +187,7 @@ export default function ProfilePage() {
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all capitalize",
                     draft.cuisinePreferences.includes(c)
                       ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-white border-slate-200 text-ink-secondary"
+                      : "bg-surface border-slate-200 text-ink-secondary"
                   )}
                 >
                   {CUISINE_LABELS[c]}
@@ -215,7 +215,7 @@ export default function ProfilePage() {
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
                     draft.proteinPreferences.includes(p)
                       ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-white border-slate-200 text-ink-secondary"
+                      : "bg-surface border-slate-200 text-ink-secondary"
                   )}
                 >
                   {PROTEIN_LABELS[p]}
@@ -292,7 +292,7 @@ export default function ProfilePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-3xl p-4 shadow-card">
+    <div className="bg-surface rounded-3xl p-4 shadow-card">
       <h3 className="text-sm font-semibold text-ink mb-3">{title}</h3>
       {children}
     </div>

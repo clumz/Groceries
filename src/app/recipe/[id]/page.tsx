@@ -168,7 +168,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
                 { label: "Carbs",    value: nutrition.carbsG,             unit: "g" },
                 { label: "Fat",      value: nutrition.fatG,               unit: "g" },
               ].map(({ label, value, unit }) => (
-                <div key={label} className="bg-white rounded-xl p-2.5 text-center">
+                <div key={label} className="bg-surface rounded-xl p-2.5 text-center">
                   <p className="text-base font-bold text-ink">{value}</p>
                   <p className="text-[10px] text-ink-tertiary">{unit}</p>
                   <p className="text-[10px] text-ink-secondary mt-0.5">{label}</p>
@@ -187,14 +187,14 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleServingsChange(localServings - 1)}
-              className="w-8 h-8 rounded-full bg-white shadow-sm text-ink font-bold flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-surface shadow-sm text-ink font-bold flex items-center justify-center"
             >
               −
             </button>
             <span className="text-lg font-bold text-ink w-5 text-center">{localServings}</span>
             <button
               onClick={() => handleServingsChange(localServings + 1)}
-              className="w-8 h-8 rounded-full bg-white shadow-sm text-ink font-bold flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-surface shadow-sm text-ink font-bold flex items-center justify-center"
             >
               +
             </button>
@@ -263,7 +263,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
       {addToPlanOpen && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setAddToPlanOpen(false)} />
-          <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white rounded-t-3xl p-6 space-y-5">
+          <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-surface rounded-t-3xl p-6 space-y-5">
             <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto" />
             <h3 className="font-bold text-ink text-lg">Add to plan</h3>
 
@@ -324,7 +324,7 @@ function FeedbackBtn({ icon, label, active, activeClass, onClick }: {
       onClick={onClick}
       className={clsx(
         "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-medium transition-all duration-150",
-        active ? activeClass : "bg-white border-slate-200 text-ink-secondary hover:border-slate-300"
+        active ? activeClass : "bg-surface border-slate-200 text-ink-secondary hover:border-slate-300"
       )}
     >
       {icon}{label}

@@ -106,7 +106,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-36">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -147,7 +147,7 @@ export default function CheckoutPage() {
         )}
 
         {/* Full item list with links */}
-        <div className="bg-white rounded-3xl overflow-hidden shadow-card">
+        <div className="bg-surface rounded-3xl overflow-hidden shadow-card">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">Items to buy</p>
             <p className="text-xs text-ink-tertiary">Tap to search on {retailerName}</p>
@@ -190,7 +190,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-white/90 backdrop-blur-sm border-t border-slate-100 z-10 space-y-2">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-surface/90 backdrop-blur-sm border-t border-slate-100 z-10 space-y-2">
         <div className="flex gap-2">
           <button
             onClick={copyList}

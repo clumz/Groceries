@@ -61,7 +61,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
 
   return (
     <div
-      className="bg-white rounded-3xl overflow-hidden shadow-card mb-3 cursor-pointer hover:shadow-card-hover transition-shadow duration-200"
+      className="bg-surface rounded-3xl overflow-hidden shadow-card mb-3 cursor-pointer hover:shadow-card-hover transition-shadow duration-200"
       onClick={() => router.push(`/recipe/${recipe.id}?mealId=${meal.id}`)}
     >
       {/* Image */}

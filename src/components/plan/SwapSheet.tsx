@@ -94,7 +94,7 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white rounded-t-3xl flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }}>
+      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-surface rounded-t-3xl flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }}>
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-slate-200" />
@@ -207,7 +207,7 @@ function CuisineChip({ label, active, onClick }: { label: string; active: boolea
         "flex-shrink-0 px-3.5 py-1.5 rounded-2xl text-sm font-medium border transition-all duration-150 whitespace-nowrap",
         active
           ? "bg-brand-600 border-brand-600 text-white"
-          : "bg-white border-slate-200 text-ink-secondary hover:border-brand-300"
+          : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-300"
       )}
     >
       {label}

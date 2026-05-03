@@ -41,6 +41,7 @@ interface AppActions {
   rejectSubstitute: (cartItemId: string) => void;
   setOrder: (order: Order) => void;
   clearOrderHistory: () => void;
+  setTheme: (theme: "light" | "dark" | "system") => void;
   reset: () => void;
   addMealToPlan: (dayIndex: number, mealType: "dinner" | "lunch", recipe: import("@/types").Recipe, servings: number) => void;
   toggleStaple: (name: string) => void;
@@ -65,6 +66,7 @@ export const useAppStore = create<Store>()(
       isBuildingCart: false,
       pantryItems: [],
       stapleIngredients: DEFAULT_STAPLES,
+      theme: "system" as const,
 
       // ─── Actions ───────────────────────────────────────────────────────────
       completeOnboarding: (prefs) =>
@@ -205,6 +207,8 @@ export const useAppStore = create<Store>()(
 
       clearOrderHistory: () => set({ orderHistory: [] }),
 
+      setTheme: (theme) => set({ theme }),
+
       addMealToPlan: (dayIndex, mealType, recipe, servings) =>
         set((s) => {
           if (!s.currentMealPlan) return s;
@@ -273,6 +277,7 @@ export const useAppStore = create<Store>()(
           orderHistory: [],
           pantryItems: [],
           stapleIngredients: DEFAULT_STAPLES,
+          theme: "system",
         }),
     }),
     {

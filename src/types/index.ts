@@ -230,6 +230,7 @@ export interface AppState {
   isBuildingCart: boolean;
   pantryItems: PantryItem[];
   stapleIngredients: string[];
+  theme: "light" | "dark" | "system";
 }
 
 // ─── API Payloads ─────────────────────────────────────────────────────────────

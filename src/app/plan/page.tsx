@@ -69,7 +69,7 @@ export default function PlanPage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-24">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-ink">This Week</h1>
@@ -115,7 +115,7 @@ export default function PlanPage() {
                 )}
               >
                 <span className="text-[10px] font-medium">{day}</span>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", hasMeal ? (activeDay === idx ? "bg-white/60" : "bg-brand-400") : "bg-transparent")} />
+                <div className={clsx("w-1.5 h-1.5 rounded-full", hasMeal ? (activeDay === idx ? "bg-surface/60" : "bg-brand-400") : "bg-transparent")} />
               </button>
             );
           })}

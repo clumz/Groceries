@@ -151,7 +151,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-surface-secondary pb-36">
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-ink">Your Cart</h1>
           <div className="flex items-center gap-2">
@@ -278,7 +278,7 @@ export default function CartPage() {
 
             {/* Cart items by category */}
             {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category} className="bg-white rounded-3xl overflow-hidden shadow-card">
+              <div key={category} className="bg-surface rounded-3xl overflow-hidden shadow-card">
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">
                     {CATEGORY_LABELS[category] ?? category}
@@ -294,7 +294,7 @@ export default function CartPage() {
 
             {/* Already have section */}
             {alreadyHaveItems.length > 0 && (
-              <div className="bg-white rounded-3xl overflow-hidden shadow-card">
+              <div className="bg-surface rounded-3xl overflow-hidden shadow-card">
                 <button
                   onClick={() => setPantryExpanded((v) => !v)}
                   className="w-full px-4 py-3 flex items-center justify-between"
@@ -331,7 +331,7 @@ export default function CartPage() {
       {/* Checkout footer */}
       {currentCart && !isBuildingCart && (
         <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-10">
-          <div className="bg-white rounded-3xl shadow-elevated px-5 py-4">
+          <div className="bg-surface rounded-3xl shadow-elevated px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-ink-secondary">Estimated total</span>
               <div className="text-right">
