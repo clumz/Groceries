@@ -225,7 +225,7 @@ export interface AppState {
   feedbackHistory: FeedbackHistory;
   currentMealPlan: WeeklyMealPlan | null;
   currentCart: Cart | null;
-  currentOrder: Order | null;
+  orderHistory: Order[];
   isGeneratingPlan: boolean;
   isBuildingCart: boolean;
   pantryItems: PantryItem[];

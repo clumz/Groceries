@@ -40,7 +40,9 @@ interface AppActions {
   approveSubstitute: (cartItemId: string) => void;
   rejectSubstitute: (cartItemId: string) => void;
   setOrder: (order: Order) => void;
+  clearOrderHistory: () => void;
   reset: () => void;
+  addMealToPlan: (dayIndex: number, mealType: "dinner" | "lunch", recipe: import("@/types").Recipe, servings: number) => void;
   toggleStaple: (name: string) => void;
   clearPantryItem: (ingredientName: string) => void;
   adjustPantryItem: (ingredientName: string, quantity: number) => void;
@@ -58,7 +60,7 @@ export const useAppStore = create<Store>()(
       feedbackHistory: EMPTY_FEEDBACK,
       currentMealPlan: null,
       currentCart: null,
-      currentOrder: null,
+      orderHistory: [],
       isGeneratingPlan: false,
       isBuildingCart: false,
       pantryItems: [],
@@ -73,7 +75,7 @@ export const useAppStore = create<Store>()(
           preferences: s.preferences ? { ...s.preferences, ...prefs } : null,
         })),
 
-      setMealPlan: (plan) => set({ currentMealPlan: plan, currentCart: null, currentOrder: null }),
+      setMealPlan: (plan) => set({ currentMealPlan: plan, currentCart: null }),
 
       setGeneratingPlan: (val) => set({ isGeneratingPlan: val }),
 
@@ -194,10 +196,33 @@ export const useAppStore = create<Store>()(
         }),
 
       setOrder: (order) => {
-        set({ currentOrder: order });
+        set((s) => ({
+          orderHistory: [order, ...s.orderHistory].slice(0, 52),
+        }));
         const cart = get().currentCart;
         if (cart) get().setPantryFromOrder(order.id, cart.items);
       },
+
+      clearOrderHistory: () => set({ orderHistory: [] }),
+
+      addMealToPlan: (dayIndex, mealType, recipe, servings) =>
+        set((s) => {
+          if (!s.currentMealPlan) return s;
+          const newMeal: PlannedMeal = {
+            id: `meal-added-${Date.now()}`,
+            dayIndex,
+            mealType,
+            recipe: { ...recipe, servings },
+            servings,
+          };
+          const meals = s.currentMealPlan.meals.filter(
+            (m) => !(m.dayIndex === dayIndex && m.mealType === mealType)
+          );
+          return {
+            currentMealPlan: { ...s.currentMealPlan, meals: [...meals, newMeal] },
+            currentCart: null,
+          };
+        }),
 
       toggleStaple: (name) =>
         set((s) => {
@@ -245,13 +270,22 @@ export const useAppStore = create<Store>()(
           feedbackHistory: EMPTY_FEEDBACK,
           currentMealPlan: null,
           currentCart: null,
-          currentOrder: null,
+          orderHistory: [],
           pantryItems: [],
           stapleIngredients: DEFAULT_STAPLES,
         }),
     }),
     {
       name: "plate-app-storage",
+      version: 1,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>;
+        if (version < 1 && state.currentOrder) {
+          state.orderHistory = [state.currentOrder];
+          delete state.currentOrder;
+        }
+        return state;
+      },
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? localStorage : {
           getItem: () => null,

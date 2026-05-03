@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
+import { estimateRecipeNutrition } from "@/lib/nutritionData";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { RecipeCard } from "@/components/plan/RecipeCard";
@@ -158,6 +159,23 @@ export default function PlanPage() {
           <>
             <div className="mb-1">
               <h2 className="text-base font-semibold text-ink">{FULL_DAYS[activeDay]}</h2>
+              {(() => {
+                const dayMeals = [...dinners, ...lunches];
+                if (dayMeals.length === 0) return null;
+                const totals = dayMeals.reduce(
+                  (acc, m) => {
+                    const n = estimateRecipeNutrition(m.recipe.ingredients, m.servings);
+                    return { cal: acc.cal + n.caloriesPerServing, protein: acc.protein + n.proteinG };
+                  },
+                  { cal: 0, protein: 0 }
+                );
+                if (totals.cal === 0) return null;
+                return (
+                  <p className="text-xs text-ink-tertiary mt-0.5">
+                    ~{totals.cal.toLocaleString()} kcal · {totals.protein}g protein
+                  </p>
+                );
+              })()}
             </div>
 
             {dinners.length > 0 && (

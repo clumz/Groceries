@@ -10,7 +10,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings } from "lucide-react";
+import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings, ExternalLink, Copy, Tag, ArrowUpRight } from "lucide-react";
 import { clsx } from "clsx";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -42,6 +42,8 @@ export default function CartPage() {
   const stapleIngredients = useAppStore((s) => s.stapleIngredients);
 
   const [pantryExpanded, setPantryExpanded] = useState(false);
+  const [priceComparison, setPriceComparison] = useState<{ savings: number; cheaperStore: import("@/types").Retailer } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (currentMealPlan && !currentCart) buildCart();
@@ -74,15 +76,31 @@ export default function CartPage() {
         return item;
       });
 
+      const currentTotal = estimateCartTotal(itemsWithSubs);
       const cart: Cart = {
         id: `cart-${Date.now()}`,
         retailer,
         items: itemsWithSubs,
-        estimatedTotal: estimateCartTotal(itemsWithSubs),
+        estimatedTotal: currentTotal,
         createdAt: Date.now(),
         mealPlanId: currentMealPlan.id,
       };
       setCart(cart);
+
+      // Price comparison: build the other retailer's cart silently
+      const otherRetailer = retailer === "woolworths" ? "coles" : "woolworths";
+      const otherMappings = matchAllIngredients(Array.from(new Set(allIngredients)), otherRetailer);
+      const otherProductMappings = new Map(
+        Array.from(otherMappings.entries()).map(([k, v]) => [k, { product: v.product, confidence: v.confidence }])
+      );
+      const otherItems = aggregateIngredients(currentMealPlan.meals, currentMealPlan.snacks, otherProductMappings, stapleIngredients, pantryItems);
+      const otherTotal = estimateCartTotal(otherItems);
+      const diff = Math.abs(otherTotal - currentTotal);
+      if (diff >= 0.5) {
+        setPriceComparison({ savings: diff, cheaperStore: otherTotal < currentTotal ? otherRetailer : retailer });
+      } else {
+        setPriceComparison(null);
+      }
     } finally {
       setBuildingCart(false);
     }
@@ -95,6 +113,19 @@ export default function CartPage() {
   const alreadyHaveItems = currentCart?.items.filter(
     (i) => i.isStaple || (i.pantryContribution ?? 0) >= i.totalQuantity
   ) ?? [];
+
+  function copyShoppingList() {
+    if (!currentCart) return;
+    const lines = toBuyItems.map((item) => {
+      const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+      const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
+      return `${item.ingredientName} — ${net} ${item.unit}${product ? ` (A$${product.price.toFixed(2)})` : ""}`;
+    });
+    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const groupedItems = toBuyItems.reduce<Record<string, CartItem[]>>((acc, item) => {
     const cat = item.matchedProduct?.category ?? "pantry";
@@ -154,6 +185,30 @@ export default function CartPage() {
           <p className="text-xs text-ink-tertiary mt-1">
             {toBuyItems.length} items to buy · {currentMealPlan.meals.length} meals
           </p>
+        )}
+        {/* Price comparison banner */}
+        {priceComparison && currentCart && (
+          <div className={clsx(
+            "mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium",
+            priceComparison.cheaperStore === currentCart.retailer
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-amber-50 text-amber-700"
+          )}>
+            <Tag className="w-3.5 h-3.5 flex-shrink-0" />
+            {priceComparison.cheaperStore === currentCart.retailer ? (
+              <span>Already at the cheaper store — saving A${priceComparison.savings.toFixed(2)} vs {currentCart.retailer === "woolworths" ? "Coles" : "Woolworths"}</span>
+            ) : (
+              <>
+                <span className="flex-1">Switch to {priceComparison.cheaperStore === "woolworths" ? "Woolies" : "Coles"} and save A${priceComparison.savings.toFixed(2)}</span>
+                <button
+                  onClick={() => { switchRetailer(priceComparison.cheaperStore); buildCart(); }}
+                  className="flex-shrink-0 font-semibold underline"
+                >
+                  Switch
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
 
@@ -286,15 +341,24 @@ export default function CartPage() {
                 <span className="text-xl font-bold text-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
               </div>
             </div>
-            <Button
-              fullWidth
-              size="xl"
-              onClick={() => router.push("/checkout")}
-            >
-              Place order with {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"}
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-            <p className="text-xs text-ink-tertiary text-center mt-2">Prices are estimates. Final price confirmed at checkout.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={copyShoppingList}
+                className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <Button
+                fullWidth
+                size="xl"
+                onClick={() => router.push("/checkout")}
+              >
+                Shop at {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"}
+                <ArrowUpRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-ink-tertiary text-center mt-2">We'll open your items on {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"} — add them to your basket there.</p>
           </div>
         </div>
       )}
@@ -304,12 +368,21 @@ export default function CartPage() {
   );
 }
 
+function getProductSearchUrl(product: { retailer: string; name: string }): string {
+  const searchName = product.name.replace(/^(woolworths|coles)\s+/i, "").trim();
+  const encoded = encodeURIComponent(searchName);
+  return product.retailer === "woolworths"
+    ? `https://www.woolworths.com.au/shop/search/products?searchTerm=${encoded}`
+    : `https://www.coles.com.au/search?q=${encoded}`;
+}
+
 function CartItemRow({ item }: { item: CartItem }) {
   const activeProduct = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
   const netQty = item.totalQuantity - (item.pantryContribution ?? 0);
+  const searchUrl = activeProduct ? getProductSearchUrl(activeProduct) : null;
 
-  return (
-    <div className={clsx("px-4 py-3 flex items-center gap-3", item.isUnavailable && item.substituteApproved === false && "opacity-40")}>
+  const inner = (
+    <>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-ink truncate">{item.ingredientName}</p>
         {activeProduct ? (
@@ -332,6 +405,25 @@ function CartItemRow({ item }: { item: CartItem }) {
       {item.substituteApproved === true && (
         <Badge variant="orange" className="ml-1 flex-shrink-0">Sub</Badge>
       )}
+      {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-ink-tertiary/50 flex-shrink-0 ml-1" />}
+    </>
+  );
+
+  if (searchUrl) {
+    return (
+      <a
+        href={searchUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={clsx("px-4 py-3 flex items-center gap-3 hover:bg-surface-tertiary/50 transition-colors", item.isUnavailable && item.substituteApproved === false && "opacity-40")}
+      >
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <div className={clsx("px-4 py-3 flex items-center gap-3", item.isUnavailable && item.substituteApproved === false && "opacity-40")}>
+      {inner}
     </div>
   );
 }
