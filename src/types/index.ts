@@ -40,7 +40,11 @@ export type BudgetRange = "under-150" | "150-250" | "250-350" | "350-plus";
 
 export type CookTimePreference = "under-20" | "20-40" | "40-plus";
 
-export type MacroTarget = "high-protein" | "balanced" | "low-carb";
+export interface MacroGoal {
+  proteinPct: number;
+  carbsPct: number;
+  fatPct: number;
+}
 
 export interface UserPreferences {
   preferredStore: StorePreference;
@@ -56,7 +60,7 @@ export interface UserPreferences {
   includeLunches: boolean;
   includeSnacks: boolean;
   calorieGoal?: number | null;
-  macroTarget?: MacroTarget | null;
+  macroGoal?: MacroGoal | null;
 }
 
 // ─── Feedback & Learning ───────────────────────────────────────────────────────

@@ -29,18 +29,26 @@ export function buildMealPlanSystemPrompt(
     "40-plus": "40+ minutes is fine",
   };
 
+  const nutritionStr = preferences.calorieGoal
+    ? `- Daily calorie target: ${preferences.calorieGoal} kcal per person${
+        preferences.macroGoal
+          ? ` (${preferences.macroGoal.proteinPct}% protein · ${preferences.macroGoal.carbsPct}% carbs · ${preferences.macroGoal.fatPct}% fat)`
+          : ""
+      }`
+    : null;
+
   return `You are an expert meal planner for Australian households. Generate personalised weekly meal plans that are realistic, varied, and delicious.
 
 USER PREFERENCES:
 - Household size: ${preferences.householdSize} people, default servings: ${preferences.defaultServings}
 - Dietary requirements: ${dietaryStr}
-- Cuisine preferences: ${cuisinesStr}
-- Protein preferences: ${proteinsStr}
+- Cuisine preferences: ${cuisinesStr} — PRIORITISE these cuisines heavily
+- Protein preferences: ${proteinsStr} — ONLY use these proteins (unless unavoidable)
 - Weekly grocery budget: ${budgetMap[preferences.budgetRange] ?? "flexible"}
 - Cooking time preference: ${cookTimeMap[preferences.cookTimePreference] ?? "flexible"}
 - Preferred supermarket: ${preferences.preferredStore === "woolworths" ? "Woolworths" : "Coles"}
 - Include lunches: ${preferences.includeLunches ? "yes" : "no"}
-- Include snacks section: ${preferences.includeSnacks ? "yes" : "no"}
+- Include snacks section: ${preferences.includeSnacks ? "yes" : "no"}${nutritionStr ? `\n- ${nutritionStr}` : ""}
 
 ${feedbackContext ? `LEARNING FROM FEEDBACK:\n${feedbackContext}\n` : ""}
 
@@ -48,14 +56,17 @@ INSTRUCTIONS:
 1. Generate exactly 7 dinners (one per day, Monday–Sunday)
 ${preferences.includeLunches ? "2. Generate 5 lunches (Monday–Friday)" : ""}
 ${preferences.includeSnacks ? "3. Generate 5–8 snack items suitable for the household" : ""}
+- CRITICAL: Use ONLY the user's preferred cuisines. Do not include cuisines not in their list.
+- CRITICAL: Use ONLY the user's preferred proteins. Do not substitute other proteins.
+- CRITICAL: Respect ALL dietary requirements strictly — this is non-negotiable.
 - Vary cuisines across the week — avoid repeating the same cuisine on consecutive days
-- Respect ALL dietary requirements strictly — this is critical
 - Keep ingredients practical and available at Australian supermarkets
 - Aim for a balance of simple weeknight meals and one or two more special weekend meals
 - Include recipe methods as clear numbered steps
 - Each recipe ingredient must be specific enough to match a supermarket product (e.g. "chicken breast fillets" not "chicken")
 - Ingredient quantities should be per the recipe's stated servings count
 - For pantry staples like salt, pepper, oil — include them in ingredients
+${preferences.calorieGoal ? `- Design meals to roughly hit the ${preferences.calorieGoal} kcal/day target when combined` : ""}
 
 RESPONSE FORMAT:
 Respond with a valid JSON object matching this TypeScript type:

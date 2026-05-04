@@ -57,6 +57,7 @@ export default function PlanPage() {
     }
   }
 
+  const isSnacksTab = activeDay === 7;
   const dinners = currentMealPlan?.meals.filter(
     (m) => m.mealType === "dinner" && m.dayIndex === activeDay
   ) ?? [];
@@ -109,16 +110,28 @@ export default function PlanPage() {
                 onClick={() => setActiveDay(idx)}
                 className={clsx(
                   "flex-shrink-0 flex flex-col items-center gap-0.5 w-10 py-2 rounded-xl transition-all duration-150",
-                  activeDay === idx
+                  activeDay === idx && !isSnacksTab
                     ? "bg-brand-600 text-white"
                     : "text-ink-secondary hover:bg-surface-tertiary"
                 )}
               >
                 <span className="text-[10px] font-medium">{day}</span>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", hasMeal ? (activeDay === idx ? "bg-surface/60" : "bg-brand-400") : "bg-transparent")} />
+                <div className={clsx("w-1.5 h-1.5 rounded-full", hasMeal ? (activeDay === idx && !isSnacksTab ? "bg-surface/60" : "bg-brand-400") : "bg-transparent")} />
               </button>
             );
           })}
+          {currentMealPlan && currentMealPlan.snacks.length > 0 && preferences.includeSnacks && (
+            <button
+              onClick={() => setActiveDay(7)}
+              className={clsx(
+                "flex-shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-150",
+                isSnacksTab ? "bg-brand-600 text-white" : "text-ink-secondary hover:bg-surface-tertiary"
+              )}
+            >
+              <span className="text-[10px] font-medium">Snacks</span>
+              <div className={clsx("w-1.5 h-1.5 rounded-full", isSnacksTab ? "bg-surface/60" : "bg-brand-400")} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -157,95 +170,113 @@ export default function PlanPage() {
 
         {currentMealPlan && !isGeneratingPlan && (
           <>
-            <div className="mb-1">
-              <h2 className="text-base font-semibold text-ink">{FULL_DAYS[activeDay]}</h2>
-              {(() => {
-                const dayMeals = [...dinners, ...lunches];
-                if (dayMeals.length === 0) return null;
-                const totals = dayMeals.reduce(
-                  (acc, m) => {
-                    const n = estimateRecipeNutrition(m.recipe.ingredients, m.servings);
-                    return { cal: acc.cal + n.caloriesPerServing, protein: acc.protein + n.proteinG };
-                  },
-                  { cal: 0, protein: 0 }
-                );
-                if (totals.cal === 0) return null;
-                const goal = preferences.calorieGoal;
-                if (goal) {
-                  const pct = Math.min(100, Math.round((totals.cal / goal) * 100));
-                  const over = totals.cal > goal;
-                  const close = pct >= 90;
-                  return (
-                    <div className="mt-1.5 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-ink-tertiary">
-                          ~{totals.cal.toLocaleString()} / {goal.toLocaleString()} kcal · {totals.protein}g protein
-                        </p>
-                        <p className={clsx("text-xs font-medium", over ? "text-red-500" : close ? "text-amber-500" : "text-brand-600")}>
-                          {over ? `+${(totals.cal - goal).toLocaleString()} over` : `${(goal - totals.cal).toLocaleString()} left`}
-                        </p>
-                      </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={clsx("h-full rounded-full transition-all", over ? "bg-red-400" : close ? "bg-amber-400" : "bg-brand-500")}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <p className="text-xs text-ink-tertiary mt-0.5">
-                    ~{totals.cal.toLocaleString()} kcal · {totals.protein}g protein
-                  </p>
-                );
-              })()}
-            </div>
-
-            {dinners.length > 0 && (
-              <div>
-                {preferences.includeLunches && (
-                  <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Dinner</p>
-                )}
-                {dinners.map((meal) => (
-                  <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
-                ))}
-              </div>
-            )}
-
-            {preferences.includeLunches && lunches.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Lunch</p>
-                {lunches.map((meal) => (
-                  <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
-                ))}
-              </div>
-            )}
-
-            {dinners.length === 0 && lunches.length === 0 && (
-              <div className="flex flex-col items-center py-12 gap-3 text-ink-tertiary">
-                <span className="text-3xl">🗓️</span>
-                <p className="text-sm">No meals planned for {FULL_DAYS[activeDay]}</p>
-              </div>
-            )}
-
-            {activeDay === 6 && currentMealPlan.snacks.length > 0 && preferences.includeSnacks && (
+            {isSnacksTab ? (
               <SnacksSection snacks={currentMealPlan.snacks} />
-            )}
+            ) : (
+              <>
+                <div className="mb-1">
+                  <h2 className="text-base font-semibold text-ink">{FULL_DAYS[activeDay]}</h2>
+                  {(() => {
+                    const dayMeals = [...dinners, ...lunches];
+                    if (dayMeals.length === 0) return null;
+                    const totals = dayMeals.reduce(
+                      (acc, m) => {
+                        const n = estimateRecipeNutrition(m.recipe.ingredients, m.servings);
+                        return { cal: acc.cal + n.caloriesPerServing, protein: acc.protein + n.proteinG, carbs: acc.carbs + n.carbsG, fat: acc.fat + n.fatG };
+                      },
+                      { cal: 0, protein: 0, carbs: 0, fat: 0 }
+                    );
+                    if (totals.cal === 0) return null;
+                    const goal = preferences.calorieGoal;
+                    const macroGoal = preferences.macroGoal;
+                    if (goal) {
+                      const pct = Math.min(100, Math.round((totals.cal / goal) * 100));
+                      const over = totals.cal > goal;
+                      const close = pct >= 90;
+                      const targetProteinG = macroGoal ? Math.round((macroGoal.proteinPct / 100) * goal / 4) : null;
+                      const targetCarbsG = macroGoal ? Math.round((macroGoal.carbsPct / 100) * goal / 4) : null;
+                      const targetFatG = macroGoal ? Math.round((macroGoal.fatPct / 100) * goal / 9) : null;
+                      return (
+                        <div className="mt-1.5 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-ink-tertiary">
+                              ~{totals.cal.toLocaleString()} / {goal.toLocaleString()} kcal
+                            </p>
+                            <p className={clsx("text-xs font-medium", over ? "text-red-500" : close ? "text-amber-500" : "text-brand-600")}>
+                              {over ? `+${(totals.cal - goal).toLocaleString()} over` : `${(goal - totals.cal).toLocaleString()} left`}
+                            </p>
+                          </div>
+                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={clsx("h-full rounded-full transition-all", over ? "bg-red-400" : close ? "bg-amber-400" : "bg-brand-500")}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          {targetProteinG && (
+                            <p className="text-[10px] text-ink-tertiary">
+                              <span className="text-brand-600 font-medium">P {totals.protein}g/{targetProteinG}g</span>
+                              {" · "}
+                              <span className="text-amber-500 font-medium">C {totals.carbs}g/{targetCarbsG}g</span>
+                              {" · "}
+                              <span className="text-rose-500 font-medium">F {totals.fat}g/{targetFatG}g</span>
+                            </p>
+                          )}
+                          {!targetProteinG && (
+                            <p className="text-[10px] text-ink-tertiary">{totals.protein}g protein</p>
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-ink-tertiary mt-0.5">
+                        ~{totals.cal.toLocaleString()} kcal · {totals.protein}g protein
+                      </p>
+                    );
+                  })()}
+                </div>
 
-            {activeDay === 0 && (
-              <div className="mt-2">
-                <button
-                  onClick={() => router.push("/cart")}
-                  className="w-full flex items-center justify-between bg-brand-600 text-white px-5 py-4 rounded-2xl"
-                >
+                {dinners.length > 0 && (
                   <div>
-                    <p className="font-semibold">View weekly cart</p>
-                    <p className="text-xs text-brand-200 mt-0.5">All {currentMealPlan.meals.length} meals consolidated</p>
+                    {preferences.includeLunches && (
+                      <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Dinner</p>
+                    )}
+                    {dinners.map((meal) => (
+                      <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
+                    ))}
                   </div>
-                  <ChevronRight className="w-5 h-5 text-brand-200" />
-                </button>
-              </div>
+                )}
+
+                {preferences.includeLunches && lunches.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Lunch</p>
+                    {lunches.map((meal) => (
+                      <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
+                    ))}
+                  </div>
+                )}
+
+                {dinners.length === 0 && lunches.length === 0 && (
+                  <div className="flex flex-col items-center py-12 gap-3 text-ink-tertiary">
+                    <span className="text-3xl">🗓️</span>
+                    <p className="text-sm">No meals planned for {FULL_DAYS[activeDay]}</p>
+                  </div>
+                )}
+
+                {activeDay === 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => router.push("/cart")}
+                      className="w-full flex items-center justify-between bg-brand-600 text-white px-5 py-4 rounded-2xl"
+                    >
+                      <div>
+                        <p className="font-semibold">View weekly cart</p>
+                        <p className="text-xs text-brand-200 mt-0.5">All {currentMealPlan.meals.length} meals consolidated</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-brand-200" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

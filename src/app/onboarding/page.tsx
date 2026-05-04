@@ -3,27 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference, MacroTarget } from "@/types";
+import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { clsx } from "clsx";
 import { Check, ChevronRight, ShoppingBag, Clock } from "lucide-react";
 
 const TOTAL_STEPS = 8;
 
-const CALORIE_OPTIONS: { value: number | null; label: string; sublabel: string }[] = [
-  { value: null,  label: "No goal",       sublabel: "Just plan great meals" },
-  { value: 1500,  label: "~1,500 kcal",   sublabel: "Light" },
-  { value: 1800,  label: "~1,800 kcal",   sublabel: "Moderate" },
-  { value: 2000,  label: "~2,000 kcal",   sublabel: "Standard" },
-  { value: 2200,  label: "~2,200 kcal",   sublabel: "Active" },
-  { value: 2500,  label: "~2,500 kcal",   sublabel: "Very active" },
-];
-
-const MACRO_OPTIONS: { value: MacroTarget; label: string; sublabel: string; splits: string }[] = [
-  { value: "balanced",     label: "Balanced",     sublabel: "Even split",        splits: "40% carbs · 30% protein · 30% fat" },
-  { value: "high-protein", label: "High protein", sublabel: "Build & maintain",  splits: "30% carbs · 40% protein · 30% fat" },
-  { value: "low-carb",     label: "Low carb",     sublabel: "Keto-friendly",     splits: "20% carbs · 40% protein · 40% fat" },
-];
+function adjustMacros(
+  changed: "protein" | "carbs" | "fat",
+  newVal: number,
+  current: { proteinPct: number; carbsPct: number; fatPct: number }
+): { proteinPct: number; carbsPct: number; fatPct: number } {
+  const remaining = 100 - newVal;
+  const others = (["protein", "carbs", "fat"] as const).filter((k) => k !== changed);
+  const [a, b] = others;
+  const aOld = current[`${a}Pct` as keyof typeof current];
+  const bOld = current[`${b}Pct` as keyof typeof current];
+  const total = (aOld + bOld) || 1;
+  let aNew = Math.round((aOld / total) * remaining / 5) * 5;
+  aNew = Math.max(10, Math.min(remaining - 10, aNew));
+  const bNew = Math.max(10, remaining - aNew);
+  return { ...current, [`${changed}Pct`]: newVal, [`${a}Pct`]: aNew, [`${b}Pct`]: bNew } as { proteinPct: number; carbsPct: number; fatPct: number };
+}
 
 const DIETARY_OPTIONS: { value: DietaryRequirement; label: string }[] = [
   { value: "vegan", label: "Vegan" },
@@ -183,8 +185,11 @@ export default function OnboardingPage() {
   const [cookTime, setCookTime] = useState<CookTimePreference>("20-40");
   const [includeLunches, setIncludeLunches] = useState(false);
   const [includeSnacks, setIncludeSnacks] = useState(true);
-  const [calorieGoal, setCalorieGoal] = useState<number | null>(null);
-  const [macroTarget, setMacroTarget] = useState<MacroTarget>("balanced");
+  const [trackNutrition, setTrackNutrition] = useState(false);
+  const [calorieGoal, setCalorieGoal] = useState(2000);
+  const [proteinPct, setProteinPct] = useState(30);
+  const [carbsPct, setCarbsPct] = useState(40);
+  const [fatPct, setFatPct] = useState(30);
 
   function isValidAustralianPostcode(pc: string): boolean {
     if (pc.length !== 4) return false;
@@ -249,8 +254,8 @@ export default function OnboardingPage() {
       cookTimePreference: cookTime,
       includeLunches,
       includeSnacks,
-      calorieGoal,
-      macroTarget: calorieGoal ? macroTarget : null,
+      calorieGoal: trackNutrition ? calorieGoal : null,
+      macroGoal: trackNutrition ? { proteinPct, carbsPct, fatPct } : null,
     };
     completeOnboarding(prefs);
 
@@ -524,59 +529,124 @@ export default function OnboardingPage() {
     <div key="step7" className="animate-slide-up space-y-6">
       <div>
         <h2 className="text-xl font-bold text-ink mb-1">Nutrition goals</h2>
-        <p className="text-sm text-ink-secondary">Optional — we'll track calories and macros against your target</p>
+        <p className="text-sm text-ink-secondary">Optional — skip this if you just want great meals</p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-ink mb-3">Daily calorie target</label>
-        <div className="space-y-2">
-          {CALORIE_OPTIONS.map((opt) => (
-            <button
-              key={String(opt.value)}
-              onClick={() => setCalorieGoal(opt.value)}
-              className={clsx(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all duration-150",
-                calorieGoal === opt.value
-                  ? "bg-brand-50 border-brand-400 text-ink"
-                  : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
-              )}
-            >
-              <div className={clsx("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0", calorieGoal === opt.value ? "border-brand-600" : "border-slate-300")}>
-                {calorieGoal === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
-              </div>
-              <div className="flex-1">
-                <span className="text-sm font-medium">{opt.label}</span>
-                <span className="text-xs text-ink-tertiary ml-2">{opt.sublabel}</span>
-              </div>
-            </button>
-          ))}
+      <div className="flex items-center justify-between py-1">
+        <div>
+          <p className="text-sm font-medium text-ink">Track calories &amp; macros</p>
+          <p className="text-xs text-ink-tertiary mt-0.5">See daily progress on your plan</p>
         </div>
+        <button
+          onClick={() => setTrackNutrition(!trackNutrition)}
+          className={clsx("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", trackNutrition ? "bg-brand-600" : "bg-slate-200")}
+        >
+          <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow transition-transform", trackNutrition ? "translate-x-6" : "translate-x-0.5")} />
+        </button>
       </div>
 
-      {calorieGoal !== null && (
-        <div className="animate-fade-in">
-          <label className="block text-sm font-medium text-ink mb-3">Macro focus</label>
+      {trackNutrition && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Calorie slider */}
           <div className="space-y-2">
-            {MACRO_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setMacroTarget(opt.value)}
-                className={clsx(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all duration-150",
-                  macroTarget === opt.value
-                    ? "bg-brand-50 border-brand-400 text-ink"
-                    : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
-                )}
-              >
-                <div className={clsx("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0", macroTarget === opt.value ? "border-brand-600" : "border-slate-300")}>
-                  {macroTarget === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{opt.label} <span className="text-ink-tertiary font-normal">— {opt.sublabel}</span></p>
-                  <p className="text-xs text-ink-tertiary mt-0.5">{opt.splits}</p>
-                </div>
-              </button>
-            ))}
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-ink">Daily calorie target</label>
+              <span className="text-sm font-bold text-brand-600">{calorieGoal.toLocaleString()} kcal</span>
+            </div>
+            <input
+              type="range"
+              min={1200}
+              max={3500}
+              step={50}
+              value={calorieGoal}
+              onChange={(e) => setCalorieGoal(Number(e.target.value))}
+              className="w-full accent-brand-600"
+            />
+            <div className="flex justify-between text-[10px] text-ink-tertiary">
+              <span>1,200 · Light</span>
+              <span>2,000 · Standard</span>
+              <span>3,500 · Very active</span>
+            </div>
+            <p className="text-xs text-ink-tertiary">Typical adult: 1,600–2,200 kcal/day. Raise for heavy exercise or a larger household.</p>
+          </div>
+
+          {/* Macro sliders */}
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-ink">Macro split</p>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink">Protein</span>
+                <span className="text-xs font-bold text-brand-600">{proteinPct}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={60}
+                step={5}
+                value={proteinPct}
+                onChange={(e) => {
+                  const next = adjustMacros("protein", Number(e.target.value), { proteinPct, carbsPct, fatPct });
+                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
+                }}
+                className="w-full accent-brand-600"
+              />
+              <p className="text-[10px] text-ink-tertiary">0.8–2g per kg body weight · Higher for muscle building</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink">Carbohydrates</span>
+                <span className="text-xs font-bold text-amber-500">{carbsPct}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={70}
+                step={5}
+                value={carbsPct}
+                onChange={(e) => {
+                  const next = adjustMacros("carbs", Number(e.target.value), { proteinPct, carbsPct, fatPct });
+                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
+                }}
+                className="w-full accent-amber-500"
+              />
+              <p className="text-[10px] text-ink-tertiary">Low carb: under 25% · Balanced: 40–50% · High carb: 55%+</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink">Fat</span>
+                <span className="text-xs font-bold text-rose-500">{fatPct}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={60}
+                step={5}
+                value={fatPct}
+                onChange={(e) => {
+                  const next = adjustMacros("fat", Number(e.target.value), { proteinPct, carbsPct, fatPct });
+                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
+                }}
+                className="w-full accent-rose-500"
+              />
+              <p className="text-[10px] text-ink-tertiary">Essential fats: 20–35% · Includes healthy oils, avocado, nuts</p>
+            </div>
+
+            {/* Macro bar */}
+            <div className="space-y-1.5">
+              <div className="flex h-3 rounded-full overflow-hidden gap-px">
+                <div className="bg-brand-500 transition-all" style={{ width: `${proteinPct}%` }} />
+                <div className="bg-amber-400 transition-all" style={{ width: `${carbsPct}%` }} />
+                <div className="bg-rose-400 transition-all" style={{ width: `${fatPct}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-ink-tertiary">
+                <span className="text-brand-600 font-medium">P {proteinPct}%</span>
+                <span className="text-amber-500 font-medium">C {carbsPct}%</span>
+                <span className="text-rose-500 font-medium">F {fatPct}%</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

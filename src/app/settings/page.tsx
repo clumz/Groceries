@@ -10,22 +10,24 @@ import {
   UtensilsCrossed, ChevronDown, Check, Flame
 } from "lucide-react";
 import { clsx } from "clsx";
-import type { BudgetRange, CookTimePreference, MacroTarget } from "@/types";
+import type { BudgetRange, CookTimePreference } from "@/types";
 
-const CALORIE_OPTIONS: { value: number | null; label: string }[] = [
-  { value: null, label: "No goal" },
-  { value: 1500, label: "~1,500 kcal — Light" },
-  { value: 1800, label: "~1,800 kcal — Moderate" },
-  { value: 2000, label: "~2,000 kcal — Standard" },
-  { value: 2200, label: "~2,200 kcal — Active" },
-  { value: 2500, label: "~2,500 kcal — Very active" },
-];
-
-const MACRO_OPTIONS: { value: MacroTarget; label: string; splits: string }[] = [
-  { value: "balanced",     label: "Balanced",     splits: "40% carbs · 30% protein · 30% fat" },
-  { value: "high-protein", label: "High protein", splits: "30% carbs · 40% protein · 30% fat" },
-  { value: "low-carb",     label: "Low carb",     splits: "20% carbs · 40% protein · 40% fat" },
-];
+function adjustMacros(
+  changed: "protein" | "carbs" | "fat",
+  newVal: number,
+  current: { proteinPct: number; carbsPct: number; fatPct: number }
+): { proteinPct: number; carbsPct: number; fatPct: number } {
+  const remaining = 100 - newVal;
+  const others = (["protein", "carbs", "fat"] as const).filter((k) => k !== changed);
+  const [a, b] = others;
+  const aOld = current[`${a}Pct` as keyof typeof current];
+  const bOld = current[`${b}Pct` as keyof typeof current];
+  const total = (aOld + bOld) || 1;
+  let aNew = Math.round((aOld / total) * remaining / 5) * 5;
+  aNew = Math.max(10, Math.min(remaining - 10, aNew));
+  const bNew = Math.max(10, remaining - aNew);
+  return { ...current, [`${changed}Pct`]: newVal, [`${a}Pct`]: aNew, [`${b}Pct`]: bNew } as { proteinPct: number; carbsPct: number; fatPct: number };
+}
 
 const BUDGET_OPTIONS: { value: BudgetRange; label: string; sublabel: string }[] = [
   { value: "under-150", label: "Under A$150", sublabel: "Budget-friendly" },
@@ -120,9 +122,11 @@ export default function SettingsPage() {
 
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false);
   const [cookTimeSheetOpen, setCookTimeSheetOpen] = useState(false);
-  const [calorieSheetOpen, setCalorieSheetOpen] = useState(false);
-  const [macroSheetOpen, setMacroSheetOpen] = useState(false);
   const [locationExpanded, setLocationExpanded] = useState(false);
+  const [localCalorie, setLocalCalorie] = useState(preferences?.calorieGoal ?? 2000);
+  const [localProtein, setLocalProtein] = useState(preferences?.macroGoal?.proteinPct ?? 30);
+  const [localCarbs, setLocalCarbs] = useState(preferences?.macroGoal?.carbsPct ?? 40);
+  const [localFat, setLocalFat] = useState(preferences?.macroGoal?.fatPct ?? 30);
   const [clearHistorySheet, setClearHistorySheet] = useState(false);
   const [resetSheet, setResetSheet] = useState(false);
   const [suburb, setSuburb] = useState(preferences?.suburb ?? "");
@@ -180,19 +184,100 @@ export default function SettingsPage() {
 
         {/* Nutrition */}
         <SectionCard title="Nutrition">
-          <SettingsRow
-            icon={<Flame className="w-4 h-4" />}
-            label="Daily calorie goal"
-            value={preferences.calorieGoal ? `${preferences.calorieGoal.toLocaleString()} kcal` : "No goal"}
-            onPress={() => setCalorieSheetOpen(true)}
-          />
-          {preferences.calorieGoal && (
-            <SettingsRow
-              icon={<Flame className="w-4 h-4" />}
-              label="Macro focus"
-              value={preferences.macroTarget === "high-protein" ? "High protein" : preferences.macroTarget === "low-carb" ? "Low carb" : "Balanced"}
-              onPress={() => setMacroSheetOpen(true)}
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-surface-tertiary text-ink-secondary flex items-center justify-center flex-shrink-0">
+              <Flame className="w-4 h-4" />
+            </span>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-ink">Track calories &amp; macros</p>
+              <p className="text-xs text-ink-tertiary mt-0.5">See daily progress on your plan</p>
+            </div>
+            <Toggle
+              checked={!!preferences.calorieGoal}
+              onChange={(v) => {
+                if (v) {
+                  updatePreferences({ calorieGoal: localCalorie, macroGoal: { proteinPct: localProtein, carbsPct: localCarbs, fatPct: localFat } });
+                } else {
+                  updatePreferences({ calorieGoal: null, macroGoal: null });
+                }
+              }}
             />
+          </div>
+
+          {preferences.calorieGoal != null && (
+            <div className="px-4 pb-5 space-y-5 border-t border-slate-100">
+              {/* Calorie slider */}
+              <div className="space-y-2 pt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">Daily calories</span>
+                  <span className="text-sm font-bold text-brand-600">{localCalorie.toLocaleString()} kcal</span>
+                </div>
+                <input
+                  type="range"
+                  min={1200}
+                  max={3500}
+                  step={50}
+                  value={localCalorie}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setLocalCalorie(v);
+                    updatePreferences({ calorieGoal: v });
+                  }}
+                  className="w-full accent-brand-600"
+                />
+                <div className="flex justify-between text-[10px] text-ink-tertiary">
+                  <span>1,200 Light</span>
+                  <span>2,000 Standard</span>
+                  <span>3,500 Active</span>
+                </div>
+              </div>
+
+              {/* Macro sliders */}
+              <div className="space-y-4">
+                <span className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">Macro split</span>
+
+                {([
+                  { key: "protein" as const, label: "Protein", pct: localProtein, color: "accent-brand-600", textColor: "text-brand-600", min: 10, max: 60, hint: "0.8–2g per kg body weight" },
+                  { key: "carbs" as const, label: "Carbohydrates", pct: localCarbs, color: "accent-amber-500", textColor: "text-amber-500", min: 10, max: 70, hint: "Low carb: under 25% · Balanced: 40–50%" },
+                  { key: "fat" as const, label: "Fat", pct: localFat, color: "accent-rose-500", textColor: "text-rose-500", min: 10, max: 60, hint: "Essential fats: 20–35%" },
+                ]).map(({ key, label, pct, color, textColor, min, max, hint }) => (
+                  <div key={key} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-ink">{label}</span>
+                      <span className={clsx("text-xs font-bold", textColor)}>{pct}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={min}
+                      max={max}
+                      step={5}
+                      value={pct}
+                      onChange={(e) => {
+                        const next = adjustMacros(key, Number(e.target.value), { proteinPct: localProtein, carbsPct: localCarbs, fatPct: localFat });
+                        setLocalProtein(next.proteinPct); setLocalCarbs(next.carbsPct); setLocalFat(next.fatPct);
+                        updatePreferences({ macroGoal: next });
+                      }}
+                      className={clsx("w-full", color)}
+                    />
+                    <p className="text-[10px] text-ink-tertiary">{hint}</p>
+                  </div>
+                ))}
+
+                {/* Macro bar */}
+                <div className="space-y-1.5">
+                  <div className="flex h-3 rounded-full overflow-hidden gap-px">
+                    <div className="bg-brand-500 transition-all" style={{ width: `${localProtein}%` }} />
+                    <div className="bg-amber-400 transition-all" style={{ width: `${localCarbs}%` }} />
+                    <div className="bg-rose-400 transition-all" style={{ width: `${localFat}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-brand-600 font-medium">P {localProtein}%</span>
+                    <span className="text-amber-500 font-medium">C {localCarbs}%</span>
+                    <span className="text-rose-500 font-medium">F {localFat}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </SectionCard>
 
@@ -434,41 +519,6 @@ export default function SettingsPage() {
               Cancel
             </button>
           </div>
-        </Sheet>
-      )}
-
-      {/* Calorie goal sheet */}
-      {calorieSheetOpen && (
-        <Sheet onClose={() => setCalorieSheetOpen(false)} title="Daily calorie goal">
-          {CALORIE_OPTIONS.map((opt) => (
-            <button
-              key={String(opt.value)}
-              onClick={() => { updatePreferences({ calorieGoal: opt.value }); setCalorieSheetOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
-            >
-              <span className="flex-1 text-sm font-medium text-ink text-left">{opt.label}</span>
-              {(preferences.calorieGoal ?? null) === opt.value && <Check className="w-4 h-4 text-brand-600" />}
-            </button>
-          ))}
-        </Sheet>
-      )}
-
-      {/* Macro focus sheet */}
-      {macroSheetOpen && (
-        <Sheet onClose={() => setMacroSheetOpen(false)} title="Macro focus">
-          {MACRO_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => { updatePreferences({ macroTarget: opt.value }); setMacroSheetOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
-            >
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-ink">{opt.label}</p>
-                <p className="text-xs text-ink-tertiary mt-0.5">{opt.splits}</p>
-              </div>
-              {preferences.macroTarget === opt.value && <Check className="w-4 h-4 text-brand-600" />}
-            </button>
-          ))}
         </Sheet>
       )}
 

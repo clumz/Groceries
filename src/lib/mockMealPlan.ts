@@ -1,4 +1,4 @@
-import type { WeeklyMealPlan, PlannedMeal, SnackItem, UserPreferences, Recipe } from "@/types";
+import type { WeeklyMealPlan, PlannedMeal, SnackItem, UserPreferences, Recipe, CuisinePreference } from "@/types";
 
 // Full recipe library — server-only (not bundled client-side)
 let _recipeLibrary: Recipe[] | null = null;
@@ -922,8 +922,14 @@ export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPl
   const planId = `mock-plan-${Date.now()}`;
   const library = getRecipeLibrary();
 
-  // Filter recipes by dietary requirements and protein preferences
+  // Filter recipes by dietary requirements, cuisine, and protein preferences
   let pool = [...library];
+
+  // Cuisine filter first (broadest)
+  if (preferences.cuisinePreferences.length > 0) {
+    const filtered = pool.filter((r) => preferences.cuisinePreferences.includes(r.cuisine as CuisinePreference));
+    if (filtered.length >= 4) pool = filtered;
+  }
 
   if (preferences.proteinPreferences.length > 0 && !preferences.proteinPreferences.includes("no-preference")) {
     const filtered = pool.filter(
