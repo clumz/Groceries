@@ -19,161 +19,190 @@ export default function RootPage() {
 
   if (redirecting) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-surface-secondary">
-        <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#1A1410" }}>
+        <div style={{ width: 32, height: 32, borderRadius: 999, border: "2px solid #C8FF3E", borderTopColor: "transparent", animation: "spin 0.7s linear infinite" }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary flex flex-col overflow-x-hidden">
-      {/* Food collage hero */}
-      <div className="relative h-[55vh] overflow-hidden shrink-0">
-        {/* Card 1: Pasta — rotated left */}
-        <div
-          className="absolute rounded-2xl overflow-hidden shadow-xl"
-          style={{ width: 140, height: 100, left: "8%", top: "14%", transform: "rotate(-6deg)", zIndex: 1 }}
-        >
-          <Image
-            src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&q=80"
-            alt="Pasta"
-            fill
-            className="object-cover"
-          />
-        </div>
+    <div style={{ minHeight: "100vh", background: "#1A1410", color: "#FFF8EE", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Food collage */}
+      <div style={{ position: "relative", height: "52vh", flexShrink: 0, overflow: "hidden" }}>
+        {/* Lime blob */}
+        <div style={{
+          position: "absolute", width: 320, height: 320,
+          borderRadius: 999, background: "#C8FF3E", opacity: 0.12,
+          top: -80, left: -80, filter: "blur(40px)",
+        }} />
+        {/* Coral blob */}
+        <div style={{
+          position: "absolute", width: 240, height: 240,
+          borderRadius: 999, background: "#FF6B4A", opacity: 0.12,
+          top: 20, right: -60, filter: "blur(40px)",
+        }} />
 
-        {/* Card 2: Salad — centered, front */}
-        <div
-          className="absolute rounded-2xl overflow-hidden shadow-2xl"
-          style={{ width: 160, height: 115, left: "50%", top: "8%", transform: "translateX(-50%)", zIndex: 3 }}
-        >
-          <Image
-            src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80"
-            alt="Fresh salad"
-            fill
-            className="object-cover"
-          />
-        </div>
+        {/* Photo 1 — left, rotated */}
+        <FloatPhoto
+          src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&q=80"
+          alt="Pasta"
+          style={{ width: 130, height: 130, left: "6%", top: "22%", transform: "rotate(-6deg)", zIndex: 1 }}
+          tag="🍝 Italian"
+          tagColor="#C8FF3E"
+        />
 
-        {/* Card 3: Curry — rotated right */}
-        <div
-          className="absolute rounded-2xl overflow-hidden shadow-xl"
-          style={{ width: 140, height: 100, right: "8%", top: "20%", transform: "rotate(5deg)", zIndex: 2 }}
-        >
-          <Image
-            src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300&q=80"
-            alt="Indian curry"
-            fill
-            className="object-cover"
-          />
-        </div>
+        {/* Photo 2 — center, front */}
+        <FloatPhoto
+          src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80"
+          alt="Fresh salad"
+          style={{ width: 150, height: 150, left: "50%", top: "10%", transform: "translateX(-50%) rotate(2deg)", zIndex: 3 }}
+          tag="🥗 22g protein"
+          tagColor="#FF6B4A"
+          tagStyle={{ color: "#fff" }}
+        />
 
-        {/* Gradient fade to background */}
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-surface-secondary" />
+        {/* Photo 3 — right */}
+        <FloatPhoto
+          src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300&q=80"
+          alt="Curry"
+          style={{ width: 130, height: 130, right: "6%", top: "28%", transform: "rotate(4deg)", zIndex: 2 }}
+          tag="🌱 vegan"
+          tagColor="#FFD66B"
+        />
+
+        {/* Gradient fade */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 60%, #1A1410)", pointerEvents: "none" }} />
       </div>
 
       {/* Content */}
-      <div className="flex flex-col items-center px-6 pb-10 gap-6 -mt-4">
-        {/* Logo + wordmark */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-xl leading-none">P</span>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 24px 40px", gap: 24 }}>
+        {/* Wordmark */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "#C8FF3E", display: "flex", alignItems: "center", justifyContent: "center",
+            border: "1.5px solid #FFF8EE",
+          }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: "#1A1410" }}>P</span>
           </div>
-          <h1 className="text-2xl font-bold text-ink tracking-tight">Plate</h1>
-          <p className="text-base text-ink-secondary text-center">Eat well, every week.</p>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>Plate</span>
         </div>
 
-        {/* Feature chips */}
-        <div className="flex flex-wrap justify-center gap-2">
+        {/* Hero headline */}
+        <div>
+          <h1 style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: 50,
+            lineHeight: 0.95,
+            letterSpacing: "-0.03em",
+            margin: 0,
+          }}>
+            Eat well,{" "}
+            <em style={{ color: "#C8FF3E", fontStyle: "italic" }}>every</em>
+            <br />week.
+          </h1>
+          <p style={{ marginTop: 14, fontSize: 16, color: "rgba(255,248,238,0.65)", lineHeight: 1.45, maxWidth: 300 }}>
+            AI meal plans + grocery cart. Done in seconds.
+          </p>
+        </div>
+
+        {/* Stat row */}
+        <div style={{ display: "flex", gap: 8 }}>
           {[
-            { icon: "🍽", label: "222 recipes" },
-            { icon: "✨", label: "AI-personalised" },
-            { icon: "🛒", label: "Woolies & Coles" },
-          ].map(({ icon, label }) => (
-            <span
-              key={label}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-slate-200 text-sm font-medium text-ink-secondary"
-            >
-              <span>{icon}</span>
-              <span>{label}</span>
-            </span>
+            { val: "222", lab: "recipes" },
+            { val: "2.1k", lab: "avg kcal" },
+            { val: "7 day", lab: "plans" },
+          ].map(({ val, lab }) => (
+            <div key={lab} style={{
+              flex: 1,
+              padding: "10px 8px",
+              borderRadius: 16,
+              background: "rgba(255,248,238,0.07)",
+              border: "1px solid rgba(255,248,238,0.12)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "#C8FF3E" }}>{val}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,248,238,0.45)", marginTop: 2 }}>{lab}</div>
+            </div>
           ))}
         </div>
 
-        {/* Get started CTA */}
+        {/* CTA */}
         <button
           onClick={() => router.push("/onboarding")}
-          className="w-full py-3.5 rounded-2xl bg-brand-600 text-white font-semibold text-base flex items-center justify-center gap-2 active:opacity-90 transition-opacity"
+          style={{
+            width: "100%",
+            height: 56,
+            borderRadius: 999,
+            background: "#C8FF3E",
+            border: "1.5px solid #FFF8EE",
+            boxShadow: "3px 3px 0 rgba(255,248,238,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: 17,
+            color: "#1A1410",
+            cursor: "pointer",
+            letterSpacing: "-0.01em",
+          }}
         >
-          Get started for free
-          <span aria-hidden>→</span>
+          Get started
+          <span style={{
+            width: 28, height: 28, borderRadius: 999,
+            background: "#1A1410", color: "#C8FF3E",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 700,
+          }}>→</span>
         </button>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-xs text-ink-tertiary whitespace-nowrap">or continue with</span>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
-
-        {/* SSO buttons — coming soon */}
-        <div className="flex flex-col gap-3 w-full">
-          <SsoButton logo={<GoogleLogo />} label="Continue with Google" />
-          <SsoButton logo={<AppleLogo />} label="Continue with Apple" />
-          <SsoButton logo={<FacebookLogo />} label="Continue with Facebook" />
-        </div>
-
-        {/* Legal footer */}
-        <p className="text-xs text-ink-tertiary text-center leading-relaxed">
-          By continuing you agree to our{" "}
-          <span className="underline">Terms of Service</span> and{" "}
-          <span className="underline">Privacy Policy</span>.
+        <p style={{ textAlign: "center", fontSize: 13, color: "#C8FF3E", margin: 0, cursor: "pointer" }}>
+          Already have a Plate? <span style={{ textDecoration: "underline" }}>Sign in</span>
         </p>
       </div>
     </div>
   );
 }
 
-function SsoButton({ logo, label }: { logo: React.ReactNode; label: string }) {
+function FloatPhoto({
+  src, alt, style, tag, tagColor, tagStyle,
+}: {
+  src: string;
+  alt: string;
+  style: React.CSSProperties;
+  tag?: string;
+  tagColor?: string;
+  tagStyle?: React.CSSProperties;
+}) {
   return (
-    <div className="relative opacity-40 pointer-events-none select-none">
-      <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-slate-200 bg-surface">
-        <span className="w-5 h-5 flex items-center justify-center shrink-0">{logo}</span>
-        <span className="flex-1 text-sm font-medium text-ink text-left line-through">{label}</span>
-      </button>
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold bg-surface-tertiary text-ink-tertiary px-2 py-0.5 rounded-full">
-        Soon
-      </span>
+    <div style={{ position: "absolute", ...style }}>
+      <div style={{
+        width: "100%", height: "100%",
+        borderRadius: 999,
+        overflow: "hidden",
+        border: "2px solid rgba(255,248,238,0.25)",
+      }}>
+        <Image src={src} alt={alt} fill style={{ objectFit: "cover" }} />
+      </div>
+      {tag && (
+        <div style={{
+          position: "absolute", bottom: -10, left: "50%",
+          transform: "translateX(-50%)",
+          whiteSpace: "nowrap",
+          background: tagColor ?? "#C8FF3E",
+          color: "#1A1410",
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: 11,
+          padding: "4px 10px",
+          borderRadius: 999,
+          border: "1.5px solid rgba(255,248,238,0.5)",
+          boxShadow: "2px 2px 0 rgba(255,248,238,0.2)",
+          ...tagStyle,
+        }}>
+          {tag}
+        </div>
+      )}
     </div>
-  );
-}
-
-function GoogleLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-    </svg>
-  );
-}
-
-function AppleLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="text-ink" aria-hidden>
-      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-    </svg>
-  );
-}
-
-function FacebookLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-      <path
-        fill="#1877F2"
-        d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
-      />
-    </svg>
   );
 }

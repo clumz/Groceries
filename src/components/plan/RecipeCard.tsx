@@ -61,7 +61,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
 
   return (
     <div
-      className="bg-surface rounded-3xl overflow-hidden shadow-card mb-3 cursor-pointer hover:shadow-card-hover transition-shadow duration-200"
+      className="bg-plate-surface rounded-3xl overflow-hidden shadow-card mb-3 cursor-pointer hover:shadow-card-hover transition-shadow duration-200"
       onClick={() => router.push(`/recipe/${recipe.id}?mealId=${meal.id}`)}
     >
       {/* Image */}
@@ -79,7 +79,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
           <FeedbackButton
             icon={<ThumbsUp className="w-3.5 h-3.5" />}
             active={meal.feedback === "thumbs-up"}
-            activeClass="bg-brand-500 text-white"
+            activeClass="bg-plate-ink text-white"
             onClick={(e) => handleFeedback(e, "thumbs-up")}
           />
           <FeedbackButton
@@ -118,7 +118,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
       {/* Content */}
       <div className="px-4 py-3.5">
         <h3 className="font-bold text-ink text-base leading-tight">{recipe.name}</h3>
-        <p className="text-xs text-ink-secondary mt-1 line-clamp-2">{recipe.description}</p>
+        <p className="text-xs text-plate-ink-2 mt-1 line-clamp-2">{recipe.description}</p>
         <div className="flex items-center gap-3 mt-2.5">
           <span className="flex items-center gap-1 text-xs text-ink-tertiary">
             <Clock className="w-3 h-3" />
@@ -128,7 +128,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
             <Users className="w-3 h-3" />
             {meal.servings} servings
           </span>
-          <span className={clsx("text-xs capitalize ml-auto", recipe.difficulty === "easy" ? "text-brand-600" : recipe.difficulty === "medium" ? "text-orange-500" : "text-red-500")}>
+          <span className={clsx("text-xs capitalize ml-auto", recipe.difficulty === "easy" ? "text-plate-coral" : recipe.difficulty === "medium" ? "text-orange-500" : "text-red-500")}>
             {recipe.difficulty}
           </span>
         </div>

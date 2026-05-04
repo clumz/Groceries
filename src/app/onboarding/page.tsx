@@ -106,8 +106,8 @@ function MultiSelectPill<T extends string>({
             className={clsx(
               "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-medium border transition-all duration-150 select-none",
               active
-                ? "bg-brand-600 border-brand-600 text-white"
-                : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-300"
+                ? "bg-plate-ink border-plate-ink text-white"
+                : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-lime"
             )}
           >
             {opt.emoji && <span>{opt.emoji}</span>}
@@ -138,24 +138,24 @@ function RadioCard<T extends string>({
           className={clsx(
             "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-150",
             value === opt.value
-              ? "bg-brand-50 border-brand-400 text-ink"
-              : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
+              ? "bg-plate-lime/10 border-plate-lime text-plate-ink"
+              : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-line"
           )}
         >
           <div
             className={clsx(
               "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-              value === opt.value ? "border-brand-600" : "border-slate-300"
+              value === opt.value ? "border-plate-ink" : "border-plate-line"
             )}
           >
             {value === opt.value && (
-              <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />
+              <div className="w-2.5 h-2.5 rounded-full bg-plate-ink" />
             )}
           </div>
           <div>
             <div className="font-medium text-sm">{opt.label}</div>
             {opt.description && (
-              <div className="text-xs text-ink-tertiary mt-0.5">{opt.description}</div>
+              <div className="text-xs text-plate-ink-3 mt-0.5">{opt.description}</div>
             )}
           </div>
         </button>
@@ -292,8 +292,8 @@ export default function OnboardingPage() {
     // Step 0: Store + Location
     <div key="step0" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Your supermarket</h2>
-        <p className="text-sm text-ink-secondary">Pick your preferred store for grocery delivery</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Your supermarket</h2>
+        <p className="text-sm text-plate-ink-2">Pick your preferred store for grocery delivery</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {(["woolworths", "coles"] as StorePreference[]).map((s) => (
@@ -306,7 +306,7 @@ export default function OnboardingPage() {
                 ? s === "woolworths"
                   ? "bg-green-50 border-green-500 text-green-800"
                   : "bg-red-50 border-red-400 text-red-800"
-                : "bg-surface border-slate-200 text-ink-secondary hover:border-slate-300"
+                : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-line"
             )}
           >
             <ShoppingBag className={clsx("w-8 h-8", s === "woolworths" ? "text-green-600" : "text-red-500")} />
@@ -315,20 +315,20 @@ export default function OnboardingPage() {
           </button>
         ))}
       </div>
-      <p className="text-xs text-ink-tertiary text-center">Price comparison across both stores coming soon</p>
+      <p className="text-xs text-plate-ink-3 text-center">Price comparison across both stores coming soon</p>
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">Suburb</label>
+          <label className="block text-sm font-medium text-plate-ink mb-1.5">Suburb</label>
           <input
             type="text"
             value={suburb}
             onChange={(e) => setSuburb(e.target.value)}
             placeholder="e.g. Surry Hills"
-            className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm bg-surface focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+            className="w-full px-4 py-3 rounded-2xl border border-plate-line text-sm bg-plate-surface focus:outline-none focus:border-plate-lime focus:ring-1 focus:ring-plate-lime"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">Postcode</label>
+          <label className="block text-sm font-medium text-plate-ink mb-1.5">Postcode</label>
           <div className="relative">
             <input
               type="text"
@@ -337,19 +337,19 @@ export default function OnboardingPage() {
               onChange={(e) => handlePostcodeChange(e.target.value)}
               placeholder="e.g. 2010"
               className={clsx(
-                "w-full px-4 py-3 rounded-2xl border text-sm bg-surface focus:outline-none focus:ring-1",
+                "w-full px-4 py-3 rounded-2xl border text-sm bg-plate-surface focus:outline-none focus:ring-1",
                 postcodeError
                   ? "border-red-400 focus:border-red-400 focus:ring-red-400"
                   : postcode.length === 4 && isValidAustralianPostcode(postcode)
-                  ? "border-brand-400 focus:border-brand-400 focus:ring-brand-400"
-                  : "border-slate-200 focus:border-brand-400 focus:ring-brand-400"
+                  ? "border-plate-lime focus:border-plate-lime focus:ring-plate-lime"
+                  : "border-plate-line focus:border-plate-lime focus:ring-plate-lime"
               )}
             />
             {postcodeLoading && (
-              <div className="absolute right-3 top-3.5 w-4 h-4 rounded-full border-2 border-brand-400 border-t-transparent animate-spin" />
+              <div className="absolute right-3 top-3.5 w-4 h-4 rounded-full border-2 border-plate-lime border-t-transparent animate-spin" />
             )}
             {!postcodeLoading && postcode.length === 4 && isValidAustralianPostcode(postcode) && (
-              <Check className="absolute right-3 top-3.5 w-4 h-4 text-brand-500" />
+              <Check className="absolute right-3 top-3.5 w-4 h-4 text-plate-coral" />
             )}
           </div>
           {postcodeError && <p className="text-xs text-red-500 mt-1.5">{postcodeError}</p>}
@@ -360,20 +360,20 @@ export default function OnboardingPage() {
     // Step 1: Dietary
     <div key="step1" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Dietary requirements</h2>
-        <p className="text-sm text-ink-secondary">Select all that apply — we'll never suggest something you can't eat</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Dietary requirements</h2>
+        <p className="text-sm text-plate-ink-2">Select all that apply — we'll never suggest something you can't eat</p>
       </div>
       <MultiSelectPill options={DIETARY_OPTIONS} selected={dietary} onToggle={toggleDietary} />
       {dietary.length === 0 && (
-        <p className="text-xs text-ink-tertiary text-center">No restrictions? Just tap Next →</p>
+        <p className="text-xs text-plate-ink-3 text-center">No restrictions? Just tap Next →</p>
       )}
     </div>,
 
     // Step 2: Cuisines
     <div key="step2" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Cuisine preferences</h2>
-        <p className="text-sm text-ink-secondary">Pick your favourites — we'll rotate through them each week</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Cuisine preferences</h2>
+        <p className="text-sm text-plate-ink-2">Pick your favourites — we'll rotate through them each week</p>
       </div>
       <MultiSelectPill options={CUISINE_OPTIONS} selected={cuisines} onToggle={toggleCuisine} />
     </div>,
@@ -381,8 +381,8 @@ export default function OnboardingPage() {
     // Step 3: Proteins
     <div key="step3" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Protein preferences</h2>
-        <p className="text-sm text-ink-secondary">What proteins do you enjoy?</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Protein preferences</h2>
+        <p className="text-sm text-plate-ink-2">What proteins do you enjoy?</p>
       </div>
       <MultiSelectPill options={PROTEIN_OPTIONS} selected={proteins} onToggle={toggleProtein} />
     </div>,
@@ -390,14 +390,14 @@ export default function OnboardingPage() {
     // Step 4: Taste selection (NEW)
     <div key="step4" className="animate-slide-up space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Pick dishes you'd love</h2>
-        <p className="text-sm text-ink-secondary">
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Pick dishes you'd love</h2>
+        <p className="text-sm text-plate-ink-2">
           Select at least 3 — we use this to personalise your first meal plan
         </p>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-ink-tertiary">{likedRecipes.length} selected</span>
-        <span className="text-xs font-medium text-brand-600">
+        <span className="text-xs text-plate-ink-3">{likedRecipes.length} selected</span>
+        <span className="text-xs font-medium text-plate-coral">
           {likedRecipes.length < 3 ? `${3 - likedRecipes.length} more to go` : "Looking good!"}
         </span>
       </div>
@@ -410,7 +410,7 @@ export default function OnboardingPage() {
               onClick={() => toggleRecipe(recipe.id)}
               className={clsx(
                 "relative rounded-2xl overflow-hidden text-left transition-all duration-150",
-                selected ? "ring-2 ring-brand-500 ring-offset-1" : "ring-0"
+                selected ? "ring-2 ring-plate-lime ring-offset-1" : "ring-0"
               )}
             >
               <div className="relative h-28">
@@ -424,8 +424,8 @@ export default function OnboardingPage() {
 
                 {/* Selected overlay */}
                 {selected && (
-                  <div className="absolute inset-0 bg-brand-600/20 flex items-start justify-end p-2">
-                    <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-plate-ink/20 flex items-start justify-end p-2">
+                    <div className="w-6 h-6 rounded-full bg-plate-coral flex items-center justify-center">
                       <Check className="w-3.5 h-3.5 text-white" />
                     </div>
                   </div>
@@ -451,26 +451,26 @@ export default function OnboardingPage() {
     // Step 5: Household
     <div key="step5" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Your household</h2>
-        <p className="text-sm text-ink-secondary">We'll scale recipes and quantities to match</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Your household</h2>
+        <p className="text-sm text-plate-ink-2">We'll scale recipes and quantities to match</p>
       </div>
       <div className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-ink mb-3">Household size</label>
+          <label className="block text-sm font-medium text-plate-ink mb-3">Household size</label>
           <div className="flex items-center gap-4">
-            <button onClick={() => setHouseholdSize(Math.max(1, householdSize - 1))} className="w-10 h-10 rounded-full bg-surface-tertiary text-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
-            <span className="text-2xl font-bold text-ink w-8 text-center">{householdSize}</span>
-            <button onClick={() => setHouseholdSize(Math.min(10, householdSize + 1))} className="w-10 h-10 rounded-full bg-surface-tertiary text-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
-            <span className="text-sm text-ink-secondary">{householdSize === 1 ? "person" : "people"}</span>
+            <button onClick={() => setHouseholdSize(Math.max(1, householdSize - 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
+            <span className="text-2xl font-bold text-plate-ink w-8 text-center">{householdSize}</span>
+            <button onClick={() => setHouseholdSize(Math.min(10, householdSize + 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
+            <span className="text-sm text-plate-ink-2">{householdSize === 1 ? "person" : "people"}</span>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-3">Default servings per meal</label>
+          <label className="block text-sm font-medium text-plate-ink mb-3">Default servings per meal</label>
           <div className="flex items-center gap-4">
-            <button onClick={() => setServings(Math.max(1, servings - 1))} className="w-10 h-10 rounded-full bg-surface-tertiary text-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
-            <span className="text-2xl font-bold text-ink w-8 text-center">{servings}</span>
-            <button onClick={() => setServings(Math.min(12, servings + 1))} className="w-10 h-10 rounded-full bg-surface-tertiary text-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
-            <span className="text-sm text-ink-secondary">servings</span>
+            <button onClick={() => setServings(Math.max(1, servings - 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
+            <span className="text-2xl font-bold text-plate-ink w-8 text-center">{servings}</span>
+            <button onClick={() => setServings(Math.min(12, servings + 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
+            <span className="text-sm text-plate-ink-2">servings</span>
           </div>
         </div>
         <div className="space-y-3 pt-2">
@@ -479,12 +479,12 @@ export default function OnboardingPage() {
             { label: "Include a snacks section", value: includeSnacks, set: setIncludeSnacks },
           ].map(({ label, value, set }) => (
             <div key={label} className="flex items-center justify-between py-1">
-              <span className="text-sm text-ink">{label}</span>
+              <span className="text-sm text-plate-ink">{label}</span>
               <button
                 onClick={() => set(!value)}
-                className={clsx("w-12 h-6 rounded-full transition-colors relative", value ? "bg-brand-600" : "bg-slate-200")}
+                className={clsx("w-12 h-6 rounded-full transition-colors relative", value ? "bg-plate-ink" : "bg-slate-200")}
               >
-                <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow transition-transform", value ? "translate-x-6" : "translate-x-0.5")} />
+                <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-plate-surface shadow transition-transform", value ? "translate-x-6" : "translate-x-0.5")} />
               </button>
             </div>
           ))}
@@ -495,11 +495,11 @@ export default function OnboardingPage() {
     // Step 6: Budget + Cook Time
     <div key="step6" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Budget & time</h2>
-        <p className="text-sm text-ink-secondary">We'll keep recommendations practical</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Budget & time</h2>
+        <p className="text-sm text-plate-ink-2">We'll keep recommendations practical</p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-ink mb-3">Weekly grocery budget</label>
+        <label className="block text-sm font-medium text-plate-ink mb-3">Weekly grocery budget</label>
         <RadioCard
           value={budget}
           onChange={setBudget}
@@ -512,7 +512,7 @@ export default function OnboardingPage() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-ink mb-3">Cooking time per meal</label>
+        <label className="block text-sm font-medium text-plate-ink mb-3">Cooking time per meal</label>
         <RadioCard
           value={cookTime}
           onChange={setCookTime}
@@ -528,20 +528,20 @@ export default function OnboardingPage() {
     // Step 7: Nutrition goals
     <div key="step7" className="animate-slide-up space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-ink mb-1">Nutrition goals</h2>
-        <p className="text-sm text-ink-secondary">Optional — skip this if you just want great meals</p>
+        <h2 className="text-xl font-bold text-plate-ink mb-1">Nutrition goals</h2>
+        <p className="text-sm text-plate-ink-2">Optional — skip this if you just want great meals</p>
       </div>
 
       <div className="flex items-center justify-between py-1">
         <div>
-          <p className="text-sm font-medium text-ink">Track calories &amp; macros</p>
-          <p className="text-xs text-ink-tertiary mt-0.5">See daily progress on your plan</p>
+          <p className="text-sm font-medium text-plate-ink">Track calories &amp; macros</p>
+          <p className="text-xs text-plate-ink-3 mt-0.5">See daily progress on your plan</p>
         </div>
         <button
           onClick={() => setTrackNutrition(!trackNutrition)}
-          className={clsx("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", trackNutrition ? "bg-brand-600" : "bg-slate-200")}
+          className={clsx("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", trackNutrition ? "bg-plate-ink" : "bg-slate-200")}
         >
-          <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow transition-transform", trackNutrition ? "translate-x-6" : "translate-x-0.5")} />
+          <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-plate-surface shadow transition-transform", trackNutrition ? "translate-x-6" : "translate-x-0.5")} />
         </button>
       </div>
 
@@ -550,8 +550,8 @@ export default function OnboardingPage() {
           {/* Calorie slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-ink">Daily calorie target</label>
-              <span className="text-sm font-bold text-brand-600">{calorieGoal.toLocaleString()} kcal</span>
+              <label className="text-sm font-medium text-plate-ink">Daily calorie target</label>
+              <span className="text-sm font-bold text-plate-coral">{calorieGoal.toLocaleString()} kcal</span>
             </div>
             <input
               type="range"
@@ -560,24 +560,24 @@ export default function OnboardingPage() {
               step={50}
               value={calorieGoal}
               onChange={(e) => setCalorieGoal(Number(e.target.value))}
-              className="w-full accent-brand-600"
+              className="w-full accent-[#C8FF3E]"
             />
-            <div className="flex justify-between text-[10px] text-ink-tertiary">
+            <div className="flex justify-between text-[10px] text-plate-ink-3">
               <span>1,200 · Light</span>
               <span>2,000 · Standard</span>
               <span>3,500 · Very active</span>
             </div>
-            <p className="text-xs text-ink-tertiary">Typical adult: 1,600–2,200 kcal/day. Raise for heavy exercise or a larger household.</p>
+            <p className="text-xs text-plate-ink-3">Typical adult: 1,600–2,200 kcal/day. Raise for heavy exercise or a larger household.</p>
           </div>
 
           {/* Macro sliders */}
           <div className="space-y-4">
-            <p className="text-sm font-medium text-ink">Macro split</p>
+            <p className="text-sm font-medium text-plate-ink">Macro split</p>
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">Protein</span>
-                <span className="text-xs font-bold text-brand-600">{proteinPct}%</span>
+                <span className="text-xs font-medium text-plate-ink">Protein</span>
+                <span className="text-xs font-bold text-plate-coral">{proteinPct}%</span>
               </div>
               <input
                 type="range"
@@ -589,14 +589,14 @@ export default function OnboardingPage() {
                   const next = adjustMacros("protein", Number(e.target.value), { proteinPct, carbsPct, fatPct });
                   setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
                 }}
-                className="w-full accent-brand-600"
+                className="w-full accent-[#C8FF3E]"
               />
-              <p className="text-[10px] text-ink-tertiary">0.8–2g per kg body weight · Higher for muscle building</p>
+              <p className="text-[10px] text-plate-ink-3">0.8–2g per kg body weight · Higher for muscle building</p>
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">Carbohydrates</span>
+                <span className="text-xs font-medium text-plate-ink">Carbohydrates</span>
                 <span className="text-xs font-bold text-amber-500">{carbsPct}%</span>
               </div>
               <input
@@ -611,12 +611,12 @@ export default function OnboardingPage() {
                 }}
                 className="w-full accent-amber-500"
               />
-              <p className="text-[10px] text-ink-tertiary">Low carb: under 25% · Balanced: 40–50% · High carb: 55%+</p>
+              <p className="text-[10px] text-plate-ink-3">Low carb: under 25% · Balanced: 40–50% · High carb: 55%+</p>
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink">Fat</span>
+                <span className="text-xs font-medium text-plate-ink">Fat</span>
                 <span className="text-xs font-bold text-rose-500">{fatPct}%</span>
               </div>
               <input
@@ -631,18 +631,18 @@ export default function OnboardingPage() {
                 }}
                 className="w-full accent-rose-500"
               />
-              <p className="text-[10px] text-ink-tertiary">Essential fats: 20–35% · Includes healthy oils, avocado, nuts</p>
+              <p className="text-[10px] text-plate-ink-3">Essential fats: 20–35% · Includes healthy oils, avocado, nuts</p>
             </div>
 
             {/* Macro bar */}
             <div className="space-y-1.5">
               <div className="flex h-3 rounded-full overflow-hidden gap-px">
-                <div className="bg-brand-500 transition-all" style={{ width: `${proteinPct}%` }} />
+                <div className="bg-plate-coral transition-all" style={{ width: `${proteinPct}%` }} />
                 <div className="bg-amber-400 transition-all" style={{ width: `${carbsPct}%` }} />
                 <div className="bg-rose-400 transition-all" style={{ width: `${fatPct}%` }} />
               </div>
-              <div className="flex justify-between text-[10px] text-ink-tertiary">
-                <span className="text-brand-600 font-medium">P {proteinPct}%</span>
+              <div className="flex justify-between text-[10px] text-plate-ink-3">
+                <span className="text-plate-coral font-medium">P {proteinPct}%</span>
                 <span className="text-amber-500 font-medium">C {carbsPct}%</span>
                 <span className="text-rose-500 font-medium">F {fatPct}%</span>
               </div>
@@ -654,11 +654,11 @@ export default function OnboardingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="min-h-screen bg-plate-surface flex flex-col">
       {/* Header */}
       <div className="px-5 pt-14 pb-4">
         <div className="flex items-center justify-between mb-6">
-          <div className="text-xs font-medium text-ink-tertiary uppercase tracking-wider">
+          <div className="text-xs font-medium text-plate-ink-3 uppercase tracking-wider">
             Step {step + 1} of {TOTAL_STEPS}
           </div>
           <div className="flex gap-1.5">
@@ -667,7 +667,7 @@ export default function OnboardingPage() {
                 key={i}
                 className={clsx(
                   "h-1.5 rounded-full transition-all duration-300",
-                  i <= step ? "bg-brand-600 w-6" : "bg-slate-200 w-3"
+                  i <= step ? "bg-plate-ink w-6" : "bg-slate-200 w-3"
                 )}
               />
             ))}
@@ -676,8 +676,8 @@ export default function OnboardingPage() {
 
         {step === 0 && (
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-ink">Welcome to <span className="text-brand-600">Plate</span></h1>
-            <p className="text-ink-secondary mt-1.5">Your weekly meals, planned and personalised.</p>
+            <h1 className="text-3xl font-bold text-plate-ink">Welcome to <span className="text-plate-coral">Plate</span></h1>
+            <p className="text-plate-ink-2 mt-1.5">Your weekly meals, planned and personalised.</p>
           </div>
         )}
       </div>
@@ -688,7 +688,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 pb-8 pt-4 bg-surface/90 backdrop-blur-sm border-t border-slate-100">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 pb-8 pt-4 bg-plate-surface/90 backdrop-blur-sm border-t border-plate-line">
         <div className="flex gap-3">
           {step > 0 && (
             <Button variant="secondary" size="lg" onClick={() => setStep(step - 1)} className="w-14 flex-shrink-0">

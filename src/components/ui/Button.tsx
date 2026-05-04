@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "lime" | "coral" | "ghost" | "secondary" | "danger";
 type Size = "sm" | "md" | "lg" | "xl";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -12,17 +12,19 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-sm",
-  secondary: "bg-surface-tertiary text-ink hover:bg-slate-200 active:bg-slate-300",
-  ghost: "bg-transparent text-ink-secondary hover:bg-surface-tertiary active:bg-slate-200",
-  danger: "bg-red-500 text-white hover:bg-red-600 active:bg-red-700",
+  lime:      "bg-plate-lime text-plate-ink border border-[1.5px] border-plate-ink shadow-sticker active:translate-y-px",
+  primary:   "bg-plate-ink text-plate-bg border border-[1.5px] border-plate-ink active:translate-y-px",
+  coral:     "bg-plate-coral text-white border border-[1.5px] border-plate-ink shadow-sticker active:translate-y-px",
+  secondary: "bg-plate-surface text-plate-ink border border-[1.5px] border-plate-ink active:translate-y-px",
+  ghost:     "bg-transparent text-plate-ink border border-[1.5px] border-plate-ink active:translate-y-px",
+  danger:    "bg-plate-coral-deep text-white border border-[1.5px] border-plate-ink active:translate-y-px",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-sm rounded-xl",
-  md: "h-10 px-4 text-sm rounded-2xl",
-  lg: "h-12 px-5 text-base rounded-2xl",
-  xl: "h-14 px-6 text-base rounded-2xl font-semibold",
+  sm: "h-[38px] px-[14px] text-[13px] rounded-full",
+  md: "h-[44px] px-[18px] text-[14px] rounded-full",
+  lg: "h-[52px] px-[22px] text-[16px] rounded-full",
+  xl: "h-[52px] px-[22px] text-[16px] rounded-full",
 };
 
 export function Button({
@@ -40,13 +42,15 @@ export function Button({
       disabled={disabled || loading}
       className={twMerge(
         clsx(
-          "inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none",
+          "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-plate-lime focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none",
+          "font-display",
           variants[variant],
           sizes[size],
           fullWidth && "w-full",
           className
         )
       )}
+      style={{ fontFamily: "var(--font-display)" }}
       {...props}
     >
       {loading && (

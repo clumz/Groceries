@@ -28,7 +28,7 @@ export default function CheckoutPage() {
   if (!currentCart) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-ink-secondary">No cart to review</p>
+        <p className="text-plate-ink-2">No cart to review</p>
         <Button onClick={() => router.push("/cart")}>Go to Cart</Button>
       </div>
     );
@@ -74,14 +74,14 @@ export default function CheckoutPage() {
 
   if (marked) {
     return (
-      <div className="min-h-screen bg-surface flex flex-col">
+      <div className="min-h-screen bg-plate-surface flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-brand-600" />
+          <div className="w-20 h-20 rounded-full bg-plate-lime/20 flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10 text-plate-coral" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-ink">Happy shopping!</h1>
-            <p className="text-ink-secondary mt-2 text-sm leading-relaxed">
+            <h1 className="text-2xl font-bold text-plate-ink">Happy shopping!</h1>
+            <p className="text-plate-ink-2 mt-2 text-sm leading-relaxed">
               Your order has been saved to history. Head to {retailerName} to add items to your cart.
             </p>
           </div>
@@ -89,7 +89,7 @@ export default function CheckoutPage() {
             href={retailerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-brand-600 text-white font-semibold px-6 py-3.5 rounded-2xl text-sm"
+            className="flex items-center gap-2 bg-plate-ink text-white font-semibold px-6 py-3.5 rounded-2xl text-sm"
           >
             Open {retailerName} <ArrowUpRight className="w-4 h-4" />
           </a>
@@ -104,17 +104,17 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-36">
+    <div className="min-h-screen bg-plate-bg pb-36">
       {/* Header */}
-      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 rounded-xl bg-surface-tertiary flex items-center justify-center text-ink-secondary"
+            className="w-9 h-9 rounded-xl bg-plate-surface-tertiary flex items-center justify-center text-plate-ink-2"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-ink">Shopping Guide</h1>
+          <h1 className="text-xl font-bold text-plate-ink">Shopping Guide</h1>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export default function CheckoutPage() {
           <ShoppingBag className={clsx("w-8 h-8", retailerColor)} />
           <div className="flex-1">
             <p className={clsx("font-bold", retailerColor)}>{retailerName}</p>
-            <p className="text-xs text-ink-secondary">
+            <p className="text-xs text-plate-ink-2">
               Add items to your basket and checkout on their website
             </p>
           </div>
@@ -147,10 +147,10 @@ export default function CheckoutPage() {
         )}
 
         {/* Full item list with links */}
-        <div className="bg-surface rounded-3xl overflow-hidden shadow-card">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">Items to buy</p>
-            <p className="text-xs text-ink-tertiary">Tap to search on {retailerName}</p>
+        <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
+          <div className="px-4 py-3 border-b border-plate-line flex items-center justify-between">
+            <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">Items to buy</p>
+            <p className="text-xs text-plate-ink-3">Tap to search on {retailerName}</p>
           </div>
           <div className="divide-y divide-slate-100">
             {confirmedItems.map((item) => {
@@ -163,38 +163,38 @@ export default function CheckoutPage() {
                   href={searchUrl ?? "#"}
                   target={searchUrl ? "_blank" : undefined}
                   rel="noopener noreferrer"
-                  className={clsx("px-4 py-3 flex items-center gap-3", searchUrl ? "hover:bg-surface-tertiary/50 transition-colors" : "pointer-events-none")}
+                  className={clsx("px-4 py-3 flex items-center gap-3", searchUrl ? "hover:bg-plate-surface-tertiary/50 transition-colors" : "pointer-events-none")}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{item.ingredientName}</p>
-                    {product && <p className="text-xs text-ink-tertiary truncate mt-0.5">{product.name}</p>}
+                    <p className="text-sm font-medium text-plate-ink truncate">{item.ingredientName}</p>
+                    {product && <p className="text-xs text-plate-ink-3 truncate mt-0.5">{product.name}</p>}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-ink-tertiary">{net} {item.unit}</p>
-                    {product && <p className="text-sm font-semibold text-ink">A${product.price.toFixed(2)}</p>}
+                    <p className="text-xs text-plate-ink-3">{net} {item.unit}</p>
+                    {product && <p className="text-sm font-semibold text-plate-ink">A${product.price.toFixed(2)}</p>}
                   </div>
-                  {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-ink-tertiary/50 flex-shrink-0" />}
+                  {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-plate-ink-3/50 flex-shrink-0" />}
                 </a>
               );
             })}
           </div>
-          <div className="px-4 py-3 border-t border-slate-100 flex justify-between">
-            <span className="text-sm font-medium text-ink">Estimated total</span>
-            <span className="text-sm font-bold text-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
+          <div className="px-4 py-3 border-t border-plate-line flex justify-between">
+            <span className="text-sm font-medium text-plate-ink">Estimated total</span>
+            <span className="text-sm font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
           </div>
         </div>
 
-        <p className="text-xs text-ink-tertiary text-center px-4">
+        <p className="text-xs text-plate-ink-3 text-center px-4">
           Prices are estimates. Final price confirmed by {retailerName} at checkout. Delivery fees not included.
         </p>
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-surface/90 backdrop-blur-sm border-t border-slate-100 z-10 space-y-2">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-plate-surface/90 backdrop-blur-sm border-t border-plate-line z-10 space-y-2">
         <div className="flex gap-2">
           <button
             onClick={copyList}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors flex-shrink-0"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy list"}
@@ -203,14 +203,14 @@ export default function CheckoutPage() {
             href={retailerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-brand-600 text-white font-semibold px-4 py-3 rounded-2xl text-sm"
+            className="flex-1 flex items-center justify-center gap-2 bg-plate-ink text-white font-semibold px-4 py-3 rounded-2xl text-sm"
           >
             Open {retailerName} <ArrowUpRight className="w-4 h-4" />
           </a>
         </div>
         <button
           onClick={markAsOrdered}
-          className="w-full py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface-tertiary transition-colors"
+          className="w-full py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors"
         >
           Mark as ordered & save to history
         </button>

@@ -77,7 +77,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
   if (!recipe) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-ink-secondary">Recipe not found</p>
+        <p className="text-plate-ink-2">Recipe not found</p>
         <Button onClick={() => router.back()} variant="secondary">Go back</Button>
       </div>
     );
@@ -114,7 +114,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-8">
+    <div className="min-h-screen bg-plate-surface pb-8">
       {/* Hero Image */}
       <div className="relative h-72">
         <img src={imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
@@ -138,11 +138,11 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
       {/* Content */}
       <div className="px-5">
         {/* Meta row */}
-        <div className="flex items-center gap-4 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
+        <div className="flex items-center gap-4 py-4 border-b border-plate-line">
+          <div className="flex items-center gap-1.5 text-sm text-plate-ink-2">
             <Clock className="w-4 h-4" /> {totalTime} min
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
+          <div className="flex items-center gap-1.5 text-sm text-plate-ink-2">
             <ChefHat className="w-4 h-4" /> Prep {recipe.prepTimeMinutes} min
           </div>
           <div className="flex-1" />
@@ -152,14 +152,14 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Description */}
-        <p className="text-sm text-ink-secondary mt-4 leading-relaxed">{recipe.description}</p>
+        <p className="text-sm text-plate-ink-2 mt-4 leading-relaxed">{recipe.description}</p>
 
         {/* Nutrition card */}
         {nutrition.caloriesPerServing > 0 && (
-          <div className="mt-4 bg-surface-tertiary rounded-2xl p-4">
+          <div className="mt-4 bg-plate-surface-tertiary rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">Nutrition per serving</p>
-              <p className="text-[10px] text-ink-tertiary">Estimated</p>
+              <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">Nutrition per serving</p>
+              <p className="text-[10px] text-plate-ink-3">Estimated</p>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[
@@ -168,10 +168,10 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
                 { label: "Carbs",    value: nutrition.carbsG,             unit: "g" },
                 { label: "Fat",      value: nutrition.fatG,               unit: "g" },
               ].map(({ label, value, unit }) => (
-                <div key={label} className="bg-surface rounded-xl p-2.5 text-center">
-                  <p className="text-base font-bold text-ink">{value}</p>
-                  <p className="text-[10px] text-ink-tertiary">{unit}</p>
-                  <p className="text-[10px] text-ink-secondary mt-0.5">{label}</p>
+                <div key={label} className="bg-plate-surface rounded-xl p-2.5 text-center">
+                  <p className="text-base font-bold text-plate-ink">{value}</p>
+                  <p className="text-[10px] text-plate-ink-3">{unit}</p>
+                  <p className="text-[10px] text-plate-ink-2 mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
@@ -179,22 +179,22 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
         )}
 
         {/* Serving adjuster */}
-        <div className="flex items-center justify-between mt-4 py-3 px-4 bg-surface-tertiary rounded-2xl">
-          <div className="flex items-center gap-2 text-sm font-medium text-ink">
-            <Users className="w-4 h-4 text-ink-tertiary" />
+        <div className="flex items-center justify-between mt-4 py-3 px-4 bg-plate-surface-tertiary rounded-2xl">
+          <div className="flex items-center gap-2 text-sm font-medium text-plate-ink">
+            <Users className="w-4 h-4 text-plate-ink-3" />
             Servings
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleServingsChange(localServings - 1)}
-              className="w-8 h-8 rounded-full bg-surface shadow-sm text-ink font-bold flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-plate-surface shadow-sm text-plate-ink font-bold flex items-center justify-center"
             >
               −
             </button>
-            <span className="text-lg font-bold text-ink w-5 text-center">{localServings}</span>
+            <span className="text-lg font-bold text-plate-ink w-5 text-center">{localServings}</span>
             <button
               onClick={() => handleServingsChange(localServings + 1)}
-              className="w-8 h-8 rounded-full bg-surface shadow-sm text-ink font-bold flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-plate-surface shadow-sm text-plate-ink font-bold flex items-center justify-center"
             >
               +
             </button>
@@ -205,7 +205,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
         {!browseMode ? (
           <div className="flex gap-2 mt-4">
             <FeedbackBtn icon={<ThumbsUp className="w-4 h-4" />} label="Love it"
-              active={meal?.feedback === "thumbs-up"} activeClass="bg-brand-600 text-white border-brand-600"
+              active={meal?.feedback === "thumbs-up"} activeClass="bg-plate-ink text-white border-plate-ink"
               onClick={() => handleFeedback("thumbs-up")} />
             <FeedbackBtn icon={<ThumbsDown className="w-4 h-4" />} label="Not for me"
               active={meal?.feedback === "thumbs-down"} activeClass="bg-slate-700 text-white border-slate-700"
@@ -217,7 +217,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
         ) : (
           <button
             onClick={() => setAddToPlanOpen(true)}
-            className="w-full flex items-center justify-center gap-2 mt-4 py-3 rounded-2xl bg-brand-600 text-white font-semibold text-sm"
+            className="w-full flex items-center justify-center gap-2 mt-4 py-3 rounded-2xl bg-plate-ink text-white font-semibold text-sm"
           >
             <CalendarPlus className="w-4 h-4" />
             Add to my plan
@@ -226,17 +226,17 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
 
         {/* Ingredients */}
         <div className="mt-6">
-          <h2 className="text-lg font-bold text-ink mb-3">Ingredients</h2>
+          <h2 className="text-lg font-bold text-plate-ink mb-3">Ingredients</h2>
           <div className="space-y-2.5">
             {recipe.ingredients.map((ing, i) => (
-              <div key={i} className="flex items-start justify-between py-2 border-b border-slate-100">
-                <span className="text-sm text-ink">{ing.name}</span>
-                <span className="text-sm text-ink-secondary ml-4 text-right flex-shrink-0">
+              <div key={i} className="flex items-start justify-between py-2 border-b border-plate-line">
+                <span className="text-sm text-plate-ink">{ing.name}</span>
+                <span className="text-sm text-plate-ink-2 ml-4 text-right flex-shrink-0">
                   {scale !== 1
                     ? `${(ing.quantity * scale % 1 === 0 ? ing.quantity * scale : (ing.quantity * scale).toFixed(1))}`
                     : ing.quantity}{" "}
                   {ing.unit}
-                  {ing.notes && <span className="block text-xs text-ink-tertiary">{ing.notes}</span>}
+                  {ing.notes && <span className="block text-xs text-plate-ink-3">{ing.notes}</span>}
                 </span>
               </div>
             ))}
@@ -245,14 +245,14 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
 
         {/* Method */}
         <div className="mt-6">
-          <h2 className="text-lg font-bold text-ink mb-3">Method</h2>
+          <h2 className="text-lg font-bold text-plate-ink mb-3">Method</h2>
           <div className="space-y-4">
             {recipe.method.map((step, i) => (
               <div key={i} className="flex gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 text-brand-700 text-xs font-bold flex items-center justify-center mt-0.5">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-plate-lime/20 text-plate-ink text-xs font-bold flex items-center justify-center mt-0.5">
                   {i + 1}
                 </div>
-                <p className="text-sm text-ink leading-relaxed">{step}</p>
+                <p className="text-sm text-plate-ink leading-relaxed">{step}</p>
               </div>
             ))}
           </div>
@@ -263,12 +263,12 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
       {addToPlanOpen && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setAddToPlanOpen(false)} />
-          <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-surface rounded-t-3xl p-6 space-y-5">
+          <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-plate-surface rounded-t-3xl p-6 space-y-5">
             <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto" />
-            <h3 className="font-bold text-ink text-lg">Add to plan</h3>
+            <h3 className="font-bold text-plate-ink text-lg">Add to plan</h3>
 
             <div>
-              <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Day</p>
+              <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider mb-2">Day</p>
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {DAYS.map((day, i) => (
                   <button
@@ -276,7 +276,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
                     onClick={() => setSelectedDay(i)}
                     className={clsx(
                       "flex-shrink-0 px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
-                      selectedDay === i ? "bg-brand-600 border-brand-600 text-white" : "border-slate-200 text-ink-secondary"
+                      selectedDay === i ? "bg-plate-ink border-plate-ink text-white" : "border-plate-line text-plate-ink-2"
                     )}
                   >
                     {day}
@@ -286,7 +286,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Meal</p>
+              <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider mb-2">Meal</p>
               <div className="flex gap-2">
                 {(["dinner", "lunch"] as const).map((type) => (
                   <button
@@ -294,7 +294,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
                     onClick={() => setSelectedMealType(type)}
                     className={clsx(
                       "flex-1 py-2.5 rounded-xl text-sm font-medium border capitalize transition-all",
-                      selectedMealType === type ? "bg-brand-600 border-brand-600 text-white" : "border-slate-200 text-ink-secondary"
+                      selectedMealType === type ? "bg-plate-ink border-plate-ink text-white" : "border-plate-line text-plate-ink-2"
                     )}
                   >
                     {type}
@@ -305,7 +305,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
 
             <button
               onClick={handleAddToPlan}
-              className="w-full py-3.5 rounded-2xl bg-brand-600 text-white font-semibold text-sm"
+              className="w-full py-3.5 rounded-2xl bg-plate-ink text-white font-semibold text-sm"
             >
               Add {DAYS[selectedDay]} {selectedMealType}
             </button>
@@ -324,7 +324,7 @@ function FeedbackBtn({ icon, label, active, activeClass, onClick }: {
       onClick={onClick}
       className={clsx(
         "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-medium transition-all duration-150",
-        active ? activeClass : "bg-surface border-slate-200 text-ink-secondary hover:border-slate-300"
+        active ? activeClass : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-line"
       )}
     >
       {icon}{label}

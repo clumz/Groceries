@@ -94,7 +94,7 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-surface rounded-t-3xl flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }}>
+      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-plate-surface rounded-t-3xl flex flex-col overflow-hidden" style={{ maxHeight: "85vh" }}>
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-slate-200" />
@@ -110,9 +110,9 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-surface-tertiary flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 rounded-full bg-plate-surface-tertiary flex items-center justify-center flex-shrink-0"
           >
-            <X className="w-4 h-4 text-ink-secondary" />
+            <X className="w-4 h-4 text-plate-ink-2" />
           </button>
         </div>
 
@@ -166,7 +166,7 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
                     {recipe.difficulty === "easy" && (
                       <>
                         <span className="text-ink-tertiary/40 text-xs">·</span>
-                        <span className="text-xs text-brand-600">Easy</span>
+                        <span className="text-xs text-plate-coral">Easy</span>
                       </>
                     )}
                   </div>
@@ -206,8 +206,8 @@ function CuisineChip({ label, active, onClick }: { label: string; active: boolea
       className={clsx(
         "flex-shrink-0 px-3.5 py-1.5 rounded-2xl text-sm font-medium border transition-all duration-150 whitespace-nowrap",
         active
-          ? "bg-brand-600 border-brand-600 text-white"
-          : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-300"
+          ? "bg-plate-ink border-plate-ink text-white"
+          : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-lime"
       )}
     >
       {label}

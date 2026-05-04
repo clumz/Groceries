@@ -7,16 +7,41 @@ import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { estimateRecipeNutrition } from "@/lib/nutritionData";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
+import { MacroRing } from "@/components/ui/MacroRing";
+import { MacroBar } from "@/components/ui/MacroBar";
 import { RecipeCard } from "@/components/plan/RecipeCard";
 import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { WeeklyMealPlan, PlannedMeal as PlannedMealType } from "@/types";
-import { RefreshCw, ShoppingCart, ChevronRight } from "lucide-react";
-import { clsx } from "clsx";
+import { RefreshCw, ShoppingCart } from "lucide-react";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const DAYS_FULL = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const FULL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function DayPill({ day, date, active, hasMeal, onClick }: {
+  day: string; date: number; active: boolean; hasMeal: boolean; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} style={{
+      flexShrink: 0, width: 50, height: 60, borderRadius: 18,
+      border: "1.5px solid #1A1410",
+      background: active ? "#1A1410" : "#FFFFFF",
+      color: active ? "#FFF8EE" : "#1A1410",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", gap: 3, cursor: "pointer",
+      fontFamily: "var(--font-display)",
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 600, opacity: active ? 0.6 : 0.5, letterSpacing: "0.02em" }}>{day}</span>
+      <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{date}</span>
+      <div style={{
+        width: 5, height: 5, borderRadius: 999,
+        background: hasMeal ? (active ? "#C8FF3E" : "#FF6B4A") : "transparent",
+      }} />
+    </button>
+  );
+}
 
 export default function PlanPage() {
   const router = useRouter();
@@ -31,10 +56,18 @@ export default function PlanPage() {
   const [error, setError] = useState<string | null>(null);
   const [swappingMeal, setSwappingMeal] = useState<PlannedMealType | null>(null);
 
+  // Generate dates for Mon–Sun of current week
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + mondayOffset + i);
+    return d.getDate();
+  });
+
   useEffect(() => {
-    if (!preferences) {
-      router.replace("/onboarding");
-    }
+    if (!preferences) router.replace("/onboarding");
   }, [preferences, router]);
 
   async function generatePlan() {
@@ -50,7 +83,7 @@ export default function PlanPage() {
       if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setMealPlan(data.mealPlan as WeeklyMealPlan);
-    } catch (e) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setGeneratingPlan(false);
@@ -58,112 +91,164 @@ export default function PlanPage() {
   }
 
   const isSnacksTab = activeDay === 7;
-  const dinners = currentMealPlan?.meals.filter(
-    (m) => m.mealType === "dinner" && m.dayIndex === activeDay
-  ) ?? [];
-  const lunches = currentMealPlan?.meals.filter(
-    (m) => m.mealType === "lunch" && m.dayIndex === activeDay
-  ) ?? [];
+  const dayMeals = currentMealPlan?.meals.filter((m) => m.dayIndex === activeDay) ?? [];
+  const dinners = dayMeals.filter((m) => m.mealType === "dinner");
+  const lunches = dayMeals.filter((m) => m.mealType === "lunch");
+
+  // Compute daily nutrition totals
+  const dayTotals = useMemo(() => {
+    if (!currentMealPlan) return null;
+    return dayMeals.reduce(
+      (acc, m) => {
+        const n = estimateRecipeNutrition(m.recipe.ingredients, m.servings);
+        return { cal: acc.cal + n.caloriesPerServing, protein: acc.protein + n.proteinG, carbs: acc.carbs + n.carbsG, fat: acc.fat + n.fatG };
+      },
+      { cal: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  }, [currentMealPlan, dayMeals]);
+
+  const calorieGoal = preferences?.calorieGoal ?? null;
+  const macroGoal = preferences?.macroGoal ?? null;
+  const targetProtein = macroGoal && calorieGoal ? Math.round((macroGoal.proteinPct / 100) * calorieGoal / 4) : null;
+  const targetCarbs = macroGoal && calorieGoal ? Math.round((macroGoal.carbsPct / 100) * calorieGoal / 4) : null;
+  const targetFat = macroGoal && calorieGoal ? Math.round((macroGoal.fatPct / 100) * calorieGoal / 9) : null;
 
   if (!preferences) return null;
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-24">
-      {/* Header */}
-      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">This Week</h1>
-            <p className="text-xs text-ink-tertiary">
-              {currentMealPlan
-                ? `Generated ${new Date(currentMealPlan.generatedAt).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}`
-                : "No plan yet"}
-            </p>
+    <div style={{ minHeight: "100vh", background: "#FFF8EE", paddingBottom: 110 }}>
+      {/* Top bar */}
+      <div style={{ padding: "54px 20px 14px 20px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>
+            {today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
           </div>
-          <div className="flex items-center gap-2">
-            {currentMealPlan && (
-              <button
-                onClick={() => router.push("/cart")}
-                className="flex items-center gap-1.5 bg-brand-600 text-white text-sm font-medium px-3 py-2 rounded-xl"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                Cart
-              </button>
-            )}
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32, letterSpacing: "-0.03em", lineHeight: 1, margin: 0 }}>
+            This <em style={{ fontStyle: "italic", color: "#C8FF3E", WebkitTextStroke: "1px #1A1410" }}>week</em>
+          </h1>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {currentMealPlan && (
             <button
-              onClick={generatePlan}
-              disabled={isGeneratingPlan}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-tertiary text-ink-secondary hover:bg-slate-200 transition-colors disabled:opacity-50"
+              onClick={() => router.push("/cart")}
+              style={{
+                width: 44, height: 44, borderRadius: 999,
+                border: "1.5px solid #1A1410",
+                background: "#C8FF3E",
+                color: "#1A1410",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "2px 2px 0 #1A1410", cursor: "pointer",
+              }}
             >
-              <RefreshCw className={clsx("w-4 h-4", isGeneratingPlan && "animate-spin")} />
+              <ShoppingCart size={18} />
             </button>
+          )}
+          <button
+            onClick={generatePlan}
+            disabled={isGeneratingPlan}
+            style={{
+              width: 44, height: 44, borderRadius: 999,
+              border: "1.5px solid #1A1410",
+              background: "#FFFFFF",
+              color: "#1A1410",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0 #1A1410", cursor: "pointer",
+              opacity: isGeneratingPlan ? 0.5 : 1,
+            }}
+          >
+            <RefreshCw size={16} style={{ animation: isGeneratingPlan ? "spin 1s linear infinite" : "none" }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Hero macro card */}
+      {currentMealPlan && calorieGoal && dayTotals && !isGeneratingPlan && (
+        <div style={{ padding: "0 20px 16px" }}>
+          <div style={{
+            padding: 16, borderRadius: 22,
+            border: "1.5px solid #1A1410",
+            background: "#FFFFFF",
+            boxShadow: "3px 3px 0 #1A1410",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <MacroRing size={120} kcal={dayTotals.cal} target={calorieGoal} color="#C8FF3E" label="kcal today" />
+              {targetProtein && (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <MacroBar label="Protein" val={dayTotals.protein} target={targetProtein} color="#FF6B4A" />
+                  <MacroBar label="Carbs" val={dayTotals.carbs} target={targetCarbs ?? 220} color="#FFD66B" />
+                  <MacroBar label="Fat" val={dayTotals.fat} target={targetFat ?? 70} color="#4A2B5C" />
+                </div>
+              )}
+              {!targetProtein && (
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "#1A1410" }}>
+                    {dayTotals.protein}g protein
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9C9087", marginTop: 4 }}>
+                    {FULL_DAYS[activeDay]}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Day selector */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-          {DAYS.map((day, idx) => {
-            const hasMeal = currentMealPlan?.meals.some((m) => m.dayIndex === idx);
-            return (
-              <button
-                key={day}
-                onClick={() => setActiveDay(idx)}
-                className={clsx(
-                  "flex-shrink-0 flex flex-col items-center gap-0.5 w-10 py-2 rounded-xl transition-all duration-150",
-                  activeDay === idx && !isSnacksTab
-                    ? "bg-brand-600 text-white"
-                    : "text-ink-secondary hover:bg-surface-tertiary"
-                )}
-              >
-                <span className="text-[10px] font-medium">{day}</span>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", hasMeal ? (activeDay === idx && !isSnacksTab ? "bg-surface/60" : "bg-brand-400") : "bg-transparent")} />
-              </button>
-            );
-          })}
+      {/* Day pill scroller */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <div className="scrollbar-hide" style={{ display: "flex", gap: 8, overflowX: "auto" }}>
+          {DAYS_FULL.map((dayFull, idx) => (
+            <DayPill
+              key={dayFull}
+              day={DAYS[idx]}
+              date={weekDates[idx]}
+              active={activeDay === idx && !isSnacksTab}
+              hasMeal={currentMealPlan?.meals.some((m) => m.dayIndex === idx) ?? false}
+              onClick={() => setActiveDay(idx)}
+            />
+          ))}
           {currentMealPlan && currentMealPlan.snacks.length > 0 && preferences.includeSnacks && (
-            <button
-              onClick={() => setActiveDay(7)}
-              className={clsx(
-                "flex-shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-150",
-                isSnacksTab ? "bg-brand-600 text-white" : "text-ink-secondary hover:bg-surface-tertiary"
-              )}
-            >
-              <span className="text-[10px] font-medium">Snacks</span>
-              <div className={clsx("w-1.5 h-1.5 rounded-full", isSnacksTab ? "bg-surface/60" : "bg-brand-400")} />
+            <button onClick={() => setActiveDay(7)} style={{
+              flexShrink: 0, height: 60, padding: "0 14px", borderRadius: 18,
+              border: "1.5px solid #1A1410",
+              background: isSnacksTab ? "#1A1410" : "#FFFFFF",
+              color: isSnacksTab ? "#FFF8EE" : "#1A1410",
+              fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
+              cursor: "pointer",
+            }}>
+              Snacks
             </button>
           )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-4 space-y-3">
+      <div style={{ padding: "0 20px" }}>
         {isGeneratingPlan && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", gap: 16 }}>
             <LoadingSpinner size="lg" />
-            <div className="text-center">
-              <p className="font-semibold text-ink">Crafting your week…</p>
-              <p className="text-sm text-ink-tertiary mt-1">Claude is personalising your meal plan</p>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "#1A1410" }}>Crafting your week…</p>
+              <p style={{ fontSize: 14, color: "#9C9087", marginTop: 4 }}>Claude is personalising your meal plan</p>
             </div>
           </div>
         )}
 
         {error && !isGeneratingPlan && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700">
+          <div style={{ background: "#FFE5E0", border: "1.5px solid #FF6B4A", borderRadius: 16, padding: 14, fontSize: 14, color: "#E5482A", marginBottom: 12 }}>
             {error}
           </div>
         )}
 
         {!currentMealPlan && !isGeneratingPlan && (
-          <div className="flex flex-col items-center justify-center py-20 gap-5 px-4">
-            <div className="text-6xl">🍽️</div>
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-ink">No meal plan yet</h2>
-              <p className="text-sm text-ink-secondary mt-1.5">
-                Tap Generate to get your personalised 7-day plan
-              </p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0 0", gap: 20, textAlign: "center" }}>
+            <div style={{ fontSize: 64 }}>🍽️</div>
+            <div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22, color: "#1A1410", margin: 0 }}>No meal plan yet</h2>
+              <p style={{ fontSize: 14, color: "#5C5249", marginTop: 8 }}>Tap Generate to get your personalised 7-day plan</p>
             </div>
-            <Button onClick={generatePlan} size="lg">
-              Generate my week
+            <Button variant="lime" onClick={generatePlan} size="lg">
+              Generate my week ✨
             </Button>
           </div>
         )}
@@ -173,72 +258,15 @@ export default function PlanPage() {
             {isSnacksTab ? (
               <SnacksSection snacks={currentMealPlan.snacks} />
             ) : (
-              <>
-                <div className="mb-1">
-                  <h2 className="text-base font-semibold text-ink">{FULL_DAYS[activeDay]}</h2>
-                  {(() => {
-                    const dayMeals = [...dinners, ...lunches];
-                    if (dayMeals.length === 0) return null;
-                    const totals = dayMeals.reduce(
-                      (acc, m) => {
-                        const n = estimateRecipeNutrition(m.recipe.ingredients, m.servings);
-                        return { cal: acc.cal + n.caloriesPerServing, protein: acc.protein + n.proteinG, carbs: acc.carbs + n.carbsG, fat: acc.fat + n.fatG };
-                      },
-                      { cal: 0, protein: 0, carbs: 0, fat: 0 }
-                    );
-                    if (totals.cal === 0) return null;
-                    const goal = preferences.calorieGoal;
-                    const macroGoal = preferences.macroGoal;
-                    if (goal) {
-                      const pct = Math.min(100, Math.round((totals.cal / goal) * 100));
-                      const over = totals.cal > goal;
-                      const close = pct >= 90;
-                      const targetProteinG = macroGoal ? Math.round((macroGoal.proteinPct / 100) * goal / 4) : null;
-                      const targetCarbsG = macroGoal ? Math.round((macroGoal.carbsPct / 100) * goal / 4) : null;
-                      const targetFatG = macroGoal ? Math.round((macroGoal.fatPct / 100) * goal / 9) : null;
-                      return (
-                        <div className="mt-1.5 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-ink-tertiary">
-                              ~{totals.cal.toLocaleString()} / {goal.toLocaleString()} kcal
-                            </p>
-                            <p className={clsx("text-xs font-medium", over ? "text-red-500" : close ? "text-amber-500" : "text-brand-600")}>
-                              {over ? `+${(totals.cal - goal).toLocaleString()} over` : `${(goal - totals.cal).toLocaleString()} left`}
-                            </p>
-                          </div>
-                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={clsx("h-full rounded-full transition-all", over ? "bg-red-400" : close ? "bg-amber-400" : "bg-brand-500")}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          {targetProteinG && (
-                            <p className="text-[10px] text-ink-tertiary">
-                              <span className="text-brand-600 font-medium">P {totals.protein}g/{targetProteinG}g</span>
-                              {" · "}
-                              <span className="text-amber-500 font-medium">C {totals.carbs}g/{targetCarbsG}g</span>
-                              {" · "}
-                              <span className="text-rose-500 font-medium">F {totals.fat}g/{targetFatG}g</span>
-                            </p>
-                          )}
-                          {!targetProteinG && (
-                            <p className="text-[10px] text-ink-tertiary">{totals.protein}g protein</p>
-                          )}
-                        </div>
-                      );
-                    }
-                    return (
-                      <p className="text-xs text-ink-tertiary mt-0.5">
-                        ~{totals.cal.toLocaleString()} kcal · {totals.protein}g protein
-                      </p>
-                    );
-                  })()}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: "#1A1410" }}>
+                  {FULL_DAYS[activeDay]}
                 </div>
 
                 {dinners.length > 0 && (
                   <div>
                     {preferences.includeLunches && (
-                      <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Dinner</p>
+                      <div className="eyebrow" style={{ marginBottom: 8 }}>Dinner</div>
                     )}
                     {dinners.map((meal) => (
                       <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
@@ -248,7 +276,7 @@ export default function PlanPage() {
 
                 {preferences.includeLunches && lunches.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">Lunch</p>
+                    <div className="eyebrow" style={{ marginBottom: 8 }}>Lunch</div>
                     {lunches.map((meal) => (
                       <RecipeCard key={meal.id} meal={meal} onSwapRequest={() => setSwappingMeal(meal)} />
                     ))}
@@ -256,27 +284,32 @@ export default function PlanPage() {
                 )}
 
                 {dinners.length === 0 && lunches.length === 0 && (
-                  <div className="flex flex-col items-center py-12 gap-3 text-ink-tertiary">
-                    <span className="text-3xl">🗓️</span>
-                    <p className="text-sm">No meals planned for {FULL_DAYS[activeDay]}</p>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", gap: 12, color: "#9C9087" }}>
+                    <span style={{ fontSize: 32 }}>🗓️</span>
+                    <p style={{ fontSize: 14 }}>No meals planned for {FULL_DAYS[activeDay]}</p>
                   </div>
                 )}
 
-                {activeDay === 0 && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => router.push("/cart")}
-                      className="w-full flex items-center justify-between bg-brand-600 text-white px-5 py-4 rounded-2xl"
-                    >
-                      <div>
-                        <p className="font-semibold">View weekly cart</p>
-                        <p className="text-xs text-brand-200 mt-0.5">All {currentMealPlan.meals.length} meals consolidated</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-brand-200" />
-                    </button>
-                  </div>
+                {activeDay === 0 && currentMealPlan && (
+                  <button
+                    onClick={() => router.push("/cart")}
+                    style={{
+                      width: "100%", padding: "16px 20px", borderRadius: 20,
+                      border: "1.5px solid #1A1410",
+                      background: "#C8FF3E",
+                      boxShadow: "3px 3px 0 #1A1410",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      cursor: "pointer", marginTop: 4,
+                    }}
+                  >
+                    <div style={{ textAlign: "left" }}>
+                      <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "#1A1410", margin: 0 }}>View weekly cart</p>
+                      <p style={{ fontSize: 12, color: "#5C5249", marginTop: 2 }}>All {currentMealPlan.meals.length} meals consolidated</p>
+                    </div>
+                    <ShoppingCart size={20} color="#1A1410" />
+                  </button>
                 )}
-              </>
+              </div>
             )}
           </>
         )}

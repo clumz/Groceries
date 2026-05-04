@@ -30,25 +30,25 @@ export default function OrdersPage() {
   const monthBudget = weeklyBudget * 4;
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-24">
+    <div className="min-h-screen bg-plate-bg pb-24">
       {/* Header */}
-      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
-        <h1 className="text-2xl font-bold text-ink">Order History</h1>
-        <p className="text-xs text-ink-tertiary mt-0.5">{orderHistory.length} order{orderHistory.length !== 1 ? "s" : ""} total</p>
+      <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
+        <h1 className="text-2xl font-bold text-plate-ink">Order History</h1>
+        <p className="text-xs text-plate-ink-3 mt-0.5">{orderHistory.length} order{orderHistory.length !== 1 ? "s" : ""} total</p>
       </div>
 
       <div className="px-4 py-4 space-y-3">
         {/* Budget summary */}
         {orderHistory.length > 0 && (
-          <div className="bg-surface rounded-3xl shadow-card p-5">
+          <div className="bg-plate-surface rounded-3xl shadow-card p-5">
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-4 h-4 text-brand-600" />
-              <p className="text-sm font-semibold text-ink">This month</p>
+              <TrendingUp className="w-4 h-4 text-plate-coral" />
+              <p className="text-sm font-semibold text-plate-ink">This month</p>
             </div>
             <div className="flex items-end justify-between mb-3">
               <div>
-                <p className="text-3xl font-bold text-ink">A${monthSpend.toFixed(0)}</p>
-                <p className="text-xs text-ink-tertiary mt-0.5">of A${monthBudget} budget</p>
+                <p className="text-3xl font-bold text-plate-ink">A${monthSpend.toFixed(0)}</p>
+                <p className="text-xs text-plate-ink-3 mt-0.5">of A${monthBudget} budget</p>
               </div>
               <p className={clsx(
                 "text-sm font-semibold",
@@ -65,7 +65,7 @@ export default function OrdersPage() {
               <div
                 className={clsx(
                   "h-full rounded-full transition-all",
-                  monthSpend / monthBudget > 1 ? "bg-red-400" : "bg-brand-500"
+                  monthSpend / monthBudget > 1 ? "bg-red-400" : "bg-plate-coral"
                 )}
                 style={{ width: `${Math.min(100, (monthSpend / monthBudget) * 100).toFixed(1)}%` }}
               />
@@ -74,7 +74,7 @@ export default function OrdersPage() {
             {/* Last 8 weeks sparkline */}
             {last8.length > 1 && (
               <div className="mt-5">
-                <p className="text-xs text-ink-tertiary mb-2">Weekly spend (last {last8.length} orders)</p>
+                <p className="text-xs text-plate-ink-3 mb-2">Weekly spend (last {last8.length} orders)</p>
                 <div className="flex items-end gap-1 h-12">
                   {[...last8].reverse().map((order, i) => {
                     const pct = Math.min(100, (order.cart.estimatedTotal / weeklyBudget) * 100);
@@ -84,7 +84,7 @@ export default function OrdersPage() {
                         <div className="w-full rounded-t-sm" style={{ height: `${pct}%` }}>
                           <div className={clsx(
                             "w-full h-full rounded-t-sm",
-                            isOver ? "bg-red-300" : i === last8.length - 1 ? "bg-brand-500" : "bg-brand-200"
+                            isOver ? "bg-red-300" : i === last8.length - 1 ? "bg-plate-coral" : "bg-plate-lime/50"
                           )} />
                         </div>
                       </div>
@@ -93,8 +93,8 @@ export default function OrdersPage() {
                 </div>
                 {/* Budget line label */}
                 <div className="flex justify-between mt-1">
-                  <p className="text-[10px] text-ink-tertiary">Oldest</p>
-                  <p className="text-[10px] text-ink-tertiary">Latest</p>
+                  <p className="text-[10px] text-plate-ink-3">Oldest</p>
+                  <p className="text-[10px] text-plate-ink-3">Latest</p>
                 </div>
               </div>
             )}
@@ -103,10 +103,10 @@ export default function OrdersPage() {
 
         {/* Empty state */}
         {orderHistory.length === 0 && (
-          <div className="bg-surface rounded-3xl shadow-card px-5 py-16 flex flex-col items-center gap-3 text-center">
+          <div className="bg-plate-surface rounded-3xl shadow-card px-5 py-16 flex flex-col items-center gap-3 text-center">
             <span className="text-5xl">🧺</span>
-            <p className="font-semibold text-ink text-lg">No orders yet</p>
-            <p className="text-sm text-ink-secondary">
+            <p className="font-semibold text-plate-ink text-lg">No orders yet</p>
+            <p className="text-sm text-plate-ink-2">
               Your order history will appear here after your first shop.
             </p>
           </div>
@@ -137,7 +137,7 @@ function OrderRow({ order, expanded, onToggle }: { order: Order; expanded: boole
     : order.estimatedDeliveryDate;
 
   return (
-    <div className="bg-surface rounded-3xl shadow-card overflow-hidden">
+    <div className="bg-plate-surface rounded-3xl shadow-card overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-4"
@@ -146,30 +146,30 @@ function OrderRow({ order, expanded, onToggle }: { order: Order; expanded: boole
           <ShoppingBag className={clsx("w-5 h-5", retailerColor)} />
         </div>
         <div className="flex-1 text-left min-w-0">
-          <p className="text-sm font-semibold text-ink capitalize">{order.retailer}</p>
-          <p className="text-xs text-ink-tertiary">{date} · {confirmedItems.length} items</p>
+          <p className="text-sm font-semibold text-plate-ink capitalize">{order.retailer}</p>
+          <p className="text-xs text-plate-ink-3">{date} · {confirmedItems.length} items</p>
         </div>
         <div className="text-right flex-shrink-0 flex items-center gap-2">
-          <p className="font-bold text-ink">A${order.cart.estimatedTotal.toFixed(2)}</p>
-          <ChevronDown className={clsx("w-4 h-4 text-ink-tertiary transition-transform", expanded && "rotate-180")} />
+          <p className="font-bold text-plate-ink">A${order.cart.estimatedTotal.toFixed(2)}</p>
+          <ChevronDown className={clsx("w-4 h-4 text-plate-ink-3 transition-transform", expanded && "rotate-180")} />
         </div>
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 px-4 pb-4 pt-3 space-y-2">
+        <div className="border-t border-plate-line px-4 pb-4 pt-3 space-y-2">
           {confirmedItems.slice(0, 15).map((item) => {
             const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
             return (
               <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-ink-secondary truncate flex-1 mr-3">{item.ingredientName}</span>
-                <span className="text-ink font-medium flex-shrink-0">
+                <span className="text-plate-ink-2 truncate flex-1 mr-3">{item.ingredientName}</span>
+                <span className="text-plate-ink font-medium flex-shrink-0">
                   {product ? `A$${product.price.toFixed(2)}` : "—"}
                 </span>
               </div>
             );
           })}
           {confirmedItems.length > 15 && (
-            <p className="text-xs text-ink-tertiary text-center">+{confirmedItems.length - 15} more items</p>
+            <p className="text-xs text-plate-ink-3 text-center">+{confirmedItems.length - 15} more items</p>
           )}
         </div>
       )}

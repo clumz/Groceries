@@ -2,24 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-surface:           #ffffff;
-  --color-surface-secondary: #f8fafc;
-  --color-surface-tertiary:  #f1f5f9;
-  --color-ink:               #0f172a;
-  --color-ink-secondary:     #475569;
-  --color-ink-tertiary:      #94a3b8;
-  --color-ink-inverse:       #ffffff;
-}
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-.dark {
-  --color-surface:           #1e293b;
-  --color-surface-secondary: #0f172a;
-  --color-surface-tertiary:  #334155;
-  --color-ink:               #f1f5f9;
-  --color-ink-secondary:     #94a3b8;
-  --color-ink-tertiary:      #64748b;
-  --color-ink-inverse:       #0f172a;
+:root {
+  /* Plate design tokens */
+  --plate-bg:        #FFF8EE;
+  --plate-surface:   #FFFFFF;
+  --plate-ink:       #1A1410;
+  --plate-ink-2:     #5C5249;
+  --plate-ink-3:     #9C9087;
+  --plate-line:      #EDE4D5;
+
+  --plate-lime:       #C8FF3E;
+  --plate-lime-deep:  #9FD41A;
+  --plate-coral:      #FF6B4A;
+  --plate-coral-deep: #E5482A;
+  --plate-butter:     #FFD66B;
+  --plate-plum:       #4A2B5C;
+  --plate-leaf:       #2D5A3D;
+  --plate-sky:        #B8E4F0;
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+
+  --font-display: "Bricolage Grotesque", "Inter", -apple-system, system-ui, sans-serif;
+  --font-body:    "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* Legacy aliases so existing classes keep working */
+  --color-surface:           var(--plate-surface);
+  --color-surface-secondary: var(--plate-bg);
+  --color-surface-tertiary:  var(--plate-line);
+  --color-ink:               var(--plate-ink);
+  --color-ink-secondary:     var(--plate-ink-2);
+  --color-ink-tertiary:      var(--plate-ink-3);
+  --color-ink-inverse:       var(--plate-surface);
 }
 
 @layer base {
@@ -29,8 +48,13 @@
   }
 
   body {
-    @apply bg-surface text-ink antialiased;
+    @apply antialiased;
+    font-family: var(--font-body);
+    background: var(--plate-bg);
+    color: var(--plate-ink);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
 
   * {
@@ -52,5 +76,26 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-mono-plate {
+    font-family: var(--font-mono);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--plate-ink-3);
+  }
+  /* Sticker hard shadow */
+  .shadow-sticker {
+    box-shadow: 3px 3px 0 var(--plate-ink);
+  }
+  .shadow-sticker-sm {
+    box-shadow: 2px 2px 0 var(--plate-ink);
   }
 }

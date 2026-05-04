@@ -44,7 +44,7 @@ export default function ProfilePage() {
   if (!preferences || !draft) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-ink-secondary">Please complete onboarding first</p>
+        <p className="text-plate-ink-2">Please complete onboarding first</p>
         <Button onClick={() => router.push("/onboarding")}>Start onboarding</Button>
       </div>
     );
@@ -85,22 +85,22 @@ export default function ProfilePage() {
   const neverShow = feedbackHistory.items.filter((i) => i.feedback === "never-show");
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-24">
+    <div className="min-h-screen bg-plate-bg pb-24">
       {/* Header */}
-      <div className="bg-surface px-5 pt-14 pb-4 border-b border-slate-100">
+      <div className="bg-plate-surface px-5 pt-14 pb-4 border-b border-plate-line">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-ink">Profile</h1>
+          <h1 className="text-2xl font-bold text-plate-ink">Profile</h1>
           {!editing ? (
             <button
               onClick={() => setEditing(true)}
-              className="text-sm font-medium text-brand-600"
+              className="text-sm font-medium text-plate-coral"
             >
               Edit
             </button>
           ) : (
             <div className="flex gap-3">
-              <button onClick={() => { setDraft(preferences); setEditing(false); }} className="text-sm text-ink-secondary">Cancel</button>
-              <button onClick={saveEdits} className="text-sm font-semibold text-brand-600">Save</button>
+              <button onClick={() => { setDraft(preferences); setEditing(false); }} className="text-sm text-plate-ink-2">Cancel</button>
+              <button onClick={saveEdits} className="text-sm font-semibold text-plate-coral">Save</button>
             </div>
           )}
         </div>
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                   "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
                   draft.preferredStore === store
                     ? store === "woolworths" ? "bg-green-100 border-green-400 text-green-800" : "bg-red-100 border-red-400 text-red-800"
-                    : "bg-surface border-slate-200 text-ink-secondary",
+                    : "bg-plate-surface border-plate-line text-plate-ink-2",
                   !editing && "pointer-events-none"
                 )}
               >
@@ -128,18 +128,18 @@ export default function ProfilePage() {
               </button>
             ))}
           </div>
-          <div className="text-xs text-ink-tertiary mt-2">{preferences.suburb}, {preferences.postcode}</div>
+          <div className="text-xs text-plate-ink-3 mt-2">{preferences.suburb}, {preferences.postcode}</div>
         </Section>
 
         {/* Household */}
         <Section title="Household">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-ink-secondary">Household size</span>
-            <span className="font-semibold text-ink">{draft.householdSize} {draft.householdSize === 1 ? "person" : "people"}</span>
+            <span className="text-plate-ink-2">Household size</span>
+            <span className="font-semibold text-plate-ink">{draft.householdSize} {draft.householdSize === 1 ? "person" : "people"}</span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-ink-secondary">Default servings</span>
-            <span className="font-semibold text-ink">{draft.defaultServings}</span>
+            <span className="text-plate-ink-2">Default servings</span>
+            <span className="font-semibold text-plate-ink">{draft.defaultServings}</span>
           </div>
         </Section>
 
@@ -154,8 +154,8 @@ export default function ProfilePage() {
                   className={clsx(
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
                     draft.dietaryRequirements.includes(d)
-                      ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-surface border-slate-200 text-ink-secondary"
+                      ? "bg-plate-ink border-plate-ink text-white"
+                      : "bg-plate-surface border-plate-line text-plate-ink-2"
                   )}
                 >
                   {DIETARY_LABELS[d]}
@@ -165,7 +165,7 @@ export default function ProfilePage() {
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {draft.dietaryRequirements.length === 0 ? (
-                <span className="text-sm text-ink-tertiary">None</span>
+                <span className="text-sm text-plate-ink-3">None</span>
               ) : (
                 draft.dietaryRequirements.map((d) => (
                   <Badge key={d} variant="green">{DIETARY_LABELS[d]}</Badge>
@@ -186,8 +186,8 @@ export default function ProfilePage() {
                   className={clsx(
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all capitalize",
                     draft.cuisinePreferences.includes(c)
-                      ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-surface border-slate-200 text-ink-secondary"
+                      ? "bg-plate-ink border-plate-ink text-white"
+                      : "bg-plate-surface border-plate-line text-plate-ink-2"
                   )}
                 >
                   {CUISINE_LABELS[c]}
@@ -214,8 +214,8 @@ export default function ProfilePage() {
                   className={clsx(
                     "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
                     draft.proteinPreferences.includes(p)
-                      ? "bg-brand-600 border-brand-600 text-white"
-                      : "bg-surface border-slate-200 text-ink-secondary"
+                      ? "bg-plate-ink border-plate-ink text-white"
+                      : "bg-plate-surface border-plate-line text-plate-ink-2"
                   )}
                 >
                   {PROTEIN_LABELS[p]}
@@ -237,8 +237,8 @@ export default function ProfilePage() {
             {liked.length > 0 && (
               <div className="mb-3">
                 <div className="flex items-center gap-1.5 mb-2">
-                  <ThumbsUp className="w-3.5 h-3.5 text-brand-600" />
-                  <span className="text-xs font-semibold text-ink-secondary">Loved recently</span>
+                  <ThumbsUp className="w-3.5 h-3.5 text-plate-coral" />
+                  <span className="text-xs font-semibold text-plate-ink-2">Loved recently</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {liked.map((i) => <Badge key={i.recipeId} variant="green">{i.recipeName}</Badge>)}
@@ -249,7 +249,7 @@ export default function ProfilePage() {
               <div className="mb-3">
                 <div className="flex items-center gap-1.5 mb-2">
                   <ThumbsDown className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="text-xs font-semibold text-ink-secondary">Not your thing</span>
+                  <span className="text-xs font-semibold text-plate-ink-2">Not your thing</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {disliked.map((i) => <Badge key={i.recipeId} variant="gray">{i.recipeName}</Badge>)}
@@ -260,7 +260,7 @@ export default function ProfilePage() {
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
                   <XCircle className="w-3.5 h-3.5 text-red-500" />
-                  <span className="text-xs font-semibold text-ink-secondary">Never show again ({neverShow.length})</span>
+                  <span className="text-xs font-semibold text-plate-ink-2">Never show again ({neverShow.length})</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {neverShow.slice(0, 5).map((i) => <Badge key={i.recipeId} variant="red">{i.recipeName}</Badge>)}
@@ -292,8 +292,8 @@ export default function ProfilePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface rounded-3xl p-4 shadow-card">
-      <h3 className="text-sm font-semibold text-ink mb-3">{title}</h3>
+    <div className="bg-plate-surface rounded-3xl p-4 shadow-card">
+      <h3 className="text-sm font-semibold text-plate-ink mb-3">{title}</h3>
       {children}
     </div>
   );

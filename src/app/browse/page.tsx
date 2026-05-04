@@ -95,24 +95,24 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-24">
+    <div className="min-h-screen bg-plate-bg pb-24">
       {/* Header */}
-      <div className="bg-surface px-4 pt-14 pb-3 sticky top-0 z-10 border-b border-slate-100 space-y-3">
-        <h1 className="text-2xl font-bold text-ink">Browse Recipes</h1>
+      <div className="bg-plate-surface px-4 pt-14 pb-3 sticky top-0 z-10 border-b border-plate-line space-y-3">
+        <h1 className="text-2xl font-bold text-plate-ink">Browse Recipes</h1>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-tertiary" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-plate-ink-3" />
           <input
             type="text"
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Search recipes…"
-            className="w-full bg-surface-secondary rounded-xl pl-9 pr-9 py-2.5 text-sm text-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-brand-300"
+            className="w-full bg-plate-bg rounded-xl pl-9 pr-9 py-2.5 text-sm text-plate-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-plate-lime"
           />
           {query && (
             <button onClick={() => handleQueryChange("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-ink-tertiary" />
+              <X className="w-4 h-4 text-plate-ink-3" />
             </button>
           )}
         </div>
@@ -125,7 +125,7 @@ export default function BrowsePage() {
               onClick={() => setCuisine(key)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap",
-                cuisine === key ? "bg-brand-600 border-brand-600 text-white" : "bg-surface border-slate-200 text-ink-secondary"
+                cuisine === key ? "bg-plate-ink border-plate-ink text-white" : "bg-plate-surface border-plate-line text-plate-ink-2"
               )}
             >
               {label}
@@ -141,7 +141,7 @@ export default function BrowsePage() {
               onClick={() => setProtein(key)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap",
-                protein === key ? "bg-slate-800 border-slate-800 text-white" : "bg-surface border-slate-200 text-ink-secondary"
+                protein === key ? "bg-slate-800 border-slate-800 text-white" : "bg-plate-surface border-plate-line text-plate-ink-2"
               )}
             >
               {label}
@@ -153,7 +153,7 @@ export default function BrowsePage() {
               onClick={() => setDifficulty(difficulty === d ? "all" : d)}
               className={clsx(
                 "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border capitalize transition-all whitespace-nowrap",
-                difficulty === d ? "bg-orange-500 border-orange-500 text-white" : "bg-surface border-slate-200 text-ink-secondary"
+                difficulty === d ? "bg-orange-500 border-orange-500 text-white" : "bg-plate-surface border-plate-line text-plate-ink-2"
               )}
             >
               {d}
@@ -165,14 +165,14 @@ export default function BrowsePage() {
       <div className="px-4 py-4">
         {/* Results count */}
         {!loading && (
-          <p className="text-xs text-ink-tertiary mb-3">{total} recipe{total !== 1 ? "s" : ""}</p>
+          <p className="text-xs text-plate-ink-3 mb-3">{total} recipe{total !== 1 ? "s" : ""}</p>
         )}
 
         {/* Loading skeleton */}
         {loading && (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-surface rounded-2xl overflow-hidden shadow-card">
+              <div key={i} className="bg-plate-surface rounded-2xl overflow-hidden shadow-card">
                 <div className="h-32 bg-slate-100 animate-pulse" />
                 <div className="p-3 space-y-2">
                   <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
@@ -199,8 +199,8 @@ export default function BrowsePage() {
             {recipes.length === 0 && (
               <div className="flex flex-col items-center py-16 gap-3 text-center">
                 <span className="text-4xl">🍽️</span>
-                <p className="font-semibold text-ink">No recipes found</p>
-                <p className="text-sm text-ink-secondary">Try different filters or a broader search</p>
+                <p className="font-semibold text-plate-ink">No recipes found</p>
+                <p className="text-sm text-plate-ink-2">Try different filters or a broader search</p>
               </div>
             )}
 
@@ -208,7 +208,7 @@ export default function BrowsePage() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="w-full mt-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface transition-colors disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface transition-colors disabled:opacity-50"
               >
                 {loadingMore ? "Loading…" : `Load more (${total - recipes.length} remaining)`}
               </button>
@@ -226,7 +226,7 @@ function RecipeBrowseCard({ recipe, onClick }: { recipe: Recipe; onClick: () => 
   const image = FOOD_IMAGES[recipe.cuisine] ?? FOOD_IMAGES.australian;
   const totalTime = recipe.cookTimeMinutes + recipe.prepTimeMinutes;
   return (
-    <button onClick={onClick} className="bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow text-left">
+    <button onClick={onClick} className="bg-plate-surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow text-left">
       <div className="relative h-32 overflow-hidden">
         <img src={image} alt={recipe.name} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -237,12 +237,12 @@ function RecipeBrowseCard({ recipe, onClick }: { recipe: Recipe; onClick: () => 
         </div>
       </div>
       <div className="p-3">
-        <p className="text-xs font-bold text-ink leading-snug line-clamp-2">{recipe.name}</p>
+        <p className="text-xs font-bold text-plate-ink leading-snug line-clamp-2">{recipe.name}</p>
         <div className="flex items-center gap-1 mt-1.5">
-          <Clock className="w-3 h-3 text-ink-tertiary" />
-          <span className="text-[10px] text-ink-tertiary">{totalTime}m</span>
-          <span className="text-ink-tertiary/40 mx-1">·</span>
-          <span className="text-[10px] text-ink-tertiary capitalize">{recipe.cuisine}</span>
+          <Clock className="w-3 h-3 text-plate-ink-3" />
+          <span className="text-[10px] text-plate-ink-3">{totalTime}m</span>
+          <span className="text-plate-ink-3/40 mx-1">·</span>
+          <span className="text-[10px] text-plate-ink-3 capitalize">{recipe.cuisine}</span>
         </div>
       </div>
     </button>

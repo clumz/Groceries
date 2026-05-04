@@ -141,8 +141,8 @@ export default function CartPage() {
   if (!currentMealPlan) {
     return (
       <div className="min-h-screen pb-24 flex flex-col items-center justify-center gap-4 px-5">
-        <ShoppingCart className="w-12 h-12 text-ink-tertiary" />
-        <p className="text-ink-secondary text-center">Generate a meal plan first to build your cart</p>
+        <ShoppingCart className="w-12 h-12 text-plate-ink-3" />
+        <p className="text-plate-ink-2 text-center">Generate a meal plan first to build your cart</p>
         <Button onClick={() => router.push("/plan")}>Go to Plan</Button>
         <BottomNav />
       </div>
@@ -150,14 +150,14 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary pb-36">
+    <div className="min-h-screen bg-plate-bg pb-36">
       {/* Header */}
-      <div className="bg-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-ink">Your Cart</h1>
+          <h1 className="text-2xl font-bold text-plate-ink">Your Cart</h1>
           <div className="flex items-center gap-2">
             {/* Store selector */}
-            <div className="flex rounded-xl overflow-hidden border border-slate-200 text-xs font-medium">
+            <div className="flex rounded-xl overflow-hidden border border-plate-line text-xs font-medium">
               {(["woolworths", "coles"] as const).map((store) => (
                 <button
                   key={store}
@@ -165,8 +165,8 @@ export default function CartPage() {
                   className={clsx(
                     "px-3 py-1.5 capitalize transition-colors",
                     preferences?.preferredStore === store
-                      ? store === "woolworths" ? "bg-green-600 text-white" : "bg-red-500 text-white"
-                      : "text-ink-secondary hover:bg-surface-tertiary"
+                      ? store === "woolworths" ? "bg-plate-leaf text-white" : "bg-plate-coral-deep text-white"
+                      : "text-plate-ink-2 hover:bg-plate-surface-tertiary"
                   )}
                 >
                   {store === "woolworths" ? "Woolies" : "Coles"}
@@ -176,14 +176,14 @@ export default function CartPage() {
             <button
               onClick={buildCart}
               disabled={isBuildingCart}
-              className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-tertiary text-ink-secondary hover:bg-slate-200 disabled:opacity-50"
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-plate-surface-tertiary text-plate-ink-2 hover:bg-slate-200 disabled:opacity-50"
             >
               <RefreshCw className={clsx("w-3.5 h-3.5", isBuildingCart && "animate-spin")} />
             </button>
           </div>
         </div>
         {currentCart && (
-          <p className="text-xs text-ink-tertiary mt-1">
+          <p className="text-xs text-plate-ink-3 mt-1">
             {toBuyItems.length} items to buy · {currentMealPlan.meals.length} meals
           </p>
         )}
@@ -217,7 +217,7 @@ export default function CartPage() {
         {isBuildingCart && (
           <div className="flex flex-col items-center py-16 gap-3">
             <LoadingSpinner size="lg" />
-            <p className="text-sm text-ink-secondary">Building your cart…</p>
+            <p className="text-sm text-plate-ink-2">Building your cart…</p>
           </div>
         )}
 
@@ -225,10 +225,10 @@ export default function CartPage() {
           <>
             {/* "Got it" hint */}
             {toBuyItems.length > 0 && (
-              <div className="flex items-center gap-3 bg-surface rounded-2xl border border-slate-200 px-4 py-3">
-                <CheckCircle2 className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                <p className="text-xs text-ink-secondary">
-                  Tap <span className="font-medium text-ink">○</span> on any item you already have — it'll be removed from your list.
+              <div className="flex items-center gap-3 bg-plate-surface rounded-2xl border border-plate-line px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-plate-ink flex-shrink-0" />
+                <p className="text-xs text-plate-ink-2">
+                  Tap <span className="font-medium text-plate-ink">○</span> on any item you already have — it'll be removed from your list.
                 </p>
               </div>
             )}
@@ -236,7 +236,7 @@ export default function CartPage() {
             {/* Pantry savings banner */}
             {savings > 0 && (
               <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
-                <Leaf className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <Leaf className="w-4 h-4 text-plate-leaf flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-emerald-800">
                     Saved A${savings.toFixed(2)} using your pantry
@@ -249,7 +249,7 @@ export default function CartPage() {
                   onClick={() => router.push("/settings")}
                   className="flex-shrink-0"
                 >
-                  <Settings className="w-4 h-4 text-emerald-600" />
+                  <Settings className="w-4 h-4 text-plate-leaf" />
                 </button>
               </div>
             )}
@@ -289,9 +289,9 @@ export default function CartPage() {
 
             {/* Cart items by category */}
             {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category} className="bg-surface rounded-3xl overflow-hidden shadow-card">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">
+              <div key={category} className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
+                <div className="px-4 py-3 border-b border-plate-line">
+                  <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">
                     {CATEGORY_LABELS[category] ?? category}
                   </p>
                 </div>
@@ -305,13 +305,13 @@ export default function CartPage() {
 
             {/* Already have section */}
             {alreadyHaveItems.length > 0 && (
-              <div className="bg-surface rounded-3xl overflow-hidden shadow-card">
+              <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
                 <button
                   onClick={() => setPantryExpanded((v) => !v)}
                   className="w-full px-4 py-3 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                    <Leaf className="w-3.5 h-3.5 text-plate-leaf" />
                     <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
                       Already have ({alreadyHaveItems.length})
                     </p>
@@ -319,15 +319,15 @@ export default function CartPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); router.push("/settings"); }}
-                      className="text-xs text-ink-tertiary hover:text-brand-600"
+                      className="text-xs text-plate-ink-3 hover:text-plate-coral"
                     >
                       Edit
                     </button>
-                    <ChevronDown className={clsx("w-4 h-4 text-ink-tertiary transition-transform", pantryExpanded && "rotate-180")} />
+                    <ChevronDown className={clsx("w-4 h-4 text-plate-ink-3 transition-transform", pantryExpanded && "rotate-180")} />
                   </div>
                 </button>
                 {pantryExpanded && (
-                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                  <div className="divide-y divide-slate-100 border-t border-plate-line">
                     {alreadyHaveItems.map((item) => (
                       <PantryItemRow key={item.id} item={item} />
                     ))}
@@ -342,22 +342,22 @@ export default function CartPage() {
       {/* Checkout footer */}
       {currentCart && !isBuildingCart && (
         <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-10">
-          <div className="bg-surface rounded-3xl shadow-elevated px-5 py-4">
+          <div className="bg-plate-surface rounded-3xl shadow-elevated px-5 py-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-ink-secondary">Estimated total</span>
+              <span className="text-sm text-plate-ink-2">Estimated total</span>
               <div className="text-right">
                 {savings > 0 && (
-                  <p className="text-xs text-emerald-600 font-medium">A${savings.toFixed(2)} saved</p>
+                  <p className="text-xs text-plate-leaf font-medium">A${savings.toFixed(2)} saved</p>
                 )}
-                <span className="text-xl font-bold text-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
+                <span className="text-xl font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={copyShoppingList}
-                className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-medium text-ink-secondary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors flex-shrink-0"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-plate-leaf" /> : <Copy className="w-4 h-4" />}
                 {copied ? "Copied" : "Copy"}
               </button>
               <Button
@@ -369,7 +369,7 @@ export default function CartPage() {
                 <ArrowUpRight className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-xs text-ink-tertiary text-center mt-2">We'll open your items on {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"} — add them to your basket there.</p>
+            <p className="text-xs text-plate-ink-3 text-center mt-2">We'll open your items on {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"} — add them to your basket there.</p>
           </div>
         </div>
       )}
@@ -396,35 +396,35 @@ function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () 
   const content = (
     <div className={clsx("flex-1 flex items-center gap-3 px-4 py-3 min-w-0", unavailable && "opacity-40")}>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-ink truncate">{item.ingredientName}</p>
+        <p className="text-sm font-medium text-plate-ink truncate">{item.ingredientName}</p>
         {activeProduct ? (
-          <p className="text-xs text-ink-tertiary truncate mt-0.5">{activeProduct.name}</p>
+          <p className="text-xs text-plate-ink-3 truncate mt-0.5">{activeProduct.name}</p>
         ) : (
           <p className="text-xs text-orange-500 mt-0.5">No match found</p>
         )}
         {(item.pantryContribution ?? 0) > 0 && (
-          <p className="text-xs text-emerald-600 mt-0.5">
+          <p className="text-xs text-plate-leaf mt-0.5">
             {item.pantryContribution?.toFixed(1)} {item.unit} from pantry
           </p>
         )}
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-xs text-ink-tertiary">{netQty.toFixed(1)} {item.unit}</p>
+        <p className="text-xs text-plate-ink-3">{netQty.toFixed(1)} {item.unit}</p>
         {activeProduct && (
-          <p className="text-sm font-semibold text-ink">A${activeProduct.price.toFixed(2)}</p>
+          <p className="text-sm font-semibold text-plate-ink">A${activeProduct.price.toFixed(2)}</p>
         )}
       </div>
       {item.substituteApproved === true && (
         <Badge variant="orange" className="ml-1 flex-shrink-0">Sub</Badge>
       )}
-      {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-ink-tertiary/50 flex-shrink-0" />}
+      {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-plate-ink-3/50 flex-shrink-0" />}
     </div>
   );
 
   return (
     <div className="flex items-center divide-x divide-slate-100">
       {searchUrl ? (
-        <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 hover:bg-surface-tertiary/50 transition-colors">
+        <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 hover:bg-plate-surface-tertiary/50 transition-colors">
           {content}
         </a>
       ) : (
@@ -432,11 +432,11 @@ function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () 
       )}
       <button
         onClick={onToggleHave}
-        className="px-4 py-3 flex-shrink-0 flex items-center justify-center hover:bg-surface-tertiary/50 transition-colors"
+        className="px-4 py-3 flex-shrink-0 flex items-center justify-center hover:bg-plate-surface-tertiary/50 transition-colors"
         title={item.markedAsHave ? "Mark as needed" : "I've got this"}
       >
         {item.markedAsHave
-          ? <CheckCircle2 className="w-5 h-5 text-brand-500" />
+          ? <CheckCircle2 className="w-5 h-5 text-plate-ink" />
           : <Circle className="w-5 h-5 text-slate-300" />
         }
       </button>
@@ -449,14 +449,14 @@ function PantryItemRow({ item }: { item: CartItem }) {
   return (
     <div className="px-4 py-3 flex items-center gap-3 opacity-60">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-ink truncate line-through">{item.ingredientName}</p>
-        <p className="text-xs text-emerald-600 mt-0.5">
+        <p className="text-sm font-medium text-plate-ink truncate line-through">{item.ingredientName}</p>
+        <p className="text-xs text-plate-leaf mt-0.5">
           {item.isStaple ? "Kitchen staple" : `${item.pantryContribution?.toFixed(1)} ${item.unit} in pantry`}
         </p>
       </div>
       <div className="text-right flex-shrink-0">
         {product && (
-          <p className="text-sm text-ink-tertiary line-through">A${product.price.toFixed(2)}</p>
+          <p className="text-sm text-plate-ink-3 line-through">A${product.price.toFixed(2)}</p>
         )}
       </div>
     </div>
