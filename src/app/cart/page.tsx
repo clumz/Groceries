@@ -10,7 +10,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings, ExternalLink, Copy, Tag, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings, ExternalLink, Copy, Tag, ArrowUpRight, Circle, CheckCircle2 } from "lucide-react";
 import { clsx } from "clsx";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -38,6 +38,7 @@ export default function CartPage() {
   const switchRetailer = useAppStore((s) => s.switchRetailer);
   const approveSubstitute = useAppStore((s) => s.approveSubstitute);
   const rejectSubstitute = useAppStore((s) => s.rejectSubstitute);
+  const toggleItemHave = useAppStore((s) => s.toggleItemHave);
   const pantryItems = useAppStore((s) => s.pantryItems);
   const stapleIngredients = useAppStore((s) => s.stapleIngredients);
 
@@ -108,10 +109,10 @@ export default function CartPage() {
 
   // Split items: things to buy vs things already covered
   const toBuyItems = currentCart?.items.filter(
-    (i) => !i.isStaple && (i.pantryContribution ?? 0) < i.totalQuantity
+    (i) => !i.isStaple && !i.markedAsHave && (i.pantryContribution ?? 0) < i.totalQuantity
   ) ?? [];
   const alreadyHaveItems = currentCart?.items.filter(
-    (i) => i.isStaple || (i.pantryContribution ?? 0) >= i.totalQuantity
+    (i) => i.isStaple || i.markedAsHave || (i.pantryContribution ?? 0) >= i.totalQuantity
   ) ?? [];
 
   function copyShoppingList() {
@@ -222,6 +223,16 @@ export default function CartPage() {
 
         {!isBuildingCart && currentCart && (
           <>
+            {/* "Got it" hint */}
+            {toBuyItems.length > 0 && (
+              <div className="flex items-center gap-3 bg-surface rounded-2xl border border-slate-200 px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                <p className="text-xs text-ink-secondary">
+                  Tap <span className="font-medium text-ink">○</span> on any item you already have — it'll be removed from your list.
+                </p>
+              </div>
+            )}
+
             {/* Pantry savings banner */}
             {savings > 0 && (
               <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
@@ -286,7 +297,7 @@ export default function CartPage() {
                 </div>
                 <div className="divide-y divide-slate-100">
                   {items.map((item) => (
-                    <CartItemRow key={item.id} item={item} />
+                    <CartItemRow key={item.id} item={item} onToggleHave={() => toggleItemHave(item.id)} />
                   ))}
                 </div>
               </div>
@@ -302,7 +313,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-2">
                     <Leaf className="w-3.5 h-3.5 text-emerald-600" />
                     <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
-                      Already in your kitchen ({alreadyHaveItems.length})
+                      Already have ({alreadyHaveItems.length})
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -376,13 +387,14 @@ function getProductSearchUrl(product: { retailer: string; name: string }): strin
     : `https://www.coles.com.au/search?q=${encoded}`;
 }
 
-function CartItemRow({ item }: { item: CartItem }) {
+function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () => void }) {
   const activeProduct = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
   const netQty = item.totalQuantity - (item.pantryContribution ?? 0);
   const searchUrl = activeProduct ? getProductSearchUrl(activeProduct) : null;
+  const unavailable = item.isUnavailable && item.substituteApproved === false;
 
-  const inner = (
-    <>
+  const content = (
+    <div className={clsx("flex-1 flex items-center gap-3 px-4 py-3 min-w-0", unavailable && "opacity-40")}>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-ink truncate">{item.ingredientName}</p>
         {activeProduct ? (
@@ -405,25 +417,29 @@ function CartItemRow({ item }: { item: CartItem }) {
       {item.substituteApproved === true && (
         <Badge variant="orange" className="ml-1 flex-shrink-0">Sub</Badge>
       )}
-      {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-ink-tertiary/50 flex-shrink-0 ml-1" />}
-    </>
+      {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-ink-tertiary/50 flex-shrink-0" />}
+    </div>
   );
 
-  if (searchUrl) {
-    return (
-      <a
-        href={searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={clsx("px-4 py-3 flex items-center gap-3 hover:bg-surface-tertiary/50 transition-colors", item.isUnavailable && item.substituteApproved === false && "opacity-40")}
-      >
-        {inner}
-      </a>
-    );
-  }
   return (
-    <div className={clsx("px-4 py-3 flex items-center gap-3", item.isUnavailable && item.substituteApproved === false && "opacity-40")}>
-      {inner}
+    <div className="flex items-center divide-x divide-slate-100">
+      {searchUrl ? (
+        <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 hover:bg-surface-tertiary/50 transition-colors">
+          {content}
+        </a>
+      ) : (
+        <div className="flex-1 min-w-0">{content}</div>
+      )}
+      <button
+        onClick={onToggleHave}
+        className="px-4 py-3 flex-shrink-0 flex items-center justify-center hover:bg-surface-tertiary/50 transition-colors"
+        title={item.markedAsHave ? "Mark as needed" : "I've got this"}
+      >
+        {item.markedAsHave
+          ? <CheckCircle2 className="w-5 h-5 text-brand-500" />
+          : <Circle className="w-5 h-5 text-slate-300" />
+        }
+      </button>
     </div>
   );
 }

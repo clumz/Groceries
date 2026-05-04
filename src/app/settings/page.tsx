@@ -7,10 +7,25 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import {
   Sun, Moon, Monitor, ChevronRight, Leaf, User, MapPin,
   Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
-  UtensilsCrossed, ChevronDown, Check
+  UtensilsCrossed, ChevronDown, Check, Flame
 } from "lucide-react";
 import { clsx } from "clsx";
-import type { BudgetRange, CookTimePreference } from "@/types";
+import type { BudgetRange, CookTimePreference, MacroTarget } from "@/types";
+
+const CALORIE_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: "No goal" },
+  { value: 1500, label: "~1,500 kcal — Light" },
+  { value: 1800, label: "~1,800 kcal — Moderate" },
+  { value: 2000, label: "~2,000 kcal — Standard" },
+  { value: 2200, label: "~2,200 kcal — Active" },
+  { value: 2500, label: "~2,500 kcal — Very active" },
+];
+
+const MACRO_OPTIONS: { value: MacroTarget; label: string; splits: string }[] = [
+  { value: "balanced",     label: "Balanced",     splits: "40% carbs · 30% protein · 30% fat" },
+  { value: "high-protein", label: "High protein", splits: "30% carbs · 40% protein · 30% fat" },
+  { value: "low-carb",     label: "Low carb",     splits: "20% carbs · 40% protein · 40% fat" },
+];
 
 const BUDGET_OPTIONS: { value: BudgetRange; label: string; sublabel: string }[] = [
   { value: "under-150", label: "Under A$150", sublabel: "Budget-friendly" },
@@ -105,6 +120,8 @@ export default function SettingsPage() {
 
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false);
   const [cookTimeSheetOpen, setCookTimeSheetOpen] = useState(false);
+  const [calorieSheetOpen, setCalorieSheetOpen] = useState(false);
+  const [macroSheetOpen, setMacroSheetOpen] = useState(false);
   const [locationExpanded, setLocationExpanded] = useState(false);
   const [clearHistorySheet, setClearHistorySheet] = useState(false);
   const [resetSheet, setResetSheet] = useState(false);
@@ -159,6 +176,24 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
+        </SectionCard>
+
+        {/* Nutrition */}
+        <SectionCard title="Nutrition">
+          <SettingsRow
+            icon={<Flame className="w-4 h-4" />}
+            label="Daily calorie goal"
+            value={preferences.calorieGoal ? `${preferences.calorieGoal.toLocaleString()} kcal` : "No goal"}
+            onPress={() => setCalorieSheetOpen(true)}
+          />
+          {preferences.calorieGoal && (
+            <SettingsRow
+              icon={<Flame className="w-4 h-4" />}
+              label="Macro focus"
+              value={preferences.macroTarget === "high-protein" ? "High protein" : preferences.macroTarget === "low-carb" ? "Low carb" : "Balanced"}
+              onPress={() => setMacroSheetOpen(true)}
+            />
+          )}
         </SectionCard>
 
         {/* Meal Planning */}
@@ -399,6 +434,41 @@ export default function SettingsPage() {
               Cancel
             </button>
           </div>
+        </Sheet>
+      )}
+
+      {/* Calorie goal sheet */}
+      {calorieSheetOpen && (
+        <Sheet onClose={() => setCalorieSheetOpen(false)} title="Daily calorie goal">
+          {CALORIE_OPTIONS.map((opt) => (
+            <button
+              key={String(opt.value)}
+              onClick={() => { updatePreferences({ calorieGoal: opt.value }); setCalorieSheetOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
+            >
+              <span className="flex-1 text-sm font-medium text-ink text-left">{opt.label}</span>
+              {(preferences.calorieGoal ?? null) === opt.value && <Check className="w-4 h-4 text-brand-600" />}
+            </button>
+          ))}
+        </Sheet>
+      )}
+
+      {/* Macro focus sheet */}
+      {macroSheetOpen && (
+        <Sheet onClose={() => setMacroSheetOpen(false)} title="Macro focus">
+          {MACRO_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { updatePreferences({ macroTarget: opt.value }); setMacroSheetOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-slate-100 last:border-0 hover:bg-surface-tertiary/60 transition-colors"
+            >
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-ink">{opt.label}</p>
+                <p className="text-xs text-ink-tertiary mt-0.5">{opt.splits}</p>
+              </div>
+              {preferences.macroTarget === opt.value && <Check className="w-4 h-4 text-brand-600" />}
+            </button>
+          ))}
         </Sheet>
       )}
 

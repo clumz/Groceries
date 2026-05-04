@@ -40,7 +40,7 @@ export default function CheckoutPage() {
     ? "https://www.woolworths.com.au/shop/browse/fruit-veg"
     : "https://www.coles.com.au/browse/fruit-vegetables";
   const confirmedItems = currentCart.items.filter(
-    (i) => !i.isStaple && (i.pantryContribution ?? 0) < i.totalQuantity && i.substituteApproved !== false
+    (i) => !i.isStaple && !i.markedAsHave && (i.pantryContribution ?? 0) < i.totalQuantity && i.substituteApproved !== false
   );
   const pantrySavings = estimatePantrySavings(currentCart.items);
 

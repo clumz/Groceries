@@ -40,6 +40,8 @@ export type BudgetRange = "under-150" | "150-250" | "250-350" | "350-plus";
 
 export type CookTimePreference = "under-20" | "20-40" | "40-plus";
 
+export type MacroTarget = "high-protein" | "balanced" | "low-carb";
+
 export interface UserPreferences {
   preferredStore: StorePreference;
   suburb: string;
@@ -53,6 +55,8 @@ export interface UserPreferences {
   cookTimePreference: CookTimePreference;
   includeLunches: boolean;
   includeSnacks: boolean;
+  calorieGoal?: number | null;
+  macroTarget?: MacroTarget | null;
 }
 
 // ─── Feedback & Learning ───────────────────────────────────────────────────────
@@ -190,6 +194,7 @@ export interface CartItem {
   isUnavailable: boolean;
   isStaple?: boolean;
   pantryContribution?: number;
+  markedAsHave?: boolean;
 }
 
 export interface Cart {

@@ -170,6 +170,30 @@ export default function PlanPage() {
                   { cal: 0, protein: 0 }
                 );
                 if (totals.cal === 0) return null;
+                const goal = preferences.calorieGoal;
+                if (goal) {
+                  const pct = Math.min(100, Math.round((totals.cal / goal) * 100));
+                  const over = totals.cal > goal;
+                  const close = pct >= 90;
+                  return (
+                    <div className="mt-1.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-ink-tertiary">
+                          ~{totals.cal.toLocaleString()} / {goal.toLocaleString()} kcal · {totals.protein}g protein
+                        </p>
+                        <p className={clsx("text-xs font-medium", over ? "text-red-500" : close ? "text-amber-500" : "text-brand-600")}>
+                          {over ? `+${(totals.cal - goal).toLocaleString()} over` : `${(goal - totals.cal).toLocaleString()} left`}
+                        </p>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={clsx("h-full rounded-full transition-all", over ? "bg-red-400" : close ? "bg-amber-400" : "bg-brand-500")}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <p className="text-xs text-ink-tertiary mt-0.5">
                     ~{totals.cal.toLocaleString()} kcal · {totals.protein}g protein

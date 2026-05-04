@@ -3,12 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference } from "@/types";
+import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference, MacroTarget } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { clsx } from "clsx";
 import { Check, ChevronRight, ShoppingBag, Clock } from "lucide-react";
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
+
+const CALORIE_OPTIONS: { value: number | null; label: string; sublabel: string }[] = [
+  { value: null,  label: "No goal",       sublabel: "Just plan great meals" },
+  { value: 1500,  label: "~1,500 kcal",   sublabel: "Light" },
+  { value: 1800,  label: "~1,800 kcal",   sublabel: "Moderate" },
+  { value: 2000,  label: "~2,000 kcal",   sublabel: "Standard" },
+  { value: 2200,  label: "~2,200 kcal",   sublabel: "Active" },
+  { value: 2500,  label: "~2,500 kcal",   sublabel: "Very active" },
+];
+
+const MACRO_OPTIONS: { value: MacroTarget; label: string; sublabel: string; splits: string }[] = [
+  { value: "balanced",     label: "Balanced",     sublabel: "Even split",        splits: "40% carbs · 30% protein · 30% fat" },
+  { value: "high-protein", label: "High protein", sublabel: "Build & maintain",  splits: "30% carbs · 40% protein · 30% fat" },
+  { value: "low-carb",     label: "Low carb",     sublabel: "Keto-friendly",     splits: "20% carbs · 40% protein · 40% fat" },
+];
 
 const DIETARY_OPTIONS: { value: DietaryRequirement; label: string }[] = [
   { value: "vegan", label: "Vegan" },
@@ -168,6 +183,8 @@ export default function OnboardingPage() {
   const [cookTime, setCookTime] = useState<CookTimePreference>("20-40");
   const [includeLunches, setIncludeLunches] = useState(false);
   const [includeSnacks, setIncludeSnacks] = useState(true);
+  const [calorieGoal, setCalorieGoal] = useState<number | null>(null);
+  const [macroTarget, setMacroTarget] = useState<MacroTarget>("balanced");
 
   function isValidAustralianPostcode(pc: string): boolean {
     if (pc.length !== 4) return false;
@@ -232,6 +249,8 @@ export default function OnboardingPage() {
       cookTimePreference: cookTime,
       includeLunches,
       includeSnacks,
+      calorieGoal,
+      macroTarget: calorieGoal ? macroTarget : null,
     };
     completeOnboarding(prefs);
 
@@ -261,6 +280,7 @@ export default function OnboardingPage() {
     likedRecipes.length >= 3, // must pick at least 3
     true, // household
     true, // budget + cook time
+    true, // nutrition goals optional
   ][step];
 
   const stepContent = [
@@ -498,6 +518,68 @@ export default function OnboardingPage() {
           ]}
         />
       </div>
+    </div>,
+
+    // Step 7: Nutrition goals
+    <div key="step7" className="animate-slide-up space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-ink mb-1">Nutrition goals</h2>
+        <p className="text-sm text-ink-secondary">Optional — we'll track calories and macros against your target</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-ink mb-3">Daily calorie target</label>
+        <div className="space-y-2">
+          {CALORIE_OPTIONS.map((opt) => (
+            <button
+              key={String(opt.value)}
+              onClick={() => setCalorieGoal(opt.value)}
+              className={clsx(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all duration-150",
+                calorieGoal === opt.value
+                  ? "bg-brand-50 border-brand-400 text-ink"
+                  : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
+              )}
+            >
+              <div className={clsx("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0", calorieGoal === opt.value ? "border-brand-600" : "border-slate-300")}>
+                {calorieGoal === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium">{opt.label}</span>
+                <span className="text-xs text-ink-tertiary ml-2">{opt.sublabel}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {calorieGoal !== null && (
+        <div className="animate-fade-in">
+          <label className="block text-sm font-medium text-ink mb-3">Macro focus</label>
+          <div className="space-y-2">
+            {MACRO_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setMacroTarget(opt.value)}
+                className={clsx(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all duration-150",
+                  macroTarget === opt.value
+                    ? "bg-brand-50 border-brand-400 text-ink"
+                    : "bg-surface border-slate-200 text-ink-secondary hover:border-brand-200"
+                )}
+              >
+                <div className={clsx("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0", macroTarget === opt.value ? "border-brand-600" : "border-slate-300")}>
+                  {macroTarget === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{opt.label} <span className="text-ink-tertiary font-normal">— {opt.sublabel}</span></p>
+                  <p className="text-xs text-ink-tertiary mt-0.5">{opt.splits}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>,
   ];
 

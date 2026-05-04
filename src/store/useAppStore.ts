@@ -41,6 +41,7 @@ interface AppActions {
   rejectSubstitute: (cartItemId: string) => void;
   setOrder: (order: Order) => void;
   clearOrderHistory: () => void;
+  toggleItemHave: (cartItemId: string) => void;
   setTheme: (theme: "light" | "dark" | "system") => void;
   reset: () => void;
   addMealToPlan: (dayIndex: number, mealType: "dinner" | "lunch", recipe: import("@/types").Recipe, servings: number) => void;
@@ -206,6 +207,19 @@ export const useAppStore = create<Store>()(
       },
 
       clearOrderHistory: () => set({ orderHistory: [] }),
+
+  toggleItemHave: (cartItemId) =>
+    set((s) => {
+      if (!s.currentCart) return s;
+      return {
+        currentCart: {
+          ...s.currentCart,
+          items: s.currentCart.items.map((item) =>
+            item.id === cartItemId ? { ...item, markedAsHave: !item.markedAsHave } : item
+          ),
+        },
+      };
+    }),
 
       setTheme: (theme) => set({ theme }),
 
