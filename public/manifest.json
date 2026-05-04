@@ -1,0 +1,14 @@
+{
+  "name": "Plate — Weekly Meal Planner",
+  "short_name": "Plate",
+  "description": "AI-powered weekly meal plans delivered to your supermarket cart.",
+  "start_url": "/plan",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#16a34a",
+  "icons": [
+    { "src": "/icon.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
