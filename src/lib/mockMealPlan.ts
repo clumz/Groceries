@@ -1,4 +1,4 @@
-import type { WeeklyMealPlan, PlannedMeal, SnackItem, UserPreferences, Recipe, CuisinePreference } from "@/types";
+import type { WeeklyMealPlan, PlannedMeal, SnackItem, UserPreferences, Recipe, CuisinePreference, FeedbackHistory, PreferenceEvolution } from "@/types";
 
 // Full recipe library — server-only (not bundled client-side)
 let _recipeLibrary: Recipe[] | null = null;
@@ -918,35 +918,116 @@ const MOCK_SNACKS: SnackItem[] = [
   { id: "snack-5", name: "Greek Yogurt", description: "Breakfast or snack with a drizzle of honey", quantity: 2, unit: "tubs (500g)", estimatedCost: 11.00 },
 ];
 
-export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPlan {
+function scoreRecipe(
+  recipe: Recipe,
+  preferences: UserPreferences,
+  feedbackHistory: FeedbackHistory | undefined,
+  evolution: PreferenceEvolution | undefined
+): number {
+  let score = 0;
+
+  // Preference alignment
+  if (preferences.cuisinePreferences.length > 0 && preferences.cuisinePreferences.includes(recipe.cuisine as CuisinePreference)) {
+    score += 10;
+  }
+  if (
+    preferences.proteinPreferences.length > 0 &&
+    !preferences.proteinPreferences.includes("no-preference") &&
+    recipe.primaryProtein &&
+    preferences.proteinPreferences.includes(recipe.primaryProtein as never)
+  ) {
+    score += 10;
+  }
+
+  // Cook time fit
+  const totalTime = (recipe.cookTimeMinutes ?? 0) + (recipe.prepTimeMinutes ?? 0);
+  const fits =
+    (preferences.cookTimePreference === "under-20" && totalTime <= 20) ||
+    (preferences.cookTimePreference === "20-40" && totalTime > 20 && totalTime <= 40) ||
+    (preferences.cookTimePreference === "40-plus" && totalTime > 40);
+  if (fits) score += 4;
+
+  // Preference evolution signals
+  if (evolution) {
+    if (recipe.cuisine && evolution.favoriteCuisines.includes(recipe.cuisine)) score += 6;
+    if (recipe.primaryProtein && evolution.favoriteProteins.includes(recipe.primaryProtein)) score += 6;
+    if (recipe.cuisine && evolution.reducedCuisines.includes(recipe.cuisine)) score -= 8;
+    if (recipe.primaryProtein && evolution.reducedProteins.includes(recipe.primaryProtein)) score -= 8;
+  }
+
+  // Per-recipe feedback history
+  if (feedbackHistory) {
+    for (const item of feedbackHistory.items) {
+      if (item.recipeId !== recipe.id) continue;
+      if (item.feedback === "thumbs-up") score += 4;
+      else if (item.feedback === "thumbs-down") score -= 10;
+      else if (item.feedback === "swapped") score -= 5;
+    }
+  }
+
+  // Small random jitter so identical scores don't always produce the same order
+  score += (Math.random() - 0.5) * 2;
+
+  return score;
+}
+
+export function generateMockMealPlan(
+  preferences: UserPreferences,
+  feedbackHistory?: FeedbackHistory,
+  evolution?: PreferenceEvolution
+): WeeklyMealPlan {
   const planId = `mock-plan-${Date.now()}`;
   const library = getRecipeLibrary();
 
-  // Filter recipes by dietary requirements, cuisine, and protein preferences
-  let pool = [...library];
+  // Remove recipes the user has permanently excluded
+  const neverShowIds = new Set(
+    (feedbackHistory?.items ?? [])
+      .filter((i) => i.feedback === "never-show")
+      .map((i) => i.recipeId)
+  );
+  let pool = library.filter((r) => !neverShowIds.has(r.id));
 
-  // Cuisine filter first (broadest)
-  if (preferences.cuisinePreferences.length > 0) {
-    const filtered = pool.filter((r) => preferences.cuisinePreferences.includes(r.cuisine as CuisinePreference));
-    if (filtered.length >= 4) pool = filtered;
+  // Dietary hard constraints (always applied, no fallback)
+  if (preferences.dietaryRequirements.includes("vegan") || preferences.dietaryRequirements.includes("vegetarian")) {
+    const dietFiltered = pool.filter((r) => r.tags.includes("vegan") || r.tags.includes("vegetarian") || r.primaryProtein === "tofu");
+    if (dietFiltered.length > 0) pool = dietFiltered;
   }
 
+  // Cuisine filter — apply only if enough recipes remain
+  if (preferences.cuisinePreferences.length > 0) {
+    const cuisineFiltered = pool.filter((r) => preferences.cuisinePreferences.includes(r.cuisine as CuisinePreference));
+    if (cuisineFiltered.length >= 4) pool = cuisineFiltered;
+  }
+
+  // Protein filter — apply only if enough recipes remain
   if (preferences.proteinPreferences.length > 0 && !preferences.proteinPreferences.includes("no-preference")) {
-    const filtered = pool.filter(
+    const proteinFiltered = pool.filter(
       (r) => r.primaryProtein && preferences.proteinPreferences.includes(r.primaryProtein as never)
     );
-    if (filtered.length >= 4) pool = filtered;
+    if (proteinFiltered.length >= 4) pool = proteinFiltered;
   }
 
-  if (preferences.dietaryRequirements.includes("vegan") || preferences.dietaryRequirements.includes("vegetarian")) {
-    pool = pool.filter((r) => r.tags.includes("vegan") || r.tags.includes("vegetarian") || r.primaryProtein === "tofu");
-    if (pool.length === 0) pool = library;
+  // Score every remaining recipe and sort descending
+  const scored = pool
+    .map((r) => ({ recipe: r, score: scoreRecipe(r, preferences, feedbackHistory, evolution) }))
+    .sort((a, b) => b.score - a.score);
+
+  // Pick 7 distinct dinners (no repeats within the week)
+  const usedIds = new Set<string>();
+  function pickNext(offset = 0): Recipe {
+    for (let i = offset; i < scored.length; i++) {
+      if (!usedIds.has(scored[i].recipe.id)) {
+        usedIds.add(scored[i].recipe.id);
+        return scored[i].recipe;
+      }
+    }
+    // Fallback: allow repeats if pool is too small
+    const r = scored[offset % scored.length].recipe;
+    return r;
   }
 
-  // Shuffle pool for variety then pick 7 distinct dinners
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const dinners: PlannedMeal[] = Array.from({ length: 7 }, (_, i) => {
-    const recipe = shuffled[i % shuffled.length];
+    const recipe = pickNext();
     return {
       id: `meal-${planId}-${i}`,
       dayIndex: i,
@@ -956,10 +1037,10 @@ export function generateMockMealPlan(preferences: UserPreferences): WeeklyMealPl
     };
   });
 
-  // Pick 5 lunches if requested (simpler versions)
+  // Pick 5 lunches from lower-scoring recipes (avoid re-using dinner recipes when possible)
   const lunches: PlannedMeal[] = preferences.includeLunches
     ? Array.from({ length: 5 }, (_, i) => {
-        const recipe = shuffled[(i + 3) % shuffled.length];
+        const recipe = pickNext(i);
         return {
           id: `lunch-${planId}-${i}`,
           dayIndex: i,

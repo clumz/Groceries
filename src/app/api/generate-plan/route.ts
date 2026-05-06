@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // Fall back to mock data if no API key is configured
     if (!process.env.ANTHROPIC_API_KEY) {
-      const mealPlan = generateMockMealPlan(preferences);
+      const mealPlan = generateMockMealPlan(preferences, feedbackHistory, preferenceEvolution);
       return NextResponse.json({ mealPlan, mock: true });
     }
 

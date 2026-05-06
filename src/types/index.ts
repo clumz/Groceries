@@ -65,7 +65,7 @@ export interface UserPreferences {
 
 // ─── Feedback & Learning ───────────────────────────────────────────────────────
 
-export type FeedbackType = "thumbs-up" | "thumbs-down" | "never-show";
+export type FeedbackType = "thumbs-up" | "thumbs-down" | "never-show" | "swapped";
 
 export interface RecipeFeedback {
   recipeId: string;

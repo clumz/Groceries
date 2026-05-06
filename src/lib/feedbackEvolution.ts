@@ -1,45 +1,64 @@
-import type { FeedbackHistory, PreferenceEvolution, UserPreferences } from "@/types";
+import type { FeedbackHistory, PreferenceEvolution } from "@/types";
 
-const REDUCE_THRESHOLD = 3;
-const BOOST_THRESHOLD = 3;
+const REDUCE_THRESHOLD = 2;
+const BOOST_THRESHOLD = 2;
+
+const DAY_MS = 86_400_000;
+
+function computeRecencyWeight(timestamp: number): number {
+  const ageDays = (Date.now() - timestamp) / DAY_MS;
+  if (ageDays <= 14) return 2.0;
+  if (ageDays <= 60) return 1.0;
+  return 0.5;
+}
+
+// Weight for each feedback type: swapped = soft negative (0.5), thumbs-down/never-show = full negative (1.0)
+function negativeWeight(feedback: string): number {
+  if (feedback === "swapped") return 0.5;
+  return 1.0;
+}
 
 export function computePreferenceEvolution(history: FeedbackHistory): PreferenceEvolution {
-  const proteinDownCount: Record<string, number> = {};
-  const cuisineDownCount: Record<string, number> = {};
-  const proteinUpCount: Record<string, number> = {};
-  const cuisineUpCount: Record<string, number> = {};
+  const proteinDownScore: Record<string, number> = {};
+  const cuisineDownScore: Record<string, number> = {};
+  const proteinUpScore: Record<string, number> = {};
+  const cuisineUpScore: Record<string, number> = {};
 
   for (const item of history.items) {
-    if (item.feedback === "thumbs-down" || item.feedback === "never-show") {
+    const recency = computeRecencyWeight(item.timestamp);
+
+    if (item.feedback === "thumbs-down" || item.feedback === "never-show" || item.feedback === "swapped") {
+      const w = recency * negativeWeight(item.feedback);
       if (item.primaryProtein) {
-        proteinDownCount[item.primaryProtein] = (proteinDownCount[item.primaryProtein] ?? 0) + 1;
+        proteinDownScore[item.primaryProtein] = (proteinDownScore[item.primaryProtein] ?? 0) + w;
       }
       if (item.cuisineType) {
-        cuisineDownCount[item.cuisineType] = (cuisineDownCount[item.cuisineType] ?? 0) + 1;
+        cuisineDownScore[item.cuisineType] = (cuisineDownScore[item.cuisineType] ?? 0) + w;
       }
     }
+
     if (item.feedback === "thumbs-up") {
       if (item.primaryProtein) {
-        proteinUpCount[item.primaryProtein] = (proteinUpCount[item.primaryProtein] ?? 0) + 1;
+        proteinUpScore[item.primaryProtein] = (proteinUpScore[item.primaryProtein] ?? 0) + recency;
       }
       if (item.cuisineType) {
-        cuisineUpCount[item.cuisineType] = (cuisineUpCount[item.cuisineType] ?? 0) + 1;
+        cuisineUpScore[item.cuisineType] = (cuisineUpScore[item.cuisineType] ?? 0) + recency;
       }
     }
   }
 
   return {
-    reducedProteins: Object.entries(proteinDownCount)
-      .filter(([, count]) => count >= REDUCE_THRESHOLD)
+    reducedProteins: Object.entries(proteinDownScore)
+      .filter(([, score]) => score >= REDUCE_THRESHOLD)
       .map(([protein]) => protein),
-    reducedCuisines: Object.entries(cuisineDownCount)
-      .filter(([, count]) => count >= REDUCE_THRESHOLD)
+    reducedCuisines: Object.entries(cuisineDownScore)
+      .filter(([, score]) => score >= REDUCE_THRESHOLD)
       .map(([cuisine]) => cuisine),
-    favoriteCuisines: Object.entries(cuisineUpCount)
-      .filter(([, count]) => count >= BOOST_THRESHOLD)
+    favoriteCuisines: Object.entries(cuisineUpScore)
+      .filter(([, score]) => score >= BOOST_THRESHOLD)
       .map(([cuisine]) => cuisine),
-    favoriteProteins: Object.entries(proteinUpCount)
-      .filter(([, count]) => count >= BOOST_THRESHOLD)
+    favoriteProteins: Object.entries(proteinUpScore)
+      .filter(([, score]) => score >= BOOST_THRESHOLD)
       .map(([protein]) => protein),
   };
 }
@@ -50,41 +69,43 @@ export function buildFeedbackContext(
 ): string {
   const lines: string[] = [];
 
-  const neverShow = history.items.filter((i) => i.feedback === "never-show").map((i) => i.recipeName);
+  const neverShow = history.items
+    .filter((i) => i.feedback === "never-show")
+    .map((i) => i.recipeName);
   if (neverShow.length > 0) {
-    lines.push(`NEVER suggest these recipes again: ${neverShow.join(", ")}.`);
+    lines.push(`EXCLUDED — never suggest these recipes: ${neverShow.join(", ")}.`);
   }
 
-  const dislikedRecipes = history.items
-    .filter((i) => i.feedback === "thumbs-down")
+  const softAvoid = history.items
+    .filter((i) => i.feedback === "thumbs-down" || i.feedback === "swapped")
     .slice(-10)
     .map((i) => i.recipeName);
-  if (dislikedRecipes.length > 0) {
-    lines.push(`The user disliked these recently: ${dislikedRecipes.join(", ")}. Avoid similar dishes.`);
+  if (softAvoid.length > 0) {
+    lines.push(`SOFT AVOID — user disliked or swapped out: ${softAvoid.join(", ")}. Do not repeat these; avoid very similar dishes.`);
   }
 
-  const likedRecipes = history.items
+  const recentLikes = history.items
     .filter((i) => i.feedback === "thumbs-up")
-    .slice(-10)
+    .slice(-5)
     .map((i) => i.recipeName);
-  if (likedRecipes.length > 0) {
-    lines.push(`The user enjoyed these recently: ${likedRecipes.join(", ")}. Suggest similar dishes.`);
-  }
-
-  if (evolution.reducedProteins.length > 0) {
-    lines.push(`Significantly reduce frequency of: ${evolution.reducedProteins.join(", ")} dishes.`);
+  if (recentLikes.length > 0) {
+    lines.push(`RECENT FAVOURITES — suggest dishes similar to: ${recentLikes.join(", ")}.`);
   }
 
   if (evolution.reducedCuisines.length > 0) {
-    lines.push(`Avoid or minimise these cuisines: ${evolution.reducedCuisines.join(", ")}.`);
+    lines.push(`REDUCED CUISINES — minimise or avoid: ${evolution.reducedCuisines.join(", ")}.`);
+  }
+
+  if (evolution.reducedProteins.length > 0) {
+    lines.push(`REDUCED PROTEINS — minimise or avoid: ${evolution.reducedProteins.join(", ")}.`);
   }
 
   if (evolution.favoriteCuisines.length > 0) {
-    lines.push(`Prioritise these favourite cuisines: ${evolution.favoriteCuisines.join(", ")}.`);
+    lines.push(`FAVOURITE CUISINES — PRIORITISE heavily: ${evolution.favoriteCuisines.join(", ")}.`);
   }
 
   if (evolution.favoriteProteins.length > 0) {
-    lines.push(`The user loves dishes featuring: ${evolution.favoriteProteins.join(", ")}.`);
+    lines.push(`FAVOURITE PROTEINS — PRIORITISE heavily: ${evolution.favoriteProteins.join(", ")}.`);
   }
 
   return lines.join("\n");

@@ -41,6 +41,7 @@ interface SwapSheetProps {
 
 export function SwapSheet({ meal, onClose }: SwapSheetProps) {
   const swapMeal = useAppStore((s) => s.swapMeal);
+  const addFeedback = useAppStore((s) => s.addFeedback);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +87,15 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
       recipe: { ...recipe, servings: meal.servings },
       servings: meal.servings,
     };
+    // Record the replaced recipe as a soft negative signal
+    addFeedback({
+      recipeId: meal.recipe.id,
+      recipeName: meal.recipe.name,
+      feedback: "swapped",
+      timestamp: Date.now(),
+      cuisineType: meal.recipe.cuisine,
+      primaryProtein: meal.recipe.primaryProtein,
+    });
     swapMeal(meal.id, newMeal);
     onClose();
   }
