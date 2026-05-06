@@ -140,147 +140,163 @@ export default function CartPage() {
 
   if (!currentMealPlan) {
     return (
-      <div className="min-h-screen pb-24 flex flex-col items-center justify-center gap-4 px-5">
-        <ShoppingCart className="w-12 h-12 text-plate-ink-3" />
-        <p className="text-plate-ink-2 text-center">Generate a meal plan first to build your cart</p>
-        <Button onClick={() => router.push("/plan")}>Go to Plan</Button>
+      <div style={{ minHeight: "100vh", background: "#FFF8EE", paddingBottom: 110, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 20px" }}>
+        <ShoppingCart size={48} color="#9C9087" />
+        <p style={{ color: "#5C5249", textAlign: "center", fontSize: 15 }}>Generate a meal plan first to build your cart</p>
+        <Button variant="lime" onClick={() => router.push("/plan")}>Go to Plan</Button>
         <BottomNav />
       </div>
     );
   }
 
+  const storeName = preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles";
+
   return (
-    <div className="min-h-screen bg-plate-bg pb-36">
-      {/* Header */}
-      <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-plate-ink">Your Cart</h1>
-          <div className="flex items-center gap-2">
-            {/* Store selector */}
-            <div className="flex rounded-xl overflow-hidden border border-plate-line text-xs font-medium">
-              {(["woolworths", "coles"] as const).map((store) => (
-                <button
-                  key={store}
-                  onClick={() => { switchRetailer(store); buildCart(); }}
-                  className={clsx(
-                    "px-3 py-1.5 capitalize transition-colors",
-                    preferences?.preferredStore === store
-                      ? store === "woolworths" ? "bg-plate-leaf text-white" : "bg-plate-coral-deep text-white"
-                      : "text-plate-ink-2 hover:bg-plate-surface-tertiary"
-                  )}
-                >
-                  {store === "woolworths" ? "Woolies" : "Coles"}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={buildCart}
-              disabled={isBuildingCart}
-              className="w-8 h-8 flex items-center justify-center rounded-xl bg-plate-surface-tertiary text-plate-ink-2 hover:bg-slate-200 disabled:opacity-50"
-            >
-              <RefreshCw className={clsx("w-3.5 h-3.5", isBuildingCart && "animate-spin")} />
-            </button>
-          </div>
+    <div style={{ minHeight: "100vh", background: "#FFF8EE", paddingBottom: 160 }}>
+      {/* TopBar */}
+      <div style={{ padding: "54px 20px 14px 20px" }}>
+        <div className="eyebrow" style={{ marginBottom: 4 }}>
+          {toBuyItems.length} items · {currentMealPlan.meals.length} meals
         </div>
-        {currentCart && (
-          <p className="text-xs text-plate-ink-3 mt-1">
-            {toBuyItems.length} items to buy · {currentMealPlan.meals.length} meals
-          </p>
-        )}
-        {/* Price comparison banner */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32, letterSpacing: "-0.03em", lineHeight: 1, margin: 0 }}>
+            Weekly cart
+          </h1>
+          <button
+            onClick={buildCart}
+            disabled={isBuildingCart}
+            style={{
+              width: 44, height: 44, borderRadius: 999,
+              border: "1.5px solid #1A1410", background: "#FFFFFF",
+              color: "#1A1410", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0 #1A1410", cursor: "pointer",
+              opacity: isBuildingCart ? 0.5 : 1,
+            }}
+          >
+            <RefreshCw size={16} style={{ animation: isBuildingCart ? "spin 1s linear infinite" : "none" }} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Store toggle */}
+        <div style={{ display: "flex", padding: 4, background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 999, boxShadow: "2px 2px 0 #1A1410" }}>
+          {(["woolworths", "coles"] as const).map((store) => {
+            const active = preferences?.preferredStore === store;
+            return (
+              <button
+                key={store}
+                onClick={() => { switchRetailer(store); buildCart(); }}
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: 999, cursor: "pointer", textAlign: "center",
+                  background: active ? "#1A1410" : "transparent",
+                  color: active ? "#FFF8EE" : "#1A1410",
+                  border: "none", transition: "all 0.12s",
+                }}
+              >
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>
+                  {store === "woolworths" ? "Woolworths" : "Coles"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Price comparison — sticker card */}
         {priceComparison && currentCart && (
-          <div className={clsx(
-            "mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium",
-            priceComparison.cheaperStore === currentCart.retailer
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-amber-50 text-amber-700"
-          )}>
-            <Tag className="w-3.5 h-3.5 flex-shrink-0" />
-            {priceComparison.cheaperStore === currentCart.retailer ? (
-              <span>Already at the cheaper store — saving A${priceComparison.savings.toFixed(2)} vs {currentCart.retailer === "woolworths" ? "Coles" : "Woolworths"}</span>
-            ) : (
-              <>
-                <span className="flex-1">Switch to {priceComparison.cheaperStore === "woolworths" ? "Woolies" : "Coles"} and save A${priceComparison.savings.toFixed(2)}</span>
-                <button
-                  onClick={() => { switchRetailer(priceComparison.cheaperStore); buildCart(); }}
-                  className="flex-shrink-0 font-semibold underline"
-                >
-                  Switch
-                </button>
-              </>
+          <div style={{
+            padding: "12px 14px", borderRadius: 18,
+            background: priceComparison.cheaperStore === currentCart.retailer ? "#C8FF3E" : "#FFD66B",
+            border: "1.5px solid #1A1410", boxShadow: "2px 2px 0 #1A1410",
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <Tag size={14} />
+            <div style={{ flex: 1, fontSize: 13, lineHeight: 1.3 }}>
+              {priceComparison.cheaperStore === currentCart.retailer ? (
+                <span><strong style={{ fontFamily: "var(--font-display)" }}>You're at the cheapest store</strong> — saving A${priceComparison.savings.toFixed(2)} vs the alternative</span>
+              ) : (
+                <span>Switch to <strong style={{ fontFamily: "var(--font-display)" }}>{priceComparison.cheaperStore === "woolworths" ? "Woolworths" : "Coles"}</strong> and save A${priceComparison.savings.toFixed(2)}</span>
+              )}
+            </div>
+            {priceComparison.cheaperStore !== currentCart.retailer && (
+              <button
+                onClick={() => { switchRetailer(priceComparison.cheaperStore); buildCart(); }}
+                style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12, background: "#1A1410", color: "#FFF8EE", border: "none", borderRadius: 999, padding: "6px 12px", cursor: "pointer" }}
+              >
+                Switch
+              </button>
             )}
           </div>
         )}
-      </div>
 
-      <div className="px-4 py-4 space-y-3">
+        {/* Pantry savings — sticker card */}
+        {savings > 0 && (
+          <div style={{
+            padding: "12px 14px", borderRadius: 18, background: "#C8FF3E",
+            border: "1.5px solid #1A1410", boxShadow: "2px 2px 0 #1A1410",
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <Leaf size={14} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>
+                Saved A${savings.toFixed(2)} from pantry
+              </div>
+              <div style={{ fontSize: 11, color: "#5C5249", marginTop: 2 }}>
+                {alreadyHaveItems.length} item{alreadyHaveItems.length !== 1 ? "s" : ""} already covered
+              </div>
+            </div>
+            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#1A1410" }}>
+              <Settings size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* "Got it" hint */}
+        {!isBuildingCart && currentCart && toBuyItems.length > 0 && (
+          <div style={{ padding: "10px 14px", borderRadius: 16, background: "#FFFFFF", border: "1px solid #EDE4D5", display: "flex", alignItems: "center", gap: 10 }}>
+            <CheckCircle2 size={14} color="#9C9087" />
+            <p style={{ fontSize: 12, color: "#5C5249", margin: 0, lineHeight: 1.4 }}>
+              Tap <strong>○</strong> on any item you already have to remove it from your list.
+            </p>
+          </div>
+        )}
+
         {isBuildingCart && (
-          <div className="flex flex-col items-center py-16 gap-3">
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", gap: 12 }}>
             <LoadingSpinner size="lg" />
-            <p className="text-sm text-plate-ink-2">Building your cart…</p>
+            <p style={{ fontSize: 14, color: "#5C5249" }}>Building your cart…</p>
           </div>
         )}
 
         {!isBuildingCart && currentCart && (
           <>
-            {/* "Got it" hint */}
-            {toBuyItems.length > 0 && (
-              <div className="flex items-center gap-3 bg-plate-surface rounded-2xl border border-plate-line px-4 py-3">
-                <CheckCircle2 className="w-4 h-4 text-plate-ink flex-shrink-0" />
-                <p className="text-xs text-plate-ink-2">
-                  Tap <span className="font-medium text-plate-ink">○</span> on any item you already have — it'll be removed from your list.
-                </p>
-              </div>
-            )}
-
-            {/* Pantry savings banner */}
-            {savings > 0 && (
-              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
-                <Leaf className="w-4 h-4 text-plate-leaf flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-emerald-800">
-                    Saved A${savings.toFixed(2)} using your pantry
-                  </p>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    {alreadyHaveItems.length} ingredient{alreadyHaveItems.length !== 1 ? "s" : ""} covered by staples or carry-forward stock
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push("/settings")}
-                  className="flex-shrink-0"
-                >
-                  <Settings className="w-4 h-4 text-plate-leaf" />
-                </button>
-              </div>
-            )}
-
             {/* Substitution alerts */}
             {unavailableItems.filter((i) => i.substituteApproved === undefined).map((item) => (
-              <div key={item.id} className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
-                <div className="flex items-start gap-2.5 mb-3">
-                  <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <div key={item.id} style={{ padding: 16, borderRadius: 18, background: "#FFD66B", border: "1.5px solid #1A1410", boxShadow: "2px 2px 0 #1A1410" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+                  <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
                   <div>
-                    <p className="text-sm font-semibold text-orange-900">{item.matchedProduct?.name} is unavailable</p>
+                    <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, margin: 0 }}>{item.matchedProduct?.name} is unavailable</p>
                     {item.substitute && (
-                      <p className="text-xs text-orange-700 mt-0.5">
-                        Suggested substitute: <strong>{item.substitute.name}</strong> (A${item.substitute.price.toFixed(2)})
+                      <p style={{ fontSize: 12, color: "#5C5249", marginTop: 4 }}>
+                        Substitute: <strong>{item.substitute.name}</strong> (A${item.substitute.price.toFixed(2)})
                       </p>
                     )}
                   </div>
                 </div>
                 {item.substitute && (
-                  <div className="flex gap-2">
+                  <div style={{ display: "flex", gap: 8 }}>
                     <button
                       onClick={() => approveSubstitute(item.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-orange-600 text-white text-xs font-medium"
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", borderRadius: 12, background: "#1A1410", color: "#FFF8EE", border: "none", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
                     >
-                      <Check className="w-3.5 h-3.5" /> Accept substitute
+                      <Check size={12} /> Accept
                     </button>
                     <button
                       onClick={() => rejectSubstitute(item.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-orange-100 text-orange-800 text-xs font-medium"
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", borderRadius: 12, background: "rgba(0,0,0,0.08)", color: "#1A1410", border: "none", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
                     >
-                      <X className="w-3.5 h-3.5" /> Remove item
+                      <X size={12} /> Remove
                     </button>
                   </div>
                 )}
@@ -289,15 +305,14 @@ export default function CartPage() {
 
             {/* Cart items by category */}
             {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category} className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
-                <div className="px-4 py-3 border-b border-plate-line">
-                  <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">
-                    {CATEGORY_LABELS[category] ?? category}
-                  </p>
+              <div key={category}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8, padding: "0 4px" }}>
+                  <span className="eyebrow">{CATEGORY_LABELS[category] ?? category}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9C9087" }}>{items.length} items</span>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {items.map((item) => (
-                    <CartItemRow key={item.id} item={item} onToggleHave={() => toggleItemHave(item.id)} />
+                <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #EDE4D5", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 28px -12px rgba(26,20,16,0.12)" }}>
+                  {items.map((item, idx) => (
+                    <CartItemRow key={item.id} item={item} onToggleHave={() => toggleItemHave(item.id)} last={idx === items.length - 1} />
                   ))}
                 </div>
               </div>
@@ -305,29 +320,22 @@ export default function CartPage() {
 
             {/* Already have section */}
             {alreadyHaveItems.length > 0 && (
-              <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
+              <div>
                 <button
                   onClick={() => setPantryExpanded((v) => !v)}
-                  className="w-full px-4 py-3 flex items-center justify-between"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "8px 4px", background: "none", border: "none", cursor: "pointer" }}
                 >
-                  <div className="flex items-center gap-2">
-                    <Leaf className="w-3.5 h-3.5 text-plate-leaf" />
-                    <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
-                      Already have ({alreadyHaveItems.length})
-                    </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <Leaf size={12} color="#2D5A3D" />
+                    <span className="eyebrow" style={{ color: "#2D5A3D" }}>Already have ({alreadyHaveItems.length})</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); router.push("/settings"); }}
-                      className="text-xs text-plate-ink-3 hover:text-plate-coral"
-                    >
-                      Edit
-                    </button>
-                    <ChevronDown className={clsx("w-4 h-4 text-plate-ink-3 transition-transform", pantryExpanded && "rotate-180")} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 600, color: "#FF6B4A", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); router.push("/settings"); }}>Edit pantry</span>
+                    <ChevronDown size={14} color="#9C9087" style={{ transform: pantryExpanded ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                   </div>
                 </button>
                 {pantryExpanded && (
-                  <div className="divide-y divide-slate-100 border-t border-plate-line">
+                  <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #EDE4D5", overflow: "hidden" }}>
                     {alreadyHaveItems.map((item) => (
                       <PantryItemRow key={item.id} item={item} />
                     ))}
@@ -339,37 +347,42 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* Checkout footer */}
+      {/* Checkout footer — dark ink card */}
       {currentCart && !isBuildingCart && (
-        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-10">
-          <div className="bg-plate-surface rounded-3xl shadow-elevated px-5 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-plate-ink-2">Estimated total</span>
-              <div className="text-right">
+        <div style={{ position: "fixed", bottom: 82, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "0 16px", zIndex: 10 }}>
+          <div style={{ background: "#1A1410", borderRadius: 22, border: "1.5px solid #1A1410", padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+              <div>
+                <div className="eyebrow" style={{ color: "rgba(255,248,238,0.55)" }}>Total · {toBuyItems.length} items</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 28, color: "#FFF8EE", letterSpacing: "-0.02em", lineHeight: 1, marginTop: 2 }}>
+                  A${currentCart.estimatedTotal.toFixed(2)}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {savings > 0 && (
-                  <p className="text-xs text-plate-leaf font-medium">A${savings.toFixed(2)} saved</p>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 11, background: "#C8FF3E", color: "#1A1410", padding: "4px 10px", borderRadius: 999, border: "1.5px solid rgba(255,248,238,0.3)" }}>
+                    A${savings.toFixed(2)} saved
+                  </span>
                 )}
-                <span className="text-xl font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
+                <button
+                  onClick={copyShoppingList}
+                  style={{ width: 36, height: 36, borderRadius: 999, background: "rgba(255,248,238,0.12)", border: "1.5px solid rgba(255,248,238,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                >
+                  {copied ? <Check size={14} color="#C8FF3E" /> : <Copy size={14} color="rgba(255,248,238,0.7)" />}
+                </button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={copyShoppingList}
-                className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors flex-shrink-0"
-              >
-                {copied ? <Check className="w-4 h-4 text-plate-leaf" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <Button
-                fullWidth
-                size="xl"
-                onClick={() => router.push("/checkout")}
-              >
-                Shop at {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"}
-                <ArrowUpRight className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-plate-ink-3 text-center mt-2">We'll open your items on {preferences?.preferredStore === "woolworths" ? "Woolworths" : "Coles"} — add them to your basket there.</p>
+            <button
+              onClick={() => router.push("/checkout")}
+              style={{
+                width: "100%", height: 52, borderRadius: 999,
+                background: "#C8FF3E", border: "none", cursor: "pointer",
+                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "#1A1410",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              Checkout with {storeName} <ArrowUpRight size={16} />
+            </button>
           </div>
         </div>
       )}
@@ -387,7 +400,7 @@ function getProductSearchUrl(product: { retailer: string; name: string }): strin
     : `https://www.coles.com.au/search?q=${encoded}`;
 }
 
-function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () => void }) {
+function CartItemRow({ item, onToggleHave, last }: { item: CartItem; onToggleHave: () => void; last?: boolean }) {
   const activeProduct = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
   const netQty = item.totalQuantity - (item.pantryContribution ?? 0);
   const searchUrl = activeProduct ? getProductSearchUrl(activeProduct) : null;

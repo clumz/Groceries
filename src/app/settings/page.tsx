@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
-  Sun, Moon, Monitor, ChevronRight, Leaf, User, MapPin,
+  ChevronRight, Leaf, User, MapPin,
   Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
-  UtensilsCrossed, ChevronDown, Check, Flame
+  UtensilsCrossed, ChevronDown, Check, Flame, X
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { BudgetRange, CookTimePreference } from "@/types";
@@ -55,66 +55,51 @@ const COOK_TIME_LABELS: Record<CookTimePreference, string> = {
   "40-plus": "40+ min",
 };
 
+const DIETARY_LABELS: Record<string, string> = {
+  vegetarian: "Vegetarian",
+  vegan: "Vegan",
+  "gluten-free": "Gluten-Free",
+  "dairy-free": "Dairy-Free",
+  "nut-free": "Nut-Free",
+  halal: "Halal",
+  kosher: "Kosher",
+  paleo: "Paleo",
+  keto: "Keto",
+};
+
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={clsx("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", checked ? "bg-plate-lime" : "bg-slate-200")}
+      style={{
+        width: 48,
+        height: 28,
+        borderRadius: 999,
+        border: "1.5px solid #1A1410",
+        background: checked ? "#C8FF3E" : "#F1EDE6",
+        position: "relative",
+        flexShrink: 0,
+        transition: "background 0.15s",
+      }}
     >
-      <div className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-plate-surface shadow transition-all duration-150", checked ? "left-[calc(100%-1.375rem)]" : "left-0.5")} />
+      <div
+        style={{
+          position: "absolute",
+          top: 3,
+          width: 18,
+          height: 18,
+          borderRadius: "50%",
+          background: "#1A1410",
+          transition: "left 0.15s",
+          left: checked ? "calc(100% - 21px)" : 3,
+        }}
+      />
     </button>
-  );
-}
-
-function SettingsRow({
-  icon, label, value, onPress, danger, rightEl,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  danger?: boolean;
-  rightEl?: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onPress}
-      disabled={!onPress && !rightEl}
-      className={clsx(
-        "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
-        onPress ? "hover:bg-plate-surface-tertiary/60 active:bg-plate-surface-tertiary" : "cursor-default",
-        danger ? "text-red-500" : "text-plate-ink"
-      )}
-    >
-      <span className={clsx("flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center", danger ? "bg-red-50 text-red-500" : "bg-plate-surface-tertiary text-plate-ink-secondary")}>
-        {icon}
-      </span>
-      <span className={clsx("flex-1 text-sm font-medium", danger ? "text-red-500" : "text-plate-ink")}>{label}</span>
-      {rightEl ?? (
-        value !== undefined ? (
-          <span className="text-xs text-plate-ink-tertiary mr-1">{value}</span>
-        ) : null
-      )}
-      {onPress && <ChevronRight className={clsx("w-4 h-4 flex-shrink-0", danger ? "text-red-400" : "text-plate-ink-tertiary")} />}
-    </button>
-  );
-}
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold text-plate-ink-tertiary uppercase tracking-wider mb-2 px-1">{title}</p>
-      <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card divide-y divide-slate-100">
-        {children}
-      </div>
-    </div>
   );
 }
 
 export default function SettingsPage() {
   const router = useRouter();
-  const theme = useAppStore((s) => s.theme);
-  const setTheme = useAppStore((s) => s.setTheme);
   const preferences = useAppStore((s) => s.preferences);
   const updatePreferences = useAppStore((s) => s.updatePreferences);
   const clearOrderHistory = useAppStore((s) => s.clearOrderHistory);
@@ -145,52 +130,145 @@ export default function SettingsPage() {
 
   if (!preferences) return null;
 
+  const initials = preferences.suburb
+    ? preferences.suburb.slice(0, 2).toUpperCase()
+    : "ME";
+
   return (
-    <div className="min-h-screen bg-plate-bg pb-24">
+    <div style={{ minHeight: "100svh", background: "#FFF8EE", paddingBottom: 120 }}>
       {/* Header */}
-      <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
-        <h1 className="text-2xl font-bold text-plate-ink" style={{ fontFamily: "var(--font-display)" }}>Settings</h1>
+      <div style={{ padding: "56px 20px 20px" }}>
+        <p className="eyebrow" style={{ color: "#FF6B4A", marginBottom: 4 }}>PREFERENCES</p>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32, color: "#1A1410", lineHeight: 1.1 }}>
+          Settings
+        </h1>
       </div>
 
-      <div className="px-4 py-4 space-y-5">
+      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 12 }}>
 
-        {/* Appearance */}
-        <SectionCard title="Appearance">
-          <div className="px-4 py-4">
-            <p className="text-xs font-semibold text-plate-ink-tertiary uppercase tracking-wider mb-3">Theme</p>
-            <div className="flex gap-2">
-              {([
-                { value: "light", icon: <Sun className="w-4 h-4" />, label: "Light" },
-                { value: "dark", icon: <Moon className="w-4 h-4" />, label: "Dark" },
-                { value: "system", icon: <Monitor className="w-4 h-4" />, label: "System" },
-              ] as const).map(({ value, icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  className={clsx(
-                    "flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 text-xs font-medium transition-all",
-                    theme === value
-                      ? "border-plate-ink bg-plate-lime/20 text-plate-ink"
-                      : "border-plate-line text-plate-ink-secondary hover:border-slate-300"
-                  )}
-                >
-                  {icon}
-                  {label}
-                </button>
+        {/* Profile card — lime sticker */}
+        <div style={{
+          background: "#C8FF3E",
+          border: "1.5px solid #1A1410",
+          borderRadius: 22,
+          boxShadow: "3px 3px 0 #1A1410",
+          padding: "16px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+        }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "#1A1410",
+            border: "1.5px solid #1A1410",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: "#C8FF3E" }}>
+              {initials}
+            </span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "#1A1410" }}>
+              {preferences.suburb || "Your location"}
+            </p>
+            <p style={{ fontSize: 13, color: "#1A1410", opacity: 0.7, marginTop: 2 }}>
+              {preferences.defaultServings} {preferences.defaultServings === 1 ? "person" : "people"} · {COOK_TIME_LABELS[preferences.cookTimePreference]}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/profile")}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "#1A1410",
+              border: "1.5px solid #1A1410",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <ChevronRight size={16} color="#C8FF3E" />
+          </button>
+        </div>
+
+        {/* Dietary chips */}
+        {(preferences.dietaryRequirements.length > 0 || preferences.cuisinePreferences.length > 0) && (
+          <div style={{
+            background: "#FFFFFF",
+            border: "1.5px solid #1A1410",
+            borderRadius: 22,
+            boxShadow: "3px 3px 0 #1A1410",
+            padding: "14px 16px",
+          }}>
+            <p className="eyebrow" style={{ color: "#1A1410", opacity: 0.5, marginBottom: 10 }}>TASTE PROFILE</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {preferences.dietaryRequirements.map((d) => (
+                <span key={d} style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#1A1410",
+                  background: "#FFD66B",
+                  border: "1.5px solid #1A1410",
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  boxShadow: "2px 2px 0 #1A1410",
+                }}>
+                  {DIETARY_LABELS[d] ?? d}
+                </span>
+              ))}
+              {preferences.cuisinePreferences.map((c) => (
+                <span key={c} style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#1A1410",
+                  background: "#FFFFFF",
+                  border: "1.5px solid #1A1410",
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  boxShadow: "2px 2px 0 #1A1410",
+                  textTransform: "capitalize",
+                }}>
+                  {c}
+                </span>
               ))}
             </div>
+            <button
+              onClick={() => router.push("/profile")}
+              style={{
+                marginTop: 12,
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#FF6B4A",
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Edit taste profile →
+            </button>
           </div>
-        </SectionCard>
+        )}
 
-        {/* Nutrition */}
-        <SectionCard title="Nutrition">
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-              <Flame className="w-4 h-4" />
-            </span>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-plate-ink">Track calories &amp; macros</p>
-              <p className="text-xs text-plate-ink-tertiary mt-0.5">See daily progress on your plan</p>
+        {/* Nutrition card */}
+        <StickerCard label="NUTRITION">
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Flame size={16} color="#FF6B4A" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Track calories &amp; macros</p>
+              <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginTop: 2 }}>Daily progress on your plan</p>
             </div>
             <Toggle
               checked={!!preferences.calorieGoal}
@@ -202,15 +280,17 @@ export default function SettingsPage() {
                 }
               }}
             />
-          </div>
+          </RowItem>
 
           {preferences.calorieGoal != null && (
-            <div className="px-4 pb-5 space-y-5 border-t border-plate-line">
-              {/* Calorie slider */}
-              <div className="space-y-2 pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-plate-ink-tertiary uppercase tracking-wider">Daily calories</span>
-                  <span className="text-sm font-bold text-plate-coral">{localCalorie.toLocaleString()} kcal</span>
+            <div style={{ borderTop: "1px solid #E8E0D5", padding: "16px 0 4px" }}>
+              {/* Calorie target */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <p className="eyebrow" style={{ color: "#1A1410", opacity: 0.5 }}>DAILY CALORIES</p>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: "#FF6B4A" }}>
+                    {localCalorie.toLocaleString()} kcal
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -224,27 +304,28 @@ export default function SettingsPage() {
                     updatePreferences({ calorieGoal: v });
                   }}
                   className="w-full accent-[#C8FF3E]"
+                  style={{ width: "100%" }}
                 />
-                <div className="flex justify-between text-[10px] text-plate-ink-tertiary">
-                  <span>1,200 Light</span>
-                  <span>2,000 Standard</span>
-                  <span>3,500 Active</span>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                  {["1,200 Light", "2,000 Std", "3,500 Active"].map((t) => (
+                    <span key={t} style={{ fontSize: 10, color: "#1A1410", opacity: 0.45 }}>{t}</span>
+                  ))}
                 </div>
               </div>
 
-              {/* Macro sliders */}
-              <div className="space-y-4">
-                <span className="text-xs font-semibold text-plate-ink-tertiary uppercase tracking-wider">Macro split</span>
+              {/* Macro split */}
+              <div style={{ marginBottom: 8 }}>
+                <p className="eyebrow" style={{ color: "#1A1410", opacity: 0.5, marginBottom: 14 }}>MACRO SPLIT</p>
 
                 {([
-                  { key: "protein" as const, label: "Protein", pct: localProtein, color: "accent-[#C8FF3E]", textColor: "text-plate-coral", min: 10, max: 60, hint: "0.8–2g per kg body weight" },
-                  { key: "carbs" as const, label: "Carbohydrates", pct: localCarbs, color: "accent-amber-500", textColor: "text-amber-500", min: 10, max: 70, hint: "Low carb: under 25% · Balanced: 40–50%" },
-                  { key: "fat" as const, label: "Fat", pct: localFat, color: "accent-rose-500", textColor: "text-rose-500", min: 10, max: 60, hint: "Essential fats: 20–35%" },
-                ]).map(({ key, label, pct, color, textColor, min, max, hint }) => (
-                  <div key={key} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-plate-ink">{label}</span>
-                      <span className={clsx("text-xs font-bold", textColor)}>{pct}%</span>
+                  { key: "protein" as const, label: "Protein", pct: localProtein, accent: "#C8FF3E", textColor: "#FF6B4A", min: 10, max: 60 },
+                  { key: "carbs" as const, label: "Carbs", pct: localCarbs, accent: "#FFD66B", textColor: "#B8860B", min: 10, max: 70 },
+                  { key: "fat" as const, label: "Fat", pct: localFat, accent: "#FF6B4A", textColor: "#CC3A1A", min: 10, max: 60 },
+                ]).map(({ key, label, pct, textColor, min, max }) => (
+                  <div key={key} style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1410" }}>{label}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: textColor }}>{pct}%</span>
                     </div>
                     <input
                       type="range"
@@ -257,211 +338,340 @@ export default function SettingsPage() {
                         setLocalProtein(next.proteinPct); setLocalCarbs(next.carbsPct); setLocalFat(next.fatPct);
                         updatePreferences({ macroGoal: next });
                       }}
-                      className={clsx("w-full", color)}
+                      className="w-full accent-[#C8FF3E]"
+                      style={{ width: "100%" }}
                     />
-                    <p className="text-[10px] text-plate-ink-tertiary">{hint}</p>
                   </div>
                 ))}
 
-                {/* Macro bar */}
-                <div className="space-y-1.5">
-                  <div className="flex h-3 rounded-full overflow-hidden gap-px">
-                    <div className="bg-plate-lime/200 transition-all" style={{ width: `${localProtein}%` }} />
-                    <div className="bg-amber-400 transition-all" style={{ width: `${localCarbs}%` }} />
-                    <div className="bg-rose-400 transition-all" style={{ width: `${localFat}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-plate-coral font-medium">P {localProtein}%</span>
-                    <span className="text-amber-500 font-medium">C {localCarbs}%</span>
-                    <span className="text-rose-500 font-medium">F {localFat}%</span>
-                  </div>
+                {/* visual macro bar */}
+                <div style={{ height: 10, borderRadius: 999, overflow: "hidden", display: "flex", border: "1.5px solid #1A1410", marginTop: 8 }}>
+                  <div style={{ background: "#C8FF3E", width: `${localProtein}%`, transition: "width 0.2s" }} />
+                  <div style={{ background: "#FFD66B", width: `${localCarbs}%`, transition: "width 0.2s" }} />
+                  <div style={{ background: "#FF6B4A", width: `${localFat}%`, transition: "width 0.2s" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#1A1410" }}>P {localProtein}%</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#B8860B" }}>C {localCarbs}%</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#CC3A1A" }}>F {localFat}%</span>
                 </div>
               </div>
             </div>
           )}
-        </SectionCard>
+        </StickerCard>
 
-        {/* Meal Planning */}
-        <SectionCard title="Meal Planning">
+        {/* Meal Planning card */}
+        <StickerCard label="MEAL PLANNING">
           {/* Store toggle */}
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-              <UtensilsCrossed className="w-4 h-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-plate-ink">Preferred store</span>
-            <div className="flex rounded-xl overflow-hidden border border-plate-line text-xs font-medium">
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <UtensilsCrossed size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Preferred store</span>
+            <div style={{
+              display: "flex",
+              background: "#FFF8EE",
+              border: "1.5px solid #1A1410",
+              borderRadius: 999,
+              padding: 3,
+              gap: 2,
+              boxShadow: "2px 2px 0 #1A1410",
+            }}>
               {(["woolworths", "coles"] as const).map((store) => (
                 <button
                   key={store}
                   onClick={() => updatePreferences({ preferredStore: store })}
-                  className={clsx(
-                    "px-3 py-1.5 capitalize transition-colors",
-                    preferences.preferredStore === store
-                      ? store === "woolworths" ? "bg-green-600 text-white" : "bg-red-500 text-white"
-                      : "text-plate-ink-secondary hover:bg-plate-surface-tertiary"
-                  )}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-display)",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "background 0.15s, color 0.15s",
+                    background: preferences.preferredStore === store ? "#1A1410" : "transparent",
+                    color: preferences.preferredStore === store ? "#C8FF3E" : "#1A1410",
+                  }}
                 >
                   {store === "woolworths" ? "Woolies" : "Coles"}
                 </button>
               ))}
             </div>
-          </div>
+          </RowItem>
+
+          <Divider />
 
           {/* Include lunches */}
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-              <Clock className="w-4 h-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-plate-ink">Include weekday lunches</span>
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Clock size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Weekday lunches</span>
             <Toggle checked={preferences.includeLunches} onChange={(v) => updatePreferences({ includeLunches: v })} />
-          </div>
+          </RowItem>
+
+          <Divider />
 
           {/* Include snacks */}
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-              <Leaf className="w-4 h-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-plate-ink">Include snacks section</span>
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Leaf size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Include snacks</span>
             <Toggle checked={preferences.includeSnacks} onChange={(v) => updatePreferences({ includeSnacks: v })} />
-          </div>
+          </RowItem>
 
-          {/* Default servings */}
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-              <Users className="w-4 h-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-plate-ink">Default servings</span>
-            <div className="flex items-center gap-2">
+          <Divider />
+
+          {/* Servings */}
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Users size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Default servings</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 onClick={() => updatePreferences({ defaultServings: Math.max(1, preferences.defaultServings - 1) })}
-                className="w-7 h-7 rounded-full bg-plate-bg border border-plate-line text-plate-ink font-bold text-sm flex items-center justify-center"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#FFF8EE",
+                  border: "1.5px solid #1A1410",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  color: "#1A1410",
+                }}
               >−</button>
-              <span className="text-sm font-bold text-plate-ink w-5 text-center">{preferences.defaultServings}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: "#1A1410", width: 20, textAlign: "center" }}>
+                {preferences.defaultServings}
+              </span>
               <button
                 onClick={() => updatePreferences({ defaultServings: Math.min(12, preferences.defaultServings + 1) })}
-                className="w-7 h-7 rounded-full bg-plate-bg border border-plate-line text-plate-ink font-bold text-sm flex items-center justify-center"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#FFF8EE",
+                  border: "1.5px solid #1A1410",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  color: "#1A1410",
+                }}
               >+</button>
             </div>
-          </div>
+          </RowItem>
 
-          {/* Weekly budget */}
-          <SettingsRow
-            icon={<DollarSign className="w-4 h-4" />}
-            label="Weekly budget"
-            value={BUDGET_LABELS[preferences.budgetRange]}
-            onPress={() => setBudgetSheetOpen(true)}
-          />
+          <Divider />
+
+          {/* Budget */}
+          <button
+            onClick={() => setBudgetSheetOpen(true)}
+            style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          >
+            <RowItem>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <DollarSign size={16} color="#1A1410" />
+              </div>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410", textAlign: "left" }}>Weekly budget</span>
+              <span style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginRight: 4 }}>{BUDGET_LABELS[preferences.budgetRange]}</span>
+              <ChevronRight size={16} color="#1A1410" style={{ opacity: 0.4 }} />
+            </RowItem>
+          </button>
+
+          <Divider />
 
           {/* Cook time */}
-          <SettingsRow
-            icon={<Clock className="w-4 h-4" />}
-            label="Cook time preference"
-            value={COOK_TIME_LABELS[preferences.cookTimePreference]}
-            onPress={() => setCookTimeSheetOpen(true)}
-          />
-        </SectionCard>
-
-        {/* Kitchen */}
-        <SectionCard title="Kitchen">
-          <SettingsRow
-            icon={<Leaf className="w-4 h-4" />}
-            label="Kitchen staples & pantry stock"
-            onPress={() => router.push("/settings/pantry")}
-          />
-        </SectionCard>
-
-        {/* Taste Profile */}
-        <SectionCard title="Taste Profile">
-          <SettingsRow
-            icon={<User className="w-4 h-4" />}
-            label="Dietary requirements"
-            value={preferences.dietaryRequirements.length > 0 ? `${preferences.dietaryRequirements.length} active` : "None"}
-            onPress={() => router.push("/profile")}
-          />
-          <SettingsRow
-            icon={<UtensilsCrossed className="w-4 h-4" />}
-            label="Cuisines & proteins"
-            value={preferences.cuisinePreferences.slice(0, 2).join(", ")}
-            onPress={() => router.push("/profile")}
-          />
-        </SectionCard>
-
-        {/* Account */}
-        <SectionCard title="Account">
-          {/* Location */}
-          <div>
-            <button
-              onClick={() => setLocationExpanded((v) => !v)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-plate-surface-tertiary/60 transition-colors"
-            >
-              <span className="w-8 h-8 rounded-xl bg-plate-surface-tertiary text-plate-ink-secondary flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-4 h-4" />
-              </span>
-              <span className="flex-1 text-sm font-medium text-plate-ink text-left">Location</span>
-              <span className="text-xs text-plate-ink-tertiary mr-1">{preferences.suburb}</span>
-              <ChevronDown className={clsx("w-4 h-4 text-plate-ink-tertiary transition-transform", locationExpanded && "rotate-180")} />
-            </button>
-            {locationExpanded && (
-              <div className="px-4 pb-4 space-y-2 border-t border-plate-line">
-                <input
-                  type="text"
-                  value={suburb}
-                  onChange={(e) => setSuburb(e.target.value)}
-                  placeholder="Suburb"
-                  className="w-full mt-3 bg-plate-bg rounded-xl px-3 py-2.5 text-sm text-plate-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-plate-lime"
-                />
-                <input
-                  type="text"
-                  value={postcode}
-                  onChange={(e) => setPostcode(e.target.value)}
-                  placeholder="Postcode"
-                  maxLength={4}
-                  className="w-full bg-plate-bg rounded-xl px-3 py-2.5 text-sm text-plate-ink placeholder-ink-tertiary outline-none focus:ring-2 focus:ring-plate-lime"
-                />
-                <button
-                  onClick={saveLocation}
-                  className="w-full py-2.5 rounded-xl bg-plate-lime text-white text-sm font-semibold"
-                >
-                  Save location
-                </button>
+          <button
+            onClick={() => setCookTimeSheetOpen(true)}
+            style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          >
+            <RowItem>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Clock size={16} color="#1A1410" />
               </div>
-            )}
-          </div>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410", textAlign: "left" }}>Cook time</span>
+              <span style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginRight: 4 }}>{COOK_TIME_LABELS[preferences.cookTimePreference]}</span>
+              <ChevronRight size={16} color="#1A1410" style={{ opacity: 0.4 }} />
+            </RowItem>
+          </button>
+        </StickerCard>
 
-          <SettingsRow
-            icon={<Trash2 className="w-4 h-4" />}
-            label="Clear order history"
-            onPress={() => setClearHistorySheet(true)}
-          />
-          <SettingsRow
-            icon={<RotateCcw className="w-4 h-4" />}
-            label="Reset all data"
-            danger
-            onPress={() => setResetSheet(true)}
-          />
-        </SectionCard>
+        {/* Kitchen / Pantry */}
+        <button
+          onClick={() => router.push("/settings/pantry")}
+          style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          <div style={{
+            background: "#FFFFFF",
+            border: "1.5px solid #1A1410",
+            borderRadius: 22,
+            boxShadow: "3px 3px 0 #1A1410",
+            padding: "14px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Leaf size={16} color="#1A1410" />
+            </div>
+            <div style={{ flex: 1, textAlign: "left" }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Kitchen staples &amp; pantry</p>
+              <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginTop: 2 }}>Manage what you already have</p>
+            </div>
+            <ChevronRight size={16} color="#1A1410" style={{ opacity: 0.4 }} />
+          </div>
+        </button>
+
+        {/* Location */}
+        <div style={{
+          background: "#FFFFFF",
+          border: "1.5px solid #1A1410",
+          borderRadius: 22,
+          boxShadow: "3px 3px 0 #1A1410",
+          overflow: "hidden",
+        }}>
+          <button
+            onClick={() => setLocationExpanded((v) => !v)}
+            style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <MapPin size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410", textAlign: "left" }}>Location</span>
+            <span style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginRight: 4 }}>{preferences.suburb}</span>
+            <ChevronDown size={16} color="#1A1410" style={{ opacity: 0.4, transform: locationExpanded ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }} />
+          </button>
+          {locationExpanded && (
+            <div style={{ borderTop: "1px solid #E8E0D5", padding: "14px 18px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <input
+                type="text"
+                value={suburb}
+                onChange={(e) => setSuburb(e.target.value)}
+                placeholder="Suburb"
+                style={{
+                  background: "#FFF8EE",
+                  border: "1.5px solid #1A1410",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  color: "#1A1410",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+              <input
+                type="text"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value)}
+                placeholder="Postcode"
+                maxLength={4}
+                style={{
+                  background: "#FFF8EE",
+                  border: "1.5px solid #1A1410",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  color: "#1A1410",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                onClick={saveLocation}
+                style={{
+                  background: "#C8FF3E",
+                  border: "1.5px solid #1A1410",
+                  borderRadius: 999,
+                  padding: "10px 0",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  fontFamily: "var(--font-display)",
+                  color: "#1A1410",
+                  cursor: "pointer",
+                  boxShadow: "2px 2px 0 #1A1410",
+                }}
+              >
+                Save location
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* About */}
-        <SectionCard title="About">
-          <div className="px-4 py-3.5 flex items-center gap-3">
-            <span className="flex-1 text-sm font-medium text-plate-ink">Version</span>
-            <span className="text-xs text-plate-ink-tertiary">1.0.0</span>
+        <div style={{
+          background: "#FFFFFF",
+          border: "1.5px solid #1A1410",
+          borderRadius: 22,
+          boxShadow: "3px 3px 0 #1A1410",
+          overflow: "hidden",
+        }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center" }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Version</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#1A1410", opacity: 0.5 }}>1.0.0</span>
           </div>
-          <a
-            href="#"
-            className="flex items-center gap-3 px-4 py-3.5 hover:bg-plate-surface-tertiary/60 transition-colors"
-          >
-            <span className="flex-1 text-sm font-medium text-plate-ink">Privacy policy</span>
-            <ExternalLink className="w-4 h-4 text-plate-ink-tertiary" />
+          <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
+          <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Privacy policy</span>
+            <ExternalLink size={14} color="#1A1410" style={{ opacity: 0.4 }} />
           </a>
-          <a
-            href="#"
-            className="flex items-center gap-3 px-4 py-3.5 hover:bg-plate-surface-tertiary/60 transition-colors"
-          >
-            <span className="flex-1 text-sm font-medium text-plate-ink">Help & feedback</span>
-            <ExternalLink className="w-4 h-4 text-plate-ink-tertiary" />
+          <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
+          <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Help &amp; feedback</span>
+            <ExternalLink size={14} color="#1A1410" style={{ opacity: 0.4 }} />
           </a>
-        </SectionCard>
+        </div>
+
+        {/* Danger zone */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
+          <button
+            onClick={() => setClearHistorySheet(true)}
+            style={{
+              background: "#FFFFFF",
+              border: "1.5px solid #1A1410",
+              borderRadius: 16,
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+              width: "100%",
+            }}
+          >
+            <Trash2 size={16} color="#1A1410" style={{ opacity: 0.6 }} />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410", textAlign: "left" }}>Clear order history</span>
+          </button>
+          <button
+            onClick={() => setResetSheet(true)}
+            style={{
+              background: "#1A1410",
+              border: "1.5px solid #1A1410",
+              borderRadius: 16,
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+              width: "100%",
+            }}
+          >
+            <RotateCcw size={16} color="#FF6B4A" />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#FF6B4A", textAlign: "left", fontFamily: "var(--font-display)" }}>Reset all data</span>
+          </button>
+        </div>
       </div>
 
       <BottomNav />
@@ -469,17 +679,27 @@ export default function SettingsPage() {
       {/* Budget sheet */}
       {budgetSheetOpen && (
         <Sheet onClose={() => setBudgetSheetOpen(false)} title="Weekly budget">
-          {BUDGET_OPTIONS.map((opt) => (
+          {BUDGET_OPTIONS.map((opt, i) => (
             <button
               key={opt.value}
               onClick={() => { updatePreferences({ budgetRange: opt.value }); setBudgetSheetOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-plate-line last:border-0 hover:bg-plate-surface-tertiary/60 transition-colors"
+              style={{
+                width: "100%",
+                background: "none",
+                border: "none",
+                borderTop: i > 0 ? "1px solid #E8E0D5" : "none",
+                padding: "14px 20px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                cursor: "pointer",
+              }}
             >
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-plate-ink">{opt.label}</p>
-                <p className="text-xs text-plate-ink-tertiary">{opt.sublabel}</p>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>{opt.label}</p>
+                <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginTop: 2 }}>{opt.sublabel}</p>
               </div>
-              {preferences.budgetRange === opt.value && <Check className="w-4 h-4 text-plate-coral" />}
+              {preferences.budgetRange === opt.value && <Check size={16} color="#C8FF3E" />}
             </button>
           ))}
         </Sheet>
@@ -487,18 +707,28 @@ export default function SettingsPage() {
 
       {/* Cook time sheet */}
       {cookTimeSheetOpen && (
-        <Sheet onClose={() => setCookTimeSheetOpen(false)} title="Cook time preference">
-          {COOK_TIME_OPTIONS.map((opt) => (
+        <Sheet onClose={() => setCookTimeSheetOpen(false)} title="Cook time">
+          {COOK_TIME_OPTIONS.map((opt, i) => (
             <button
               key={opt.value}
               onClick={() => { updatePreferences({ cookTimePreference: opt.value }); setCookTimeSheetOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-plate-line last:border-0 hover:bg-plate-surface-tertiary/60 transition-colors"
+              style={{
+                width: "100%",
+                background: "none",
+                border: "none",
+                borderTop: i > 0 ? "1px solid #E8E0D5" : "none",
+                padding: "14px 20px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                cursor: "pointer",
+              }}
             >
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-plate-ink">{opt.label}</p>
-                <p className="text-xs text-plate-ink-tertiary">{opt.sublabel}</p>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>{opt.label}</p>
+                <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginTop: 2 }}>{opt.sublabel}</p>
               </div>
-              {preferences.cookTimePreference === opt.value && <Check className="w-4 h-4 text-plate-coral" />}
+              {preferences.cookTimePreference === opt.value && <Check size={16} color="#C8FF3E" />}
             </button>
           ))}
         </Sheet>
@@ -506,59 +736,127 @@ export default function SettingsPage() {
 
       {/* Clear history confirmation */}
       {clearHistorySheet && (
-        <Sheet onClose={() => setClearHistorySheet(false)} title="Clear order history?">
-          <div className="px-5 py-4 space-y-3">
-            <p className="text-sm text-plate-ink-secondary">This will permanently delete all your past orders. Your meal plan and cart won't be affected.</p>
-            <button
-              onClick={() => { clearOrderHistory(); setClearHistorySheet(false); }}
-              className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-semibold text-sm"
-            >
-              Clear history
-            </button>
-            <button onClick={() => setClearHistorySheet(false)} className="w-full py-3 text-sm text-plate-ink-secondary">
-              Cancel
-            </button>
-          </div>
-        </Sheet>
+        <ConfirmSheet
+          title="Clear order history?"
+          body="This will permanently delete all your past orders. Your meal plan and cart won't be affected."
+          confirmLabel="Clear history"
+          onConfirm={() => { clearOrderHistory(); setClearHistorySheet(false); }}
+          onClose={() => setClearHistorySheet(false)}
+          danger
+        />
       )}
 
       {/* Reset all data confirmation */}
       {resetSheet && (
-        <Sheet onClose={() => setResetSheet(false)} title="Reset all data?">
-          <div className="px-5 py-4 space-y-3">
-            <p className="text-sm text-plate-ink-secondary">
-              This will delete your profile, meal plan, cart, order history, and pantry. You'll restart the onboarding flow. This cannot be undone.
-            </p>
-            <button
-              onClick={handleReset}
-              className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-semibold text-sm"
-            >
-              Reset everything
-            </button>
-            <button onClick={() => setResetSheet(false)} className="w-full py-3 text-sm text-plate-ink-secondary">
-              Cancel
-            </button>
-          </div>
-        </Sheet>
+        <ConfirmSheet
+          title="Reset all data?"
+          body="This will delete your profile, meal plan, cart, order history, and pantry. You'll restart onboarding. This cannot be undone."
+          confirmLabel="Reset everything"
+          onConfirm={handleReset}
+          onClose={() => setResetSheet(false)}
+          danger
+        />
       )}
     </div>
   );
 }
 
+function StickerCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      background: "#FFFFFF",
+      border: "1.5px solid #1A1410",
+      borderRadius: 22,
+      boxShadow: "3px 3px 0 #1A1410",
+      overflow: "hidden",
+      padding: "14px 16px",
+    }}>
+      <p className="eyebrow" style={{ color: "#1A1410", opacity: 0.5, marginBottom: 14 }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function RowItem({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {children}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div style={{ height: 1, background: "#E8E0D5", margin: "12px 0" }} />;
+}
+
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-plate-surface rounded-t-3xl overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-plate-line flex items-center justify-between">
-          <div className="w-10 h-1 rounded-full bg-slate-200 absolute left-1/2 -translate-x-1/2 top-3" />
-          <h3 className="font-bold text-plate-ink text-base mt-2">{title}</h3>
-          <button onClick={onClose} className="text-plate-ink-tertiary hover:text-plate-ink transition-colors mt-2">
-            <ChevronDown className="w-5 h-5 rotate-180" />
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "flex-end" }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} onClick={onClose} />
+      <div style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 430,
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: "#FFFFFF",
+        borderRadius: "24px 24px 0 0",
+        border: "1.5px solid #1A1410",
+        overflow: "hidden",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+          <div style={{ width: 40, height: 4, borderRadius: 999, background: "#E8E0D5" }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 20px 12px", borderBottom: "1px solid #E8E0D5" }}>
+          <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "#1A1410" }}>{title}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <X size={18} color="#1A1410" style={{ opacity: 0.5 }} />
           </button>
         </div>
         {children}
+        <div style={{ height: "env(safe-area-inset-bottom, 16px)" }} />
       </div>
     </div>
+  );
+}
+
+function ConfirmSheet({ title, body, confirmLabel, onConfirm, onClose, danger }: {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Sheet title={title} onClose={onClose}>
+      <div style={{ padding: "16px 20px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.7, lineHeight: 1.5 }}>{body}</p>
+        <button
+          onClick={onConfirm}
+          style={{
+            background: danger ? "#1A1410" : "#C8FF3E",
+            border: "1.5px solid #1A1410",
+            borderRadius: 999,
+            padding: "14px 0",
+            fontSize: 15,
+            fontWeight: 700,
+            fontFamily: "var(--font-display)",
+            color: danger ? "#FF6B4A" : "#1A1410",
+            cursor: "pointer",
+            boxShadow: "2px 2px 0 #1A1410",
+            width: "100%",
+          }}
+        >
+          {confirmLabel}
+        </button>
+        <button
+          onClick={onClose}
+          style={{ background: "none", border: "none", padding: "10px 0", fontSize: 14, color: "#1A1410", opacity: 0.5, cursor: "pointer" }}
+        >
+          Cancel
+        </button>
+      </div>
+    </Sheet>
   );
 }

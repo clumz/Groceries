@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference } from "@/types";
-import { Button } from "@/components/ui/Button";
-import { clsx } from "clsx";
 import { Check, ChevronRight, ShoppingBag, Clock } from "lucide-react";
 
 const TOTAL_STEPS = 8;
@@ -96,23 +94,35 @@ function MultiSelectPill<T extends string>({
   onToggle: (v: T) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {options.map((opt) => {
         const active = selected.includes(opt.value);
         return (
           <button
             key={opt.value}
             onClick={() => onToggle(opt.value)}
-            className={clsx(
-              "flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-medium border transition-all duration-150 select-none",
-              active
-                ? "bg-plate-ink border-plate-ink text-white"
-                : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-lime"
-            )}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 700,
+              fontFamily: "var(--font-display)",
+              border: "1.5px solid #1A1410",
+              cursor: "pointer",
+              transition: "all 0.12s",
+              background: active ? "#C8FF3E" : "#FFFFFF",
+              color: "#1A1410",
+              boxShadow: active ? "2px 2px 0 #1A1410" : "none",
+              transform: active ? "translate(-1px, -1px)" : "none",
+              userSelect: "none",
+            }}
           >
-            {opt.emoji && <span>{opt.emoji}</span>}
+            {opt.emoji && <span style={{ fontSize: 16 }}>{opt.emoji}</span>}
             {opt.label}
-            {active && <Check className="w-3 h-3 ml-0.5" />}
+            {active && <Check style={{ width: 13, height: 13 }} />}
           </button>
         );
       })}
@@ -130,36 +140,51 @@ function RadioCard<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="space-y-2.5">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={clsx(
-            "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-150",
-            value === opt.value
-              ? "bg-plate-lime/10 border-plate-lime text-plate-ink"
-              : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-line"
-          )}
-        >
-          <div
-            className={clsx(
-              "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-              value === opt.value ? "border-plate-ink" : "border-plate-line"
-            )}
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "14px 16px",
+              borderRadius: 16,
+              border: "1.5px solid #1A1410",
+              cursor: "pointer",
+              textAlign: "left",
+              background: active ? "#C8FF3E" : "#FFFFFF",
+              boxShadow: active ? "3px 3px 0 #1A1410" : "none",
+              transform: active ? "translate(-1.5px, -1.5px)" : "none",
+              transition: "all 0.12s",
+            }}
           >
-            {value === opt.value && (
-              <div className="w-2.5 h-2.5 rounded-full bg-plate-ink" />
-            )}
-          </div>
-          <div>
-            <div className="font-medium text-sm">{opt.label}</div>
-            {opt.description && (
-              <div className="text-xs text-plate-ink-3 mt-0.5">{opt.description}</div>
-            )}
-          </div>
-        </button>
-      ))}
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              border: "2px solid #1A1410",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: active ? "#1A1410" : "transparent",
+            }}>
+              {active && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8FF3E" }} />}
+            </div>
+            <div>
+              <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#1A1410" }}>{opt.label}</p>
+              {opt.description && (
+                <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.6, marginTop: 2 }}>{opt.description}</p>
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -290,155 +315,202 @@ export default function OnboardingPage() {
 
   const stepContent = [
     // Step 0: Store + Location
-    <div key="step0" className="animate-slide-up space-y-6">
+    <div key="step0" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Your supermarket</h2>
-        <p className="text-sm text-plate-ink-2">Pick your preferred store for grocery delivery</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Your supermarket
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Pick your preferred store for grocery delivery</p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        {(["woolworths", "coles"] as StorePreference[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStore(s)}
-            className={clsx(
-              "flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 h-28 font-semibold text-sm transition-all duration-150",
-              store === s
-                ? s === "woolworths"
-                  ? "bg-green-50 border-green-500 text-green-800"
-                  : "bg-red-50 border-red-400 text-red-800"
-                : "bg-plate-surface border-plate-line text-plate-ink-2 hover:border-plate-line"
-            )}
-          >
-            <ShoppingBag className={clsx("w-8 h-8", s === "woolworths" ? "text-green-600" : "text-red-500")} />
-            <span className="capitalize">{s}</span>
-            {store === s && <Check className="w-4 h-4" />}
-          </button>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {(["woolworths", "coles"] as StorePreference[]).map((s) => {
+          const active = store === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setStore(s)}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: 16,
+                borderRadius: 22,
+                border: "1.5px solid #1A1410",
+                height: 112,
+                background: active ? "#C8FF3E" : "#FFFFFF",
+                boxShadow: active ? "3px 3px 0 #1A1410" : "none",
+                transform: active ? "translate(-1.5px, -1.5px)" : "none",
+                cursor: "pointer",
+                transition: "all 0.12s",
+              }}
+            >
+              <ShoppingBag size={28} color="#1A1410" />
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#1A1410", textTransform: "capitalize" }}>{s}</span>
+              {active && <Check size={14} color="#1A1410" />}
+            </button>
+          );
+        })}
       </div>
-      <p className="text-xs text-plate-ink-3 text-center">Price comparison across both stores coming soon</p>
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <div>
-          <label className="block text-sm font-medium text-plate-ink mb-1.5">Suburb</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.6, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)" }}>Suburb</label>
           <input
             type="text"
             value={suburb}
             onChange={(e) => setSuburb(e.target.value)}
             placeholder="e.g. Surry Hills"
-            className="w-full px-4 py-3 rounded-2xl border border-plate-line text-sm bg-plate-surface focus:outline-none focus:border-plate-lime focus:ring-1 focus:ring-plate-lime"
+            style={{
+              width: "100%",
+              background: "#FFFFFF",
+              border: "1.5px solid #1A1410",
+              borderRadius: 14,
+              padding: "12px 16px",
+              fontSize: 15,
+              color: "#1A1410",
+              outline: "none",
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-plate-ink mb-1.5">Postcode</label>
-          <div className="relative">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.6, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)" }}>Postcode</label>
+          <div style={{ position: "relative" }}>
             <input
               type="text"
               inputMode="numeric"
               value={postcode}
               onChange={(e) => handlePostcodeChange(e.target.value)}
               placeholder="e.g. 2010"
-              className={clsx(
-                "w-full px-4 py-3 rounded-2xl border text-sm bg-plate-surface focus:outline-none focus:ring-1",
-                postcodeError
-                  ? "border-red-400 focus:border-red-400 focus:ring-red-400"
-                  : postcode.length === 4 && isValidAustralianPostcode(postcode)
-                  ? "border-plate-lime focus:border-plate-lime focus:ring-plate-lime"
-                  : "border-plate-line focus:border-plate-lime focus:ring-plate-lime"
-              )}
+              style={{
+                width: "100%",
+                background: "#FFFFFF",
+                border: `1.5px solid ${postcodeError ? "#FF6B4A" : "#1A1410"}`,
+                borderRadius: 14,
+                padding: "12px 40px 12px 16px",
+                fontSize: 15,
+                color: "#1A1410",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
             />
             {postcodeLoading && (
-              <div className="absolute right-3 top-3.5 w-4 h-4 rounded-full border-2 border-plate-lime border-t-transparent animate-spin" />
+              <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, borderRadius: "50%", border: "2px solid #C8FF3E", borderTopColor: "transparent", animation: "spin 0.6s linear infinite" }} />
             )}
             {!postcodeLoading && postcode.length === 4 && isValidAustralianPostcode(postcode) && (
-              <Check className="absolute right-3 top-3.5 w-4 h-4 text-plate-coral" />
+              <Check size={16} color="#1A1410" style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)" }} />
             )}
           </div>
-          {postcodeError && <p className="text-xs text-red-500 mt-1.5">{postcodeError}</p>}
+          {postcodeError && <p style={{ fontSize: 12, color: "#FF6B4A", marginTop: 4 }}>{postcodeError}</p>}
         </div>
       </div>
     </div>,
 
     // Step 1: Dietary
-    <div key="step1" className="animate-slide-up space-y-6">
+    <div key="step1" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Dietary requirements</h2>
-        <p className="text-sm text-plate-ink-2">Select all that apply — we'll never suggest something you can't eat</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Dietary needs
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Select all that apply — we'll never suggest something you can't eat</p>
       </div>
       <MultiSelectPill options={DIETARY_OPTIONS} selected={dietary} onToggle={toggleDietary} />
       {dietary.length === 0 && (
-        <p className="text-xs text-plate-ink-3 text-center">No restrictions? Just tap Next →</p>
+        <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.45, textAlign: "center" }}>No restrictions? Just tap Next →</p>
       )}
     </div>,
 
     // Step 2: Cuisines
-    <div key="step2" className="animate-slide-up space-y-6">
+    <div key="step2" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Cuisine preferences</h2>
-        <p className="text-sm text-plate-ink-2">Pick your favourites — we'll rotate through them each week</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Favourite cuisines
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Pick your favourites — we'll rotate through them each week</p>
       </div>
       <MultiSelectPill options={CUISINE_OPTIONS} selected={cuisines} onToggle={toggleCuisine} />
     </div>,
 
     // Step 3: Proteins
-    <div key="step3" className="animate-slide-up space-y-6">
+    <div key="step3" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Protein preferences</h2>
-        <p className="text-sm text-plate-ink-2">What proteins do you enjoy?</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Preferred proteins
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>What proteins do you enjoy?</p>
       </div>
       <MultiSelectPill options={PROTEIN_OPTIONS} selected={proteins} onToggle={toggleProtein} />
     </div>,
 
-    // Step 4: Taste selection (NEW)
-    <div key="step4" className="animate-slide-up space-y-5">
+    // Step 4: Taste selection
+    <div key="step4" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Pick dishes you'd love</h2>
-        <p className="text-sm text-plate-ink-2">
-          Select at least 3 — we use this to personalise your first meal plan
-        </p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Pick dishes you'd love
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Select at least 3 — personalises your first meal plan</p>
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-plate-ink-3">{likedRecipes.length} selected</span>
-        <span className="text-xs font-medium text-plate-coral">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#1A1410", opacity: 0.5 }}>{likedRecipes.length} selected</span>
+        <span style={{
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: 12,
+          color: likedRecipes.length >= 3 ? "#1A1410" : "#FF6B4A",
+          background: likedRecipes.length >= 3 ? "#C8FF3E" : "#FFD66B",
+          border: "1.5px solid #1A1410",
+          borderRadius: 999,
+          padding: "3px 10px",
+        }}>
           {likedRecipes.length < 3 ? `${3 - likedRecipes.length} more to go` : "Looking good!"}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {TASTE_RECIPES.map((recipe) => {
           const selected = likedRecipes.includes(recipe.id);
           return (
             <button
               key={recipe.id}
               onClick={() => toggleRecipe(recipe.id)}
-              className={clsx(
-                "relative rounded-2xl overflow-hidden text-left transition-all duration-150",
-                selected ? "ring-2 ring-plate-lime ring-offset-1" : "ring-0"
-              )}
+              style={{
+                position: "relative",
+                borderRadius: 18,
+                overflow: "hidden",
+                textAlign: "left",
+                border: selected ? "2px solid #C8FF3E" : "1.5px solid #1A1410",
+                boxShadow: selected ? "3px 3px 0 #1A1410" : "none",
+                transform: selected ? "translate(-1.5px, -1.5px)" : "none",
+                transition: "all 0.12s",
+                cursor: "pointer",
+                background: "none",
+                padding: 0,
+              }}
             >
-              <div className="relative h-28">
+              <div style={{ position: "relative", height: 112 }}>
                 <img
                   src={recipe.image}
                   alt={recipe.name}
-                  className="w-full h-full object-cover"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)" }} />
 
-                {/* Selected overlay */}
                 {selected && (
-                  <div className="absolute inset-0 bg-plate-ink/20 flex items-start justify-end p-2">
-                    <div className="w-6 h-6 rounded-full bg-plate-coral flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
+                  <div style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: "#C8FF3E", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Check size={13} color="#1A1410" />
                   </div>
                 )}
 
-                {/* Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                  <p className="text-white text-xs font-semibold leading-tight">{recipe.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-white/70 text-[10px]">{recipe.cuisine}</span>
-                    <span className="text-white/40 text-[10px]">·</span>
-                    <Clock className="w-2.5 h-2.5 text-white/70" />
-                    <span className="text-white/70 text-[10px]">{recipe.cookTime}m</span>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 10px" }}>
+                  <p style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 700, lineHeight: 1.3, fontFamily: "var(--font-display)" }}>{recipe.name}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                    <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>{recipe.cuisine}</span>
+                    <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 10 }}>·</span>
+                    <Clock size={9} color="rgba(255,255,255,0.7)" />
+                    <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>{recipe.cookTime}m</span>
                   </div>
                 </div>
               </div>
@@ -449,42 +521,59 @@ export default function OnboardingPage() {
     </div>,
 
     // Step 5: Household
-    <div key="step5" className="animate-slide-up space-y-6">
+    <div key="step5" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Your household</h2>
-        <p className="text-sm text-plate-ink-2">We'll scale recipes and quantities to match</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Your household
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We'll scale recipes and quantities to match</p>
       </div>
-      <div className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-plate-ink mb-3">Household size</label>
-          <div className="flex items-center gap-4">
-            <button onClick={() => setHouseholdSize(Math.max(1, householdSize - 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
-            <span className="text-2xl font-bold text-plate-ink w-8 text-center">{householdSize}</span>
-            <button onClick={() => setHouseholdSize(Math.min(10, householdSize + 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
-            <span className="text-sm text-plate-ink-2">{householdSize === 1 ? "person" : "people"}</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Household size */}
+        <div style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 18, boxShadow: "3px 3px 0 #1A1410", padding: "16px 18px" }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 12 }}>HOUSEHOLD SIZE</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => setHouseholdSize(Math.max(1, householdSize - 1))} style={{ width: 40, height: 40, borderRadius: "50%", background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#1A1410" }}>−</button>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32, color: "#1A1410", width: 40, textAlign: "center" }}>{householdSize}</span>
+            <button onClick={() => setHouseholdSize(Math.min(10, householdSize + 1))} style={{ width: 40, height: 40, borderRadius: "50%", background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#1A1410" }}>+</button>
+            <span style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>{householdSize === 1 ? "person" : "people"}</span>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-plate-ink mb-3">Default servings per meal</label>
-          <div className="flex items-center gap-4">
-            <button onClick={() => setServings(Math.max(1, servings - 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">−</button>
-            <span className="text-2xl font-bold text-plate-ink w-8 text-center">{servings}</span>
-            <button onClick={() => setServings(Math.min(12, servings + 1))} className="w-10 h-10 rounded-full bg-plate-surface-tertiary text-plate-ink font-bold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors">+</button>
-            <span className="text-sm text-plate-ink-2">servings</span>
+
+        {/* Servings */}
+        <div style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 18, boxShadow: "3px 3px 0 #1A1410", padding: "16px 18px" }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 12 }}>DEFAULT SERVINGS PER MEAL</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => setServings(Math.max(1, servings - 1))} style={{ width: 40, height: 40, borderRadius: "50%", background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#1A1410" }}>−</button>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32, color: "#1A1410", width: 40, textAlign: "center" }}>{servings}</span>
+            <button onClick={() => setServings(Math.min(12, servings + 1))} style={{ width: 40, height: 40, borderRadius: "50%", background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#1A1410" }}>+</button>
+            <span style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>servings</span>
           </div>
         </div>
-        <div className="space-y-3 pt-2">
+
+        {/* Toggles */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
             { label: "Include weekday lunches", value: includeLunches, set: setIncludeLunches },
             { label: "Include a snacks section", value: includeSnacks, set: setIncludeSnacks },
           ].map(({ label, value, set }) => (
-            <div key={label} className="flex items-center justify-between py-1">
-              <span className="text-sm text-plate-ink">{label}</span>
+            <div key={label} style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>{label}</span>
               <button
                 onClick={() => set(!value)}
-                className={clsx("w-12 h-6 rounded-full transition-colors relative", value ? "bg-plate-ink" : "bg-slate-200")}
+                style={{
+                  width: 48,
+                  height: 28,
+                  borderRadius: 999,
+                  border: "1.5px solid #1A1410",
+                  background: value ? "#C8FF3E" : "#F1EDE6",
+                  position: "relative",
+                  flexShrink: 0,
+                  transition: "background 0.15s",
+                  cursor: "pointer",
+                }}
               >
-                <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-plate-surface shadow transition-transform", value ? "translate-x-6" : "translate-x-0.5")} />
+                <div style={{ position: "absolute", top: 3, width: 18, height: 18, borderRadius: "50%", background: "#1A1410", transition: "left 0.15s", left: value ? "calc(100% - 21px)" : 3 }} />
               </button>
             </div>
           ))}
@@ -493,13 +582,15 @@ export default function OnboardingPage() {
     </div>,
 
     // Step 6: Budget + Cook Time
-    <div key="step6" className="animate-slide-up space-y-6">
+    <div key="step6" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Budget & time</h2>
-        <p className="text-sm text-plate-ink-2">We'll keep recommendations practical</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Budget &amp; time
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We'll keep recommendations practical</p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-plate-ink mb-3">Weekly grocery budget</label>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 10 }}>WEEKLY GROCERY BUDGET</p>
         <RadioCard
           value={budget}
           onChange={setBudget}
@@ -512,7 +603,7 @@ export default function OnboardingPage() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-plate-ink mb-3">Cooking time per meal</label>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 10 }}>COOKING TIME PER MEAL</p>
         <RadioCard
           value={cookTime}
           onChange={setCookTime}
@@ -526,126 +617,85 @@ export default function OnboardingPage() {
     </div>,
 
     // Step 7: Nutrition goals
-    <div key="step7" className="animate-slide-up space-y-6">
+    <div key="step7" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 className="text-xl font-bold text-plate-ink mb-1">Nutrition goals</h2>
-        <p className="text-sm text-plate-ink-2">Optional — skip this if you just want great meals</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
+          Nutrition goals
+        </h2>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Optional — skip this if you just want great meals</p>
       </div>
 
-      <div className="flex items-center justify-between py-1">
+      <div style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <p className="text-sm font-medium text-plate-ink">Track calories &amp; macros</p>
-          <p className="text-xs text-plate-ink-3 mt-0.5">See daily progress on your plan</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Track calories &amp; macros</p>
+          <p style={{ fontSize: 12, color: "#1A1410", opacity: 0.55, marginTop: 2 }}>See daily progress on your plan</p>
         </div>
         <button
           onClick={() => setTrackNutrition(!trackNutrition)}
-          className={clsx("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", trackNutrition ? "bg-plate-ink" : "bg-slate-200")}
+          style={{
+            width: 48, height: 28, borderRadius: 999, border: "1.5px solid #1A1410",
+            background: trackNutrition ? "#C8FF3E" : "#F1EDE6",
+            position: "relative", flexShrink: 0, transition: "background 0.15s", cursor: "pointer",
+          }}
         >
-          <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-plate-surface shadow transition-transform", trackNutrition ? "translate-x-6" : "translate-x-0.5")} />
+          <div style={{ position: "absolute", top: 3, width: 18, height: 18, borderRadius: "50%", background: "#1A1410", transition: "left 0.15s", left: trackNutrition ? "calc(100% - 21px)" : 3 }} />
         </button>
       </div>
 
       {trackNutrition && (
-        <div className="space-y-6 animate-fade-in">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Calorie slider */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-plate-ink">Daily calorie target</label>
-              <span className="text-sm font-bold text-plate-coral">{calorieGoal.toLocaleString()} kcal</span>
+          <div style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 18, boxShadow: "3px 3px 0 #1A1410", padding: "16px 18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)" }}>DAILY CALORIES</p>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: "#FF6B4A" }}>{calorieGoal.toLocaleString()} kcal</span>
             </div>
             <input
-              type="range"
-              min={1200}
-              max={3500}
-              step={50}
-              value={calorieGoal}
+              type="range" min={1200} max={3500} step={50} value={calorieGoal}
               onChange={(e) => setCalorieGoal(Number(e.target.value))}
-              className="w-full accent-[#C8FF3E]"
+              className="w-full accent-[#C8FF3E]" style={{ width: "100%" }}
             />
-            <div className="flex justify-between text-[10px] text-plate-ink-3">
-              <span>1,200 · Light</span>
-              <span>2,000 · Standard</span>
-              <span>3,500 · Very active</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              {["1,200 Light", "2,000 Std", "3,500 Active"].map((t) => (
+                <span key={t} style={{ fontSize: 10, color: "#1A1410", opacity: 0.45 }}>{t}</span>
+              ))}
             </div>
-            <p className="text-xs text-plate-ink-3">Typical adult: 1,600–2,200 kcal/day. Raise for heavy exercise or a larger household.</p>
           </div>
 
           {/* Macro sliders */}
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-plate-ink">Macro split</p>
+          <div style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 18, boxShadow: "3px 3px 0 #1A1410", padding: "16px 18px" }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 16 }}>MACRO SPLIT</p>
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-plate-ink">Protein</span>
-                <span className="text-xs font-bold text-plate-coral">{proteinPct}%</span>
+            {([
+              { key: "protein" as const, label: "Protein", pct: proteinPct, textColor: "#FF6B4A", min: 10, max: 60 },
+              { key: "carbs" as const, label: "Carbs", pct: carbsPct, textColor: "#B8860B", min: 10, max: 70 },
+              { key: "fat" as const, label: "Fat", pct: fatPct, textColor: "#CC3A1A", min: 10, max: 60 },
+            ]).map(({ key, label, pct, textColor, min, max }) => (
+              <div key={key} style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1410" }}>{label}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: textColor }}>{pct}%</span>
+                </div>
+                <input
+                  type="range" min={min} max={max} step={5} value={pct}
+                  onChange={(e) => {
+                    const next = adjustMacros(key, Number(e.target.value), { proteinPct, carbsPct, fatPct });
+                    setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
+                  }}
+                  className="w-full accent-[#C8FF3E]" style={{ width: "100%" }}
+                />
               </div>
-              <input
-                type="range"
-                min={10}
-                max={60}
-                step={5}
-                value={proteinPct}
-                onChange={(e) => {
-                  const next = adjustMacros("protein", Number(e.target.value), { proteinPct, carbsPct, fatPct });
-                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
-                }}
-                className="w-full accent-[#C8FF3E]"
-              />
-              <p className="text-[10px] text-plate-ink-3">0.8–2g per kg body weight · Higher for muscle building</p>
+            ))}
+
+            <div style={{ height: 10, borderRadius: 999, overflow: "hidden", display: "flex", border: "1.5px solid #1A1410", marginTop: 4 }}>
+              <div style={{ background: "#C8FF3E", width: `${proteinPct}%`, transition: "width 0.2s" }} />
+              <div style={{ background: "#FFD66B", width: `${carbsPct}%`, transition: "width 0.2s" }} />
+              <div style={{ background: "#FF6B4A", width: `${fatPct}%`, transition: "width 0.2s" }} />
             </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-plate-ink">Carbohydrates</span>
-                <span className="text-xs font-bold text-amber-500">{carbsPct}%</span>
-              </div>
-              <input
-                type="range"
-                min={10}
-                max={70}
-                step={5}
-                value={carbsPct}
-                onChange={(e) => {
-                  const next = adjustMacros("carbs", Number(e.target.value), { proteinPct, carbsPct, fatPct });
-                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
-                }}
-                className="w-full accent-amber-500"
-              />
-              <p className="text-[10px] text-plate-ink-3">Low carb: under 25% · Balanced: 40–50% · High carb: 55%+</p>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-plate-ink">Fat</span>
-                <span className="text-xs font-bold text-rose-500">{fatPct}%</span>
-              </div>
-              <input
-                type="range"
-                min={10}
-                max={60}
-                step={5}
-                value={fatPct}
-                onChange={(e) => {
-                  const next = adjustMacros("fat", Number(e.target.value), { proteinPct, carbsPct, fatPct });
-                  setProteinPct(next.proteinPct); setCarbsPct(next.carbsPct); setFatPct(next.fatPct);
-                }}
-                className="w-full accent-rose-500"
-              />
-              <p className="text-[10px] text-plate-ink-3">Essential fats: 20–35% · Includes healthy oils, avocado, nuts</p>
-            </div>
-
-            {/* Macro bar */}
-            <div className="space-y-1.5">
-              <div className="flex h-3 rounded-full overflow-hidden gap-px">
-                <div className="bg-plate-coral transition-all" style={{ width: `${proteinPct}%` }} />
-                <div className="bg-amber-400 transition-all" style={{ width: `${carbsPct}%` }} />
-                <div className="bg-rose-400 transition-all" style={{ width: `${fatPct}%` }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-plate-ink-3">
-                <span className="text-plate-coral font-medium">P {proteinPct}%</span>
-                <span className="text-amber-500 font-medium">C {carbsPct}%</span>
-                <span className="text-rose-500 font-medium">F {fatPct}%</span>
-              </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#1A1410" }}>P {proteinPct}%</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#B8860B" }}>C {carbsPct}%</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#CC3A1A" }}>F {fatPct}%</span>
             </div>
           </div>
         </div>
@@ -653,58 +703,105 @@ export default function OnboardingPage() {
     </div>,
   ];
 
-  return (
-    <div className="min-h-screen bg-plate-surface flex flex-col">
-      {/* Header */}
-      <div className="px-5 pt-14 pb-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-xs font-medium text-plate-ink-3 uppercase tracking-wider">
-            Step {step + 1} of {TOTAL_STEPS}
-          </div>
-          <div className="flex gap-1.5">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                className={clsx(
-                  "h-1.5 rounded-full transition-all duration-300",
-                  i <= step ? "bg-plate-ink w-6" : "bg-slate-200 w-3"
-                )}
-              />
-            ))}
-          </div>
-        </div>
+  const STEP_LABELS = [
+    "YOUR STORE",
+    "DIETARY NEEDS",
+    "CUISINES",
+    "PROTEINS",
+    "TASTE PROFILE",
+    "HOUSEHOLD",
+    "BUDGET & TIME",
+    "NUTRITION",
+  ];
 
-        {step === 0 && (
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-plate-ink">Welcome to <span className="text-plate-coral">Plate</span></h1>
-            <p className="text-plate-ink-2 mt-1.5">Your weekly meals, planned and personalised.</p>
-          </div>
-        )}
+  return (
+    <div style={{ minHeight: "100svh", background: "#FFF8EE", display: "flex", flexDirection: "column" }}>
+      {/* Progress bar + step label */}
+      <div style={{ padding: "56px 20px 0", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <p className="eyebrow" style={{ color: "#FF6B4A" }}>{STEP_LABELS[step]}</p>
+          <p className="eyebrow" style={{ color: "#1A1410", opacity: 0.4 }}>{step + 1} / {TOTAL_STEPS}</p>
+        </div>
+        {/* Thick lime progress bar */}
+        <div style={{ height: 8, background: "#E8E0D5", borderRadius: 999, overflow: "hidden", border: "1.5px solid #1A1410" }}>
+          <div
+            style={{
+              height: "100%",
+              background: "#C8FF3E",
+              borderRadius: 999,
+              width: `${((step + 1) / TOTAL_STEPS) * 100}%`,
+              transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          />
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-5 overflow-y-auto pb-32">
+      <div style={{ flex: 1, padding: "24px 20px 120px", overflowY: "auto" }}>
         {stepContent[step]}
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 pb-8 pt-4 bg-plate-surface/90 backdrop-blur-sm border-t border-plate-line">
-        <div className="flex gap-3">
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: 430,
+        padding: "12px 20px 32px",
+        background: "rgba(255,248,238,0.92)",
+        backdropFilter: "blur(12px)",
+        borderTop: "1px solid #E8E0D5",
+      }}>
+        <div style={{ display: "flex", gap: 10 }}>
           {step > 0 && (
-            <Button variant="secondary" size="lg" onClick={() => setStep(step - 1)} className="w-14 flex-shrink-0">
+            <button
+              onClick={() => setStep(step - 1)}
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 999,
+                border: "1.5px solid #1A1410",
+                background: "#FFFFFF",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: 20,
+                color: "#1A1410",
+              }}
+            >
               ←
-            </Button>
+            </button>
           )}
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={!canAdvance}
+          <button
             onClick={() => step === TOTAL_STEPS - 1 ? handleFinish() : setStep(step + 1)}
+            disabled={!canAdvance}
+            style={{
+              flex: 1,
+              height: 52,
+              borderRadius: 999,
+              border: "1.5px solid #1A1410",
+              background: canAdvance ? "#C8FF3E" : "#E8E0D5",
+              color: "#1A1410",
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: canAdvance ? "pointer" : "not-allowed",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              boxShadow: canAdvance ? "3px 3px 0 #1A1410" : "none",
+              transform: canAdvance ? "translate(-1.5px, -1.5px)" : "none",
+              transition: "all 0.12s",
+            }}
           >
             {step === TOTAL_STEPS - 1 ? "Build my plan" : "Next"}
-            {step < TOTAL_STEPS - 1 && <ChevronRight className="w-4 h-4" />}
-          </Button>
+            {step < TOTAL_STEPS - 1 && <ChevronRight style={{ width: 16, height: 16 }} />}
+          </button>
         </div>
       </div>
     </div>
