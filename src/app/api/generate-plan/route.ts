@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { buildMealPlanSystemPrompt } from "@/lib/prompts";
-import { generateMockMealPlan } from "@/lib/mockMealPlan";
+import { generateMealPlan } from "@/lib/mealPlanAlgorithm";
 import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal, FeedbackHistory } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 
@@ -61,11 +61,11 @@ export async function POST(req: NextRequest) {
 
     const preferenceEvolution = computePreferenceEvolution(feedbackHistory);
 
-    // Fall back to mock data if no API key is configured
+    // Use deterministic algorithm as primary path — Claude is opt-in when ANTHROPIC_API_KEY is set
     if (!process.env.ANTHROPIC_API_KEY) {
-      const mealPlan = generateMockMealPlan(preferences, feedbackHistory, preferenceEvolution);
+      const mealPlan = generateMealPlan(preferences, feedbackHistory, preferenceEvolution);
       if (planUserId) await savePlanToDB(planUserId, mealPlan);
-      return NextResponse.json({ mealPlan, planId: mealPlan.id, mock: true });
+      return NextResponse.json({ mealPlan, planId: mealPlan.id });
     }
 
     const Anthropic = (await import("@anthropic-ai/sdk")).default;
