@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useAppStore } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   ChevronRight, Leaf, User, MapPin,
   Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
-  UtensilsCrossed, ChevronDown, Check, Flame, X
+  UtensilsCrossed, ChevronDown, Check, Flame, X, LogOut
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { BudgetRange, CookTimePreference } from "@/types";
@@ -637,6 +638,23 @@ export default function SettingsPage() {
 
         {/* Danger zone */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            style={{
+              background: "#FFFFFF",
+              border: "1.5px solid #1A1410",
+              borderRadius: 16,
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+              width: "100%",
+            }}
+          >
+            <LogOut size={16} color="#1A1410" style={{ opacity: 0.6 }} />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410", textAlign: "left" }}>Sign out</span>
+          </button>
           <button
             onClick={() => setClearHistorySheet(true)}
             style={{
