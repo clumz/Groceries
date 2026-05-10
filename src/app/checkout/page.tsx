@@ -1,21 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { estimatePantrySavings } from "@/lib/cartAggregator";
-import type { Order } from "@/types";
+import type { CartItem, Order } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { ChevronLeft, ShoppingBag, ArrowUpRight, Copy, Check, Leaf, ExternalLink, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ShoppingBag, ArrowUpRight, Copy, Check, Leaf, Share2, Circle, CheckCircle2 } from "lucide-react";
 import { clsx } from "clsx";
 
-function getProductSearchUrl(product: { retailer: string; name: string }): string {
-  const searchName = product.name.replace(/^(woolworths|coles)\s+/i, "").trim();
-  const encoded = encodeURIComponent(searchName);
-  return product.retailer === "woolworths"
-    ? `https://www.woolworths.com.au/shop/search/products?searchTerm=${encoded}`
-    : `https://www.coles.com.au/search?q=${encoded}`;
+const CATEGORY_LABELS: Record<string, string> = {
+  produce: "Fresh Produce",
+  meat: "Meat & Poultry",
+  seafood: "Seafood",
+  dairy: "Dairy & Eggs",
+  pantry: "Pantry",
+  frozen: "Frozen",
+  snacks: "Snacks",
+  bakery: "Bakery",
+  health: "Health",
+  deli: "Deli",
+  beverages: "Beverages",
+};
+
+const CATEGORY_ORDER = ["produce", "meat", "seafood", "dairy", "pantry", "frozen", "bakery", "deli", "snacks", "health", "beverages"];
+
+function buildShareText(
+  items: CartItem[],
+  retailerName: string,
+  total: number,
+): string {
+  const grouped: Record<string, CartItem[]> = {};
+  for (const item of items) {
+    const cat = item.matchedProduct?.category ?? "pantry";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  }
+
+  const sections = CATEGORY_ORDER.filter((c) => grouped[c]?.length).map((cat) => {
+    const label = CATEGORY_LABELS[cat] ?? cat;
+    const lines = grouped[cat].map((item) => {
+      const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+      const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
+      return `☐ ${item.ingredientName} (${net} ${item.unit})${product ? ` — A$${product.price.toFixed(2)}` : ""}`;
+    });
+    return `${label}\n${lines.join("\n")}`;
+  });
+
+  return [
+    `Shopping list — ${retailerName}`,
+    `Estimated total: A$${total.toFixed(2)} · ${items.length} items`,
+    "",
+    ...sections,
+  ].join("\n");
 }
 
 export default function CheckoutPage() {
@@ -23,7 +61,9 @@ export default function CheckoutPage() {
   const currentCart = useAppStore((s) => s.currentCart);
   const setOrder = useAppStore((s) => s.setOrder);
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   const [marked, setMarked] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   if (!currentCart) {
     return (
@@ -39,20 +79,45 @@ export default function CheckoutPage() {
   const retailerUrl = currentCart.retailer === "woolworths"
     ? "https://www.woolworths.com.au/shop/grocery"
     : "https://www.coles.com.au/browse";
+
   const confirmedItems = currentCart.items.filter(
     (i) => !i.isStaple && !i.markedAsHave && (i.pantryContribution ?? 0) < i.totalQuantity && i.substituteApproved !== false
   );
   const pantrySavings = estimatePantrySavings(currentCart.items);
+  const checkedCount = checkedIds.size;
+  const remainingCount = confirmedItems.length - checkedCount;
 
-  function copyList() {
-    const lines = confirmedItems.map((item) => {
-      const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
-      const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
-      return `${item.ingredientName} — ${net} ${item.unit}${product ? ` (A$${product.price.toFixed(2)})` : ""}`;
-    });
-    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+  const shareText = buildShareText(confirmedItems, retailerName, currentCart.estimatedTotal);
+
+  async function shareList() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Shopping list — ${retailerName}`, text: shareText });
+        setShared(true);
+        setTimeout(() => setShared(false), 2000);
+      } catch {
+        // User dismissed share sheet — no-op
+      }
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  async function copyList() {
+    await navigator.clipboard.writeText(shareText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function toggleChecked(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }
 
@@ -70,86 +135,136 @@ export default function CheckoutPage() {
     };
     setOrder(order);
     setMarked(true);
+    setCheckedIds(new Set());
   }
 
+  // Group confirmed items by category, respecting order
+  const grouped: Record<string, CartItem[]> = {};
+  for (const item of confirmedItems) {
+    const cat = item.matchedProduct?.category ?? "pantry";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  }
+  const orderedCategories = CATEGORY_ORDER.filter((c) => grouped[c]?.length);
+
+  // ── Shopping checklist (after marking as ordered) ──────────────────────────
   if (marked) {
     return (
-      <div className="min-h-screen bg-plate-bg pb-36">
+      <div className="min-h-screen bg-plate-bg pb-40">
         {/* Header */}
         <div className="bg-plate-surface px-5 pt-14 pb-4 sticky top-0 z-10 border-b border-plate-line">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-plate-lime flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-plate-ink" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-plate-lime flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-plate-ink" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold text-plate-ink">Shopping checklist</h1>
+                <p className="text-xs text-plate-ink-3">
+                  {checkedCount > 0 ? `${checkedCount} of ${confirmedItems.length} added` : `${confirmedItems.length} items · A$${currentCart.estimatedTotal.toFixed(2)}`}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-plate-ink">Shopping guide</h1>
-              <p className="text-xs text-plate-ink-3">Tap each item to search in {retailerName}</p>
-            </div>
+            {/* Progress bar */}
+            {confirmedItems.length > 0 && (
+              <div className="w-16 h-2 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-plate-lime transition-all duration-300"
+                  style={{ width: `${(checkedCount / confirmedItems.length) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="px-4 py-4 space-y-3">
+        <div className="px-4 py-3 space-y-1">
+          {/* Tip banner */}
           <div className={clsx(
-            "rounded-2xl px-4 py-3 text-sm",
+            "rounded-2xl px-4 py-3 mb-3",
             currentCart.retailer === "woolworths" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
           )}>
-            <p className={clsx("font-semibold", retailerColor)}>
-              Tap each item below — it opens a search in the {retailerName} app. Add it to your basket, then come back for the next one.
+            <p className={clsx("text-sm font-semibold", retailerColor)}>
+              Tick off each item as you add it to your {retailerName} cart
+            </p>
+            <p className="text-xs text-plate-ink-3 mt-1">
+              On iPad: use Split View — {retailerName} on one side, this checklist on the other
             </p>
           </div>
 
-          <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
-            <div className="px-4 py-3 border-b border-plate-line flex items-center justify-between">
-              <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">
-                {confirmedItems.length} items to buy
+          {/* Grouped checklist */}
+          {orderedCategories.map((cat) => (
+            <div key={cat} className="mb-2">
+              <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider px-1 py-2">
+                {CATEGORY_LABELS[cat] ?? cat}
               </p>
-              <p className="text-sm font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</p>
+              <div className="bg-plate-surface rounded-2xl overflow-hidden border border-slate-100">
+                {grouped[cat].map((item, idx) => {
+                  const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+                  const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
+                  const isChecked = checkedIds.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => toggleChecked(item.id)}
+                      className={clsx(
+                        "w-full px-4 py-3.5 flex items-center gap-3 text-left transition-colors active:bg-slate-100",
+                        idx < grouped[cat].length - 1 && "border-b border-slate-100",
+                        isChecked ? "bg-slate-50" : "bg-white"
+                      )}
+                    >
+                      {isChecked
+                        ? <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                        : <Circle className="w-5 h-5 text-slate-300 flex-shrink-0" />
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className={clsx("text-sm font-medium truncate transition-colors", isChecked ? "text-slate-400 line-through" : "text-plate-ink")}>
+                          {item.ingredientName}
+                        </p>
+                        {product && (
+                          <p className={clsx("text-xs truncate mt-0.5 transition-colors", isChecked ? "text-slate-300" : "text-plate-ink-3")}>
+                            {product.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className={clsx("text-xs transition-colors", isChecked ? "text-slate-300" : "text-plate-ink-3")}>
+                          {net} {item.unit}
+                        </p>
+                        {product && (
+                          <p className={clsx("text-sm font-semibold transition-colors", isChecked ? "text-slate-300" : "text-plate-ink")}>
+                            A${product.price.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="divide-y divide-slate-100">
-              {confirmedItems.map((item) => {
-                const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
-                const searchUrl = product ? getProductSearchUrl(product) : null;
-                const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
-                return (
-                  <a
-                    key={item.id}
-                    href={searchUrl ?? "#"}
-                    target={searchUrl ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    className={clsx(
-                      "px-4 py-3.5 flex items-center gap-3",
-                      searchUrl ? "hover:bg-plate-surface-tertiary/50 active:bg-plate-surface-tertiary transition-colors" : "pointer-events-none opacity-50"
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-plate-ink truncate">{item.ingredientName}</p>
-                      {product && <p className="text-xs text-plate-ink-3 truncate mt-0.5">{product.name}</p>}
-                    </div>
-                    <div className="text-right flex-shrink-0 mr-1">
-                      <p className="text-xs text-plate-ink-3">{net} {item.unit}</p>
-                      {product && <p className="text-sm font-semibold text-plate-ink">A${product.price.toFixed(2)}</p>}
-                    </div>
-                    {searchUrl && <ExternalLink className="w-4 h-4 text-plate-ink-3/60 flex-shrink-0" />}
-                  </a>
-                );
-              })}
-            </div>
-          </div>
+          ))}
 
-          <p className="text-xs text-plate-ink-3 text-center px-4">
-            Prices are estimates. Final price confirmed by {retailerName} at checkout.
-          </p>
+          {checkedCount === confirmedItems.length && confirmedItems.length > 0 && (
+            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4 text-center mt-4">
+              <p className="text-emerald-700 font-bold text-base">All done! 🎉</p>
+              <p className="text-emerald-600 text-sm mt-1">Everything is in your {retailerName} cart.</p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-plate-surface/90 backdrop-blur-sm border-t border-plate-line z-10 space-y-2">
+          {remainingCount > 0 && (
+            <p className="text-center text-xs text-plate-ink-3">
+              {remainingCount} item{remainingCount !== 1 ? "s" : ""} still to add
+            </p>
+          )}
           <div className="flex gap-2">
             <button
-              onClick={copyList}
+              onClick={shareList}
               className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors flex-shrink-0"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-              {copied ? "Copied!" : "Copy list"}
+              {shared ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
+              {shared ? "Shared!" : "Share list"}
             </button>
             <a
               href={retailerUrl}
@@ -168,6 +283,7 @@ export default function CheckoutPage() {
     );
   }
 
+  // ── Pre-checkout review ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-plate-bg pb-36">
       {/* Header */}
@@ -179,7 +295,7 @@ export default function CheckoutPage() {
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-plate-ink">Shopping Guide</h1>
+          <h1 className="text-xl font-bold text-plate-ink">Review order</h1>
         </div>
       </div>
 
@@ -193,7 +309,7 @@ export default function CheckoutPage() {
           <div className="flex-1">
             <p className={clsx("font-bold", retailerColor)}>{retailerName}</p>
             <p className="text-xs text-plate-ink-2">
-              Add items to your basket and checkout on their website
+              {confirmedItems.length} items · A${currentCart.estimatedTotal.toFixed(2)} estimated
             </p>
           </div>
           <Badge variant={currentCart.retailer === "woolworths" ? "green" : "red"}>
@@ -211,42 +327,36 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Full item list with links */}
-        <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card">
-          <div className="px-4 py-3 border-b border-plate-line flex items-center justify-between">
-            <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider">Items to buy</p>
-            <p className="text-xs text-plate-ink-3">Tap to search on {retailerName}</p>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {confirmedItems.map((item) => {
-              const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
-              const searchUrl = product ? getProductSearchUrl(product) : null;
-              const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
-              return (
-                <a
-                  key={item.id}
-                  href={searchUrl ?? "#"}
-                  target={searchUrl ? "_blank" : undefined}
-                  rel="noopener noreferrer"
-                  className={clsx("px-4 py-3 flex items-center gap-3", searchUrl ? "hover:bg-plate-surface-tertiary/50 transition-colors" : "pointer-events-none")}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-plate-ink truncate">{item.ingredientName}</p>
-                    {product && <p className="text-xs text-plate-ink-3 truncate mt-0.5">{product.name}</p>}
+        {/* Grouped item list */}
+        {orderedCategories.map((cat) => (
+          <div key={cat}>
+            <p className="text-xs font-semibold text-plate-ink-3 uppercase tracking-wider px-1 py-2">
+              {CATEGORY_LABELS[cat] ?? cat}
+            </p>
+            <div className="bg-plate-surface rounded-3xl overflow-hidden shadow-card divide-y divide-slate-100">
+              {grouped[cat].map((item) => {
+                const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+                const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
+                return (
+                  <div key={item.id} className="px-4 py-3 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-plate-ink truncate">{item.ingredientName}</p>
+                      {product && <p className="text-xs text-plate-ink-3 truncate mt-0.5">{product.name}</p>}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs text-plate-ink-3">{net} {item.unit}</p>
+                      {product && <p className="text-sm font-semibold text-plate-ink">A${product.price.toFixed(2)}</p>}
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-plate-ink-3">{net} {item.unit}</p>
-                    {product && <p className="text-sm font-semibold text-plate-ink">A${product.price.toFixed(2)}</p>}
-                  </div>
-                  {searchUrl && <ExternalLink className="w-3.5 h-3.5 text-plate-ink-3/50 flex-shrink-0" />}
-                </a>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-          <div className="px-4 py-3 border-t border-plate-line flex justify-between">
-            <span className="text-sm font-medium text-plate-ink">Estimated total</span>
-            <span className="text-sm font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
-          </div>
+        ))}
+
+        <div className="bg-plate-surface rounded-2xl px-4 py-3 flex justify-between border border-slate-100">
+          <span className="text-sm font-medium text-plate-ink">Estimated total</span>
+          <span className="text-sm font-bold text-plate-ink">A${currentCart.estimatedTotal.toFixed(2)}</span>
         </div>
 
         <p className="text-xs text-plate-ink-3 text-center px-4">
@@ -258,11 +368,11 @@ export default function CheckoutPage() {
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-8 pt-4 bg-plate-surface/90 backdrop-blur-sm border-t border-plate-line z-10 space-y-2">
         <div className="flex gap-2">
           <button
-            onClick={copyList}
+            onClick={shareList}
             className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors flex-shrink-0"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-            {copied ? "Copied!" : "Copy list"}
+            {shared ? <Check className="w-4 h-4 text-emerald-600" /> : copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
+            {shared ? "Shared!" : copied ? "Copied!" : "Share list"}
           </button>
           <a
             href={retailerUrl}
@@ -275,9 +385,9 @@ export default function CheckoutPage() {
         </div>
         <button
           onClick={markAsOrdered}
-          className="w-full py-3 rounded-2xl border border-plate-line text-sm font-medium text-plate-ink-2 hover:bg-plate-surface-tertiary transition-colors"
+          className="w-full py-3.5 rounded-2xl bg-plate-lime border border-plate-ink text-plate-ink font-bold text-sm shadow-[2px_2px_0_#1A1410] hover:translate-y-px hover:shadow-[1px_1px_0_#1A1410] transition-all"
         >
-          Mark as ordered & save to history
+          Start shopping checklist →
         </button>
       </div>
     </div>
