@@ -11,16 +11,17 @@ export default function RootPage() {
   const { data: session, status } = useSession();
   const isOnboarded = useAppStore((s) => s.isOnboarded);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(true);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  // Redirect authenticated + onboarded users to /plan
+  // After auth: new users go to onboarding, returning users go to plan
   useEffect(() => {
-    if (status === "authenticated" || isOnboarded) {
+    if (status === "authenticated") {
       setRedirecting(true);
-      router.replace("/plan");
+      router.replace(isOnboarded ? "/plan" : "/onboarding");
     }
   }, [status, isOnboarded, router]);
 
@@ -34,14 +35,14 @@ export default function RootPage() {
 
   async function handleGoogleSignIn() {
     setSigningIn(true);
-    await signIn("google", { callbackUrl: "/plan" });
+    await signIn("google", { callbackUrl: "/" });
   }
 
   async function handleEmailSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     setSigningIn(true);
-    await signIn("resend", { email, callbackUrl: "/plan", redirect: false });
+    await signIn("resend", { email, callbackUrl: "/", redirect: false });
     setEmailSent(true);
     setSigningIn(false);
   }
@@ -100,7 +101,7 @@ export default function RootPage() {
 
         {/* CTAs */}
         <button
-          onClick={() => router.push("/onboarding")}
+          onClick={() => { setIsNewUser(true); setShowSignIn(true); }}
           style={{ width: "100%", height: 56, borderRadius: 999, background: "#C8FF3E", border: "1.5px solid #FFF8EE", boxShadow: "3px 3px 0 rgba(255,248,238,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "#1A1410", cursor: "pointer", letterSpacing: "-0.01em" }}
         >
           Get started
@@ -108,7 +109,7 @@ export default function RootPage() {
         </button>
 
         <button
-          onClick={() => setShowSignIn(true)}
+          onClick={() => { setIsNewUser(false); setShowSignIn(true); }}
           style={{ background: "none", border: "none", textAlign: "center", fontSize: 13, color: "#C8FF3E", margin: 0, cursor: "pointer", padding: 0 }}
         >
           Already have a Plate? <span style={{ textDecoration: "underline" }}>Sign in</span>
@@ -125,9 +126,11 @@ export default function RootPage() {
           <div style={{ position: "relative", zIndex: 1, background: "#FFF8EE", borderRadius: "24px 24px 0 0", padding: "28px 24px 48px", border: "1.5px solid #1A1410", borderBottom: "none" }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: "#1A1410", opacity: 0.15, margin: "0 auto 24px" }} />
             <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 24, color: "#1A1410", margin: "0 0 6px", fontStyle: "italic" }}>
-              Welcome back
+              {isNewUser ? "Create your account" : "Welcome back"}
             </h2>
-            <p style={{ fontSize: 14, color: "rgba(26,20,16,0.55)", margin: "0 0 24px" }}>Sign in to sync your plans across devices.</p>
+            <p style={{ fontSize: 14, color: "rgba(26,20,16,0.55)", margin: "0 0 24px" }}>
+              {isNewUser ? "Sign in to save your meal plan and cart." : "Sign in to sync your plans across devices."}
+            </p>
 
             {emailSent ? (
               <div style={{ background: "#C8FF3E", border: "1.5px solid #1A1410", borderRadius: 16, padding: "16px 20px", boxShadow: "3px 3px 0 #1A1410" }}>
