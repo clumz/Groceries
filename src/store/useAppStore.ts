@@ -26,6 +26,33 @@ const EMPTY_FEEDBACK: FeedbackHistory = {
   substituteDecisions: [],
 };
 
+// ─── Background server sync helpers ────────────────────────────────────────────
+
+async function bgSync(url: string, opts: RequestInit = {}): Promise<void> {
+  try {
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      ...opts,
+    });
+    if (res.status === 401) return; // Not signed in — skip silently
+  } catch {
+    // Offline or network error — skip
+  }
+}
+
+let prefsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+function syncPrefsDebounced(preferences: UserPreferences) {
+  if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
+  prefsDebounceTimer = setTimeout(() => {
+    bgSync("/api/user/preferences", {
+      method: "PUT",
+      body: JSON.stringify(preferences),
+    });
+  }, 800);
+}
+
+// ─── Interface ────────────────────────────────────────────────────────────────
+
 interface AppActions {
   completeOnboarding: (prefs: UserPreferences) => void;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
@@ -70,13 +97,21 @@ export const useAppStore = create<Store>()(
       theme: "system" as const,
 
       // ─── Actions ───────────────────────────────────────────────────────────
-      completeOnboarding: (prefs) =>
-        set({ isOnboarded: true, preferences: prefs }),
+      completeOnboarding: (prefs) => {
+        set({ isOnboarded: true, preferences: prefs });
+        bgSync("/api/user/preferences", {
+          method: "PUT",
+          body: JSON.stringify({ ...prefs, isOnboarded: true }),
+        });
+      },
 
-      updatePreferences: (prefs) =>
+      updatePreferences: (prefs) => {
         set((s) => ({
           preferences: s.preferences ? { ...s.preferences, ...prefs } : null,
-        })),
+        }));
+        const merged = get().preferences;
+        if (merged) syncPrefsDebounced(merged);
+      },
 
       setMealPlan: (plan) => set({ currentMealPlan: plan, currentCart: null }),
 
@@ -84,7 +119,8 @@ export const useAppStore = create<Store>()(
 
       setBuildingCart: (val) => set({ isBuildingCart: val }),
 
-      swapMeal: (mealId, newMeal) =>
+      swapMeal: (mealId, newMeal) => {
+        const planId = get().currentMealPlan?.id;
         set((s) => {
           if (!s.currentMealPlan) return s;
           return {
@@ -94,9 +130,17 @@ export const useAppStore = create<Store>()(
             },
             currentCart: null,
           };
-        }),
+        });
+        if (planId) {
+          bgSync(`/api/user/meal-plans/${planId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ mealId, recipeId: newMeal.recipe.id, servings: newMeal.servings }),
+          });
+        }
+      },
 
-      updateServings: (mealId, servings) =>
+      updateServings: (mealId, servings) => {
+        const planId = get().currentMealPlan?.id;
         set((s) => {
           if (!s.currentMealPlan) return s;
           const meal = s.currentMealPlan.meals.find((m) => m.id === mealId);
@@ -117,9 +161,20 @@ export const useAppStore = create<Store>()(
             },
             currentCart: null,
           };
-        }),
+        });
+        if (planId) {
+          bgSync(`/api/user/meal-plans/${planId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ mealId, servings }),
+          });
+        }
+      },
 
-      addFeedback: (feedback) =>
+      addFeedback: (feedback) => {
+        const planId = get().currentMealPlan?.id;
+        const affectedMeal = get().currentMealPlan?.meals.find(
+          (m) => m.recipe.id === feedback.recipeId
+        );
         set((s) => {
           const existingIdx = s.feedbackHistory.items.findIndex(
             (i) => i.recipeId === feedback.recipeId
@@ -143,7 +198,18 @@ export const useAppStore = create<Store>()(
                 }
               : null,
           };
-        }),
+        });
+        bgSync("/api/user/feedback", {
+          method: "POST",
+          body: JSON.stringify(feedback),
+        });
+        if (planId && affectedMeal) {
+          bgSync(`/api/user/meal-plans/${planId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ mealId: affectedMeal.id, feedback: feedback.feedback }),
+          });
+        }
+      },
 
       setCart: (cart) => set({ currentCart: cart }),
 
@@ -204,22 +270,26 @@ export const useAppStore = create<Store>()(
         }));
         const cart = get().currentCart;
         if (cart) get().setPantryFromOrder(order.id, cart.items);
+        bgSync("/api/user/orders", {
+          method: "POST",
+          body: JSON.stringify({ order }),
+        });
       },
 
       clearOrderHistory: () => set({ orderHistory: [] }),
 
-  toggleItemHave: (cartItemId) =>
-    set((s) => {
-      if (!s.currentCart) return s;
-      return {
-        currentCart: {
-          ...s.currentCart,
-          items: s.currentCart.items.map((item) =>
-            item.id === cartItemId ? { ...item, markedAsHave: !item.markedAsHave } : item
-          ),
-        },
-      };
-    }),
+      toggleItemHave: (cartItemId) =>
+        set((s) => {
+          if (!s.currentCart) return s;
+          return {
+            currentCart: {
+              ...s.currentCart,
+              items: s.currentCart.items.map((item) =>
+                item.id === cartItemId ? { ...item, markedAsHave: !item.markedAsHave } : item
+              ),
+            },
+          };
+        }),
 
       setTheme: (theme) => set({ theme }),
 
@@ -242,9 +312,10 @@ export const useAppStore = create<Store>()(
           };
         }),
 
-      toggleStaple: (name) =>
+      toggleStaple: (name) => {
+        const norm = name.toLowerCase().trim();
+        const isActive = get().stapleIngredients.includes(norm);
         set((s) => {
-          const norm = name.toLowerCase().trim();
           const has = s.stapleIngredients.includes(norm);
           return {
             stapleIngredients: has
@@ -252,29 +323,57 @@ export const useAppStore = create<Store>()(
               : [...s.stapleIngredients, norm],
             currentCart: null,
           };
-        }),
+        });
+        bgSync("/api/user/pantry", {
+          method: "POST",
+          body: JSON.stringify({ type: "staple", ingredientName: norm, active: !isActive }),
+        });
+      },
 
-      clearPantryItem: (ingredientName) =>
+      clearPantryItem: (ingredientName) => {
+        const matchingItems = get().pantryItems.filter(
+          (p) => p.ingredientName.toLowerCase() === ingredientName.toLowerCase()
+        );
         set((s) => ({
           pantryItems: s.pantryItems.filter(
             (p) => p.ingredientName.toLowerCase() !== ingredientName.toLowerCase()
           ),
           currentCart: null,
-        })),
+        }));
+        for (const item of matchingItems) {
+          bgSync("/api/user/pantry", {
+            method: "DELETE",
+            body: JSON.stringify({ ingredientName: item.ingredientName, unit: item.unit }),
+          });
+        }
+      },
 
-      adjustPantryItem: (ingredientName, quantity) =>
-        set((s) => {
-          const norm = ingredientName.toLowerCase();
-          if (quantity <= 0) {
-            return { pantryItems: s.pantryItems.filter((p) => p.ingredientName !== norm), currentCart: null };
-          }
-          return {
-            pantryItems: s.pantryItems.map((p) =>
-              p.ingredientName === norm ? { ...p, quantity } : p
-            ),
+      adjustPantryItem: (ingredientName, quantity) => {
+        const norm = ingredientName.toLowerCase();
+        const existing = get().pantryItems.find((p) => p.ingredientName === norm);
+        const unit = existing?.unit ?? "";
+        if (quantity <= 0) {
+          set((s) => ({
+            pantryItems: s.pantryItems.filter((p) => p.ingredientName !== norm),
             currentCart: null,
-          };
-        }),
+          }));
+          bgSync("/api/user/pantry", {
+            method: "DELETE",
+            body: JSON.stringify({ ingredientName: norm, unit }),
+          });
+          return;
+        }
+        set((s) => ({
+          pantryItems: s.pantryItems.map((p) =>
+            p.ingredientName === norm ? { ...p, quantity } : p
+          ),
+          currentCart: null,
+        }));
+        bgSync("/api/user/pantry", {
+          method: "POST",
+          body: JSON.stringify({ ingredientName: norm, quantity, unit }),
+        });
+      },
 
       setPantryFromOrder: (orderId, cartItems) =>
         set((s) => ({

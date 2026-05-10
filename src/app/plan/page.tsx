@@ -13,6 +13,7 @@ import { RecipeCard } from "@/components/plan/RecipeCard";
 import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { MigrationBanner } from "@/components/ui/MigrationBanner";
 import type { WeeklyMealPlan, PlannedMeal as PlannedMealType } from "@/types";
 import { RefreshCw, ShoppingCart } from "lucide-react";
 
@@ -160,6 +161,8 @@ export default function PlanPage() {
           </button>
         </div>
       </div>
+
+      <MigrationBanner />
 
       {/* Hero macro card */}
       {currentMealPlan && calorieGoal && dayTotals && !isGeneratingPlan && (

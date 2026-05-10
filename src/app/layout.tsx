@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/ui/Providers";
+import { StoreHydration } from "@/components/ui/StoreHydration";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -49,9 +51,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-plate-bg">
-        <div className="mx-auto max-w-[430px] min-h-screen relative bg-plate-bg">
-          {children}
-        </div>
+        <Providers>
+          <StoreHydration />
+          <div className="mx-auto max-w-[430px] min-h-screen relative bg-plate-bg">
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );

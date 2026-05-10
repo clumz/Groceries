@@ -1,17 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { buildMealPlanSystemPrompt } from "@/lib/prompts";
 import { generateMockMealPlan } from "@/lib/mockMealPlan";
-import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal } from "@/types";
+import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal, FeedbackHistory } from "@/types";
+import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 
 export async function POST(req: NextRequest) {
   try {
     const body: GeneratePlanRequest = await req.json();
-    const { preferences, feedbackHistory, preferenceEvolution } = body;
+    const { preferences } = body;
+
+    // If signed in, use server-side feedback (more trustworthy than client payload)
+    let feedbackHistory: FeedbackHistory = body.feedbackHistory ?? { items: [], servingAdjustments: [], substituteDecisions: [] };
+    let planUserId: string | null = null;
+
+    const session = await auth();
+    if (session?.user?.id) {
+      planUserId = session.user.id;
+      try {
+        const { prisma } = await import("@/lib/prisma");
+        const [dbFeedback, dbPrefsRow] = await Promise.all([
+          prisma.recipeFeedback.findMany({ where: { userId: planUserId } }),
+          prisma.userPreferences.findUnique({ where: { userId: planUserId } }),
+        ]);
+        if (dbFeedback.length > 0) {
+          feedbackHistory = {
+            items: dbFeedback.map((f) => ({
+              recipeId: f.recipeId,
+              recipeName: f.recipeName,
+              feedback: f.feedback as "thumbs-up" | "thumbs-down" | "never-show" | "swapped",
+              timestamp: f.timestamp.getTime(),
+              cuisineType: f.cuisineType ?? undefined,
+              primaryProtein: f.primaryProtein ?? undefined,
+            })),
+            servingAdjustments: [],
+            substituteDecisions: [],
+          };
+        }
+        // Prefer server preferences if available
+        if (dbPrefsRow) {
+          Object.assign(preferences, {
+            preferredStore: dbPrefsRow.preferredStore as "woolworths" | "coles",
+            suburb: dbPrefsRow.suburb,
+            postcode: dbPrefsRow.postcode,
+            dietaryRequirements: dbPrefsRow.dietaryRequirements,
+            cuisinePreferences: dbPrefsRow.cuisinePreferences,
+            proteinPreferences: dbPrefsRow.proteinPreferences,
+            householdSize: dbPrefsRow.householdSize,
+            defaultServings: dbPrefsRow.defaultServings,
+            budgetRange: dbPrefsRow.budgetRange as "under-150" | "150-250" | "250-350" | "350-plus",
+            cookTimePreference: dbPrefsRow.cookTimePreference as "under-20" | "20-40" | "40-plus",
+            includeLunches: dbPrefsRow.includeLunches,
+            includeSnacks: dbPrefsRow.includeSnacks,
+          });
+        }
+      } catch {
+        // DB unavailable — use client-supplied values
+      }
+    }
+
+    const preferenceEvolution = computePreferenceEvolution(feedbackHistory);
 
     // Fall back to mock data if no API key is configured
     if (!process.env.ANTHROPIC_API_KEY) {
       const mealPlan = generateMockMealPlan(preferences, feedbackHistory, preferenceEvolution);
-      return NextResponse.json({ mealPlan, mock: true });
+      if (planUserId) await savePlanToDB(planUserId, mealPlan);
+      return NextResponse.json({ mealPlan, planId: mealPlan.id, mock: true });
     }
 
     const Anthropic = (await import("@anthropic-ai/sdk")).default;
@@ -59,12 +113,57 @@ export async function POST(req: NextRequest) {
       preferenceSnapshot: preferences,
     };
 
-    return NextResponse.json({ mealPlan });
+    if (planUserId) await savePlanToDB(planUserId, mealPlan);
+
+    return NextResponse.json({ mealPlan, planId });
   } catch (error) {
     console.error("generate-plan error:", error);
     return NextResponse.json(
       { error: "Failed to generate meal plan" },
       { status: 500 }
     );
+  }
+}
+
+async function savePlanToDB(userId: string, mealPlan: WeeklyMealPlan): Promise<void> {
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    await prisma.mealPlan.updateMany({
+      where: { userId, isActive: true },
+      data: { isActive: false },
+    });
+    await prisma.mealPlan.create({
+      data: {
+        id: mealPlan.id,
+        userId,
+        generatedAt: new Date(mealPlan.generatedAt),
+        preferenceSnapshot: mealPlan.preferenceSnapshot as object,
+        isActive: true,
+        plannedMeals: {
+          create: mealPlan.meals
+            .filter((m) => m.recipe.id)
+            .map((m) => ({
+              id: m.id,
+              recipeId: m.recipe.id,
+              dayIndex: m.dayIndex,
+              mealType: m.mealType,
+              servings: m.servings,
+              feedback: m.feedback ?? null,
+            })),
+        },
+        snacks: {
+          create: mealPlan.snacks.map((s) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            quantity: s.quantity,
+            unit: s.unit,
+            estimatedCost: s.estimatedCost,
+          })),
+        },
+      },
+    });
+  } catch (e) {
+    console.warn("Could not save plan to DB:", e);
   }
 }

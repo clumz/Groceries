@@ -87,6 +87,12 @@ export default function CartPage() {
         mealPlanId: currentMealPlan.id,
       };
       setCart(cart);
+      // Auto-save to server (best-effort)
+      fetch("/api/user/carts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart }),
+      }).catch(() => {});
 
       // Price comparison: build the other retailer's cart silently
       const otherRetailer = retailer === "woolworths" ? "coles" : "woolworths";
