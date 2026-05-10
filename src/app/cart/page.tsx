@@ -51,11 +51,11 @@ export default function CartPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMealPlan]);
 
-  function buildCart() {
+  function buildCart(overrideRetailer?: "woolworths" | "coles") {
     if (!currentMealPlan || !preferences) return;
     setBuildingCart(true);
     try {
-      const retailer = preferences.preferredStore;
+      const retailer = overrideRetailer ?? preferences.preferredStore;
       const allIngredients = currentMealPlan.meals.flatMap((m) => m.recipe.ingredients.map((i) => i.name));
       const mappings = matchAllIngredients(Array.from(new Set(allIngredients)), retailer);
       const productMappings = new Map(
@@ -169,7 +169,7 @@ export default function CartPage() {
             Weekly cart
           </h1>
           <button
-            onClick={buildCart}
+            onClick={() => buildCart()}
             disabled={isBuildingCart}
             style={{
               width: 44, height: 44, borderRadius: 999,
@@ -192,7 +192,7 @@ export default function CartPage() {
             return (
               <button
                 key={store}
-                onClick={() => { switchRetailer(store); buildCart(); }}
+                onClick={() => { switchRetailer(store); buildCart(store); }}
                 style={{
                   flex: 1, padding: "8px 12px", borderRadius: 999, cursor: "pointer", textAlign: "center",
                   background: active ? "#1A1410" : "transparent",
