@@ -9,9 +9,12 @@ import type { Cart, CartItem } from "@/types";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { ShoppingCart, AlertCircle, ChevronRight, RefreshCw, Check, X, Leaf, ChevronDown, Settings, ExternalLink, Copy, Tag, ArrowUpRight, Circle, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, AlertCircle, RefreshCw, Check, X, Leaf, ChevronDown, Settings, ExternalLink, Copy, Tag, ArrowUpRight, Circle, CheckCircle2 } from "lucide-react";
 import { clsx } from "clsx";
+import { CartSkeleton } from "@/components/ui/Skeleton";
+import { haptic } from "@/lib/haptics";
+import { toast } from "@/lib/toast";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const CATEGORY_LABELS: Record<string, string> = {
   produce: "Fresh Produce",
@@ -41,6 +44,8 @@ export default function CartPage() {
   const toggleItemHave = useAppStore((s) => s.toggleItemHave);
   const pantryItems = useAppStore((s) => s.pantryItems);
   const stapleIngredients = useAppStore((s) => s.stapleIngredients);
+
+  const { pullY, progress, refreshing } = usePullToRefresh(() => buildCart());
 
   const [pantryExpanded, setPantryExpanded] = useState(false);
   const [priceComparison, setPriceComparison] = useState<{ savings: number; cheaperStore: import("@/types").Retailer } | null>(null);
@@ -87,6 +92,7 @@ export default function CartPage() {
         mealPlanId: currentMealPlan.id,
       };
       setCart(cart);
+      toast.success("Cart updated");
       // Auto-save to server (best-effort)
       fetch("/api/user/carts", {
         method: "POST",
@@ -159,6 +165,20 @@ export default function CartPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#FFF8EE", paddingBottom: 160 }}>
+      {/* Pull-to-refresh indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div style={{
+          position: "fixed", top: 0, left: "50%", transform: `translateX(-50%) translateY(${Math.min(pullY, 56) - 40}px)`,
+          zIndex: 50, display: "flex", alignItems: "center", gap: 6,
+          background: "#1A1410", color: "#FFF8EE", borderRadius: 999,
+          padding: "8px 14px", fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 600,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.2)", transition: "opacity 0.1s",
+          opacity: Math.min(progress * 1.5, 1),
+        }}>
+          <RefreshCw size={12} style={{ animation: refreshing ? "spin 1s linear infinite" : "none", transform: refreshing ? undefined : `rotate(${progress * 180}deg)` }} />
+          {refreshing ? "Refreshing…" : "Pull to refresh"}
+        </div>
+      )}
       {/* TopBar */}
       <div style={{ padding: "54px 20px 14px 20px" }}>
         <div className="eyebrow" style={{ marginBottom: 4 }}>
@@ -267,12 +287,7 @@ export default function CartPage() {
           </div>
         )}
 
-        {isBuildingCart && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", gap: 12 }}>
-            <LoadingSpinner size="lg" />
-            <p style={{ fontSize: 14, color: "#5C5249" }}>Building your cart…</p>
-          </div>
-        )}
+        {isBuildingCart && <CartSkeleton />}
 
         {!isBuildingCart && currentCart && (
           <>
@@ -318,7 +333,7 @@ export default function CartPage() {
                 </div>
                 <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #EDE4D5", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 28px -12px rgba(26,20,16,0.12)" }}>
                   {items.map((item, idx) => (
-                    <CartItemRow key={item.id} item={item} onToggleHave={() => toggleItemHave(item.id)} last={idx === items.length - 1} />
+                    <CartItemRow key={item.id} item={item} onToggleHave={() => { haptic("light"); toggleItemHave(item.id); }} last={idx === items.length - 1} />
                   ))}
                 </div>
               </div>

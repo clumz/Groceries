@@ -63,6 +63,31 @@
   }
 }
 
+/* ── Dark mode tokens ──────────────────────────────────────────────────────── */
+.dark {
+  --plate-bg:        #0F0C09;
+  --plate-surface:   #1A1410;
+  --plate-ink:       #FFF8EE;
+  --plate-ink-2:     #C8B8A8;
+  --plate-ink-3:     #7A6E65;
+  --plate-line:      #2E2520;
+
+  --plate-lime:       #C8FF3E;
+  --plate-lime-deep:  #9FD41A;
+  --plate-coral:      #FF6B4A;
+  --plate-coral-deep: #E5482A;
+  --plate-butter:     #FFD66B;
+  --plate-leaf:       #4A8A60;
+
+  --color-surface:           var(--plate-surface);
+  --color-surface-secondary: var(--plate-bg);
+  --color-surface-tertiary:  var(--plate-line);
+  --color-ink:               var(--plate-ink);
+  --color-ink-secondary:     var(--plate-ink-2);
+  --color-ink-tertiary:      var(--plate-ink-3);
+  --color-ink-inverse:       #1A1410;
+}
+
 @layer utilities {
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -98,4 +123,13 @@
   .shadow-sticker-sm {
     box-shadow: 2px 2px 0 var(--plate-ink);
   }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

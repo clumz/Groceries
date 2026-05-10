@@ -6,6 +6,7 @@ import type { PlannedMeal, FeedbackType } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { Clock, Users, ThumbsUp, ThumbsDown, X, Shuffle } from "lucide-react";
 import { clsx } from "clsx";
+import { haptic } from "@/lib/haptics";
 
 const CUISINE_COLORS: Record<string, "green" | "blue" | "orange" | "purple" | "gray"> = {
   italian: "orange",
@@ -49,6 +50,7 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
 
   function handleFeedback(e: React.MouseEvent, type: FeedbackType) {
     e.stopPropagation();
+    haptic(type === "thumbs-up" ? "medium" : "light");
     addFeedback({
       recipeId: recipe.id,
       recipeName: recipe.name,

@@ -12,8 +12,10 @@ import { MacroBar } from "@/components/ui/MacroBar";
 import { RecipeCard } from "@/components/plan/RecipeCard";
 import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { PlanSkeleton } from "@/components/ui/Skeleton";
 import { MigrationBanner } from "@/components/ui/MigrationBanner";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { toast } from "@/lib/toast";
 import type { WeeklyMealPlan, PlannedMeal as PlannedMealType } from "@/types";
 import { RefreshCw, ShoppingCart } from "lucide-react";
 
@@ -84,12 +86,16 @@ export default function PlanPage() {
       if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setMealPlan(data.mealPlan as WeeklyMealPlan);
+      toast.success("New plan ready!");
     } catch {
       setError("Something went wrong. Please try again.");
+      toast.error("Couldn't generate plan — please try again.");
     } finally {
       setGeneratingPlan(false);
     }
   }
+
+  const { pullY, progress, refreshing } = usePullToRefresh(generatePlan);
 
   const isSnacksTab = activeDay === 7;
   const dayMeals = currentMealPlan?.meals.filter((m) => m.dayIndex === activeDay) ?? [];
@@ -118,6 +124,20 @@ export default function PlanPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#FFF8EE", paddingBottom: 110 }}>
+      {/* Pull-to-refresh indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div style={{
+          position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
+          zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "8px 16px", borderRadius: "0 0 16px 16px",
+          background: "#1A1410", color: "#FFF8EE",
+          fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 600,
+          gap: 6, transition: "opacity 0.15s",
+        }}>
+          <RefreshCw size={12} style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none", transform: `rotate(${progress * 180}deg)` }} />
+          {refreshing ? "Generating…" : "Pull to refresh"}
+        </div>
+      )}
       {/* Top bar */}
       <div style={{ padding: "54px 20px 14px 20px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
         <div>
@@ -227,15 +247,7 @@ export default function PlanPage() {
 
       {/* Content */}
       <div style={{ padding: "0 20px" }}>
-        {isGeneratingPlan && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", gap: 16 }}>
-            <LoadingSpinner size="lg" />
-            <div style={{ textAlign: "center" }}>
-              <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "#1A1410" }}>Crafting your week…</p>
-              <p style={{ fontSize: 14, color: "#9C9087", marginTop: 4 }}>Claude is personalising your meal plan</p>
-            </div>
-          </div>
-        )}
+        {isGeneratingPlan && <PlanSkeleton />}
 
         {error && !isGeneratingPlan && (
           <div style={{ background: "#FFE5E0", border: "1.5px solid #FF6B4A", borderRadius: 16, padding: 14, fontSize: 14, color: "#E5482A", marginBottom: 12 }}>

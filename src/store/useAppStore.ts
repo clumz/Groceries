@@ -19,6 +19,7 @@ import type {
 } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
+import { toast } from "@/lib/toast";
 
 const EMPTY_FEEDBACK: FeedbackHistory = {
   items: [],
@@ -199,6 +200,8 @@ export const useAppStore = create<Store>()(
               : null,
           };
         });
+        const label = feedback.feedback === "thumbs-up" ? "Liked!" : feedback.feedback === "never-show" ? "Won't show again" : null;
+        if (label) toast.success(label);
         bgSync("/api/user/feedback", {
           method: "POST",
           body: JSON.stringify(feedback),

@@ -5,10 +5,10 @@
   "start_url": "/plan",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#16a34a",
+  "background_color": "#FFF8EE",
+  "theme_color": "#1A1410",
   "icons": [
     { "src": "/icon.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
   ]
 }
