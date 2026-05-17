@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useAppStore } from "@/store/useAppStore";
@@ -105,6 +105,8 @@ export default function SettingsPage() {
   const updatePreferences = useAppStore((s) => s.updatePreferences);
   const clearOrderHistory = useAppStore((s) => s.clearOrderHistory);
   const reset = useAppStore((s) => s.reset);
+  const setCart = useAppStore((s) => s.setCart);
+  const setHasSeenWelcome = useAppStore((s) => s.setHasSeenWelcome);
 
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false);
   const [cookTimeSheetOpen, setCookTimeSheetOpen] = useState(false);
@@ -117,6 +119,8 @@ export default function SettingsPage() {
   const [resetSheet, setResetSheet] = useState(false);
   const [suburb, setSuburb] = useState(preferences?.suburb ?? "");
   const [postcode, setPostcode] = useState(preferences?.postcode ?? "");
+  const [debugOpen, setDebugOpen] = useState(false);
+  const debugPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function saveLocation() {
     if (!suburb.trim() || !postcode.trim()) return;
@@ -620,9 +624,17 @@ export default function SettingsPage() {
           boxShadow: "3px 3px 0 #1A1410",
           overflow: "hidden",
         }}>
-          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center" }}>
+          <div
+            style={{ padding: "14px 18px", display: "flex", alignItems: "center", userSelect: "none" }}
+            onPointerDown={() => { debugPressTimer.current = setTimeout(() => setDebugOpen(true), 500); }}
+            onPointerUp={() => { if (debugPressTimer.current) clearTimeout(debugPressTimer.current); }}
+            onPointerLeave={() => { if (debugPressTimer.current) clearTimeout(debugPressTimer.current); }}
+          >
             <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Version</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#1A1410", opacity: 0.5 }}>1.0.0</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#1A1410", opacity: 0.5 }}>
+              {process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_COMMIT_SHA}
+            </span>
+            <span style={{ marginLeft: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 10, background: "#FF6B4A", color: "#FFF8EE", padding: "2px 7px", borderRadius: 999 }}>Beta</span>
           </div>
           <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
           <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
@@ -774,6 +786,37 @@ export default function SettingsPage() {
           onClose={() => setResetSheet(false)}
           danger
         />
+      )}
+
+      {/* Debug menu */}
+      {debugOpen && (
+        <Sheet title="🛠 Debug" onClose={() => setDebugOpen(false)}>
+          <div style={{ padding: "12px 20px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { setCart(null); setDebugOpen(false); }}
+                style={{ flex: 1, padding: "10px 0", borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Clear cart
+              </button>
+              <button
+                onClick={() => { setHasSeenWelcome(false); setDebugOpen(false); }}
+                style={{ flex: 1, padding: "10px 0", borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Reset welcome
+              </button>
+            </div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(JSON.stringify(useAppStore.getState(), null, 2)); }}
+              style={{ width: "100%", padding: "10px 0", borderRadius: 12, background: "#C8FF3E", border: "1.5px solid #1A1410", fontSize: 13, fontWeight: 700, fontFamily: "var(--font-display)", cursor: "pointer" }}
+            >
+              Copy state JSON
+            </button>
+            <pre style={{ fontSize: 10, color: "#5C5249", background: "#F5F0E8", borderRadius: 12, padding: 12, maxHeight: 220, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+              {JSON.stringify(useAppStore.getState(), null, 2)}
+            </pre>
+          </div>
+        </Sheet>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import type { UserPreferences, StorePreference, DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference } from "@/types";
 import { Check, ChevronRight, ShoppingBag, Clock } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 const TOTAL_STEPS = 8;
 
@@ -777,7 +778,15 @@ export default function OnboardingPage() {
             </button>
           )}
           <button
-            onClick={() => step === TOTAL_STEPS - 1 ? handleFinish() : setStep(step + 1)}
+            onClick={() => {
+              if (step === TOTAL_STEPS - 1) {
+                track("onboarding_step", { step: step + 1, name: STEP_LABELS[step], completed: true });
+                handleFinish();
+              } else {
+                track("onboarding_step", { step: step + 1, name: STEP_LABELS[step] });
+                setStep(step + 1);
+              }
+            }}
             disabled={!canAdvance}
             style={{
               flex: 1,

@@ -196,11 +196,19 @@ export default function BrowsePage() {
               ))}
             </div>
 
-            {recipes.length === 0 && (
+            {recipes.length === 0 && !loading && (
               <div className="flex flex-col items-center py-16 gap-3 text-center">
                 <span className="text-4xl">🍽️</span>
                 <p className="font-semibold text-plate-ink">No recipes found</p>
-                <p className="text-sm text-plate-ink-2">Try different filters or a broader search</p>
+                <p className="text-sm text-plate-ink-2">Try a different search term or clear your filters</p>
+                {(cuisine !== "all" || protein !== "all" || difficulty !== "all" || query) && (
+                  <button
+                    onClick={() => { setQuery(""); setCuisine("all"); setProtein("all"); setDifficulty("all"); }}
+                    className="mt-2 px-4 py-2 rounded-full bg-plate-ink text-plate-bg text-xs font-semibold"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
 

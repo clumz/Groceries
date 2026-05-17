@@ -66,6 +66,7 @@ model User {
   substituteDecisions SubstituteDecision[]
   pantryItems         PantryItem[]
   staples             UserStaple[]
+  bugReports          BugReport[]
 
   @@map("users")
 }
@@ -320,4 +321,32 @@ model UserStaple {
   @@unique([userId, ingredientName])
   @@index([userId])
   @@map("user_staples")
+}
+
+// ─── Internal Testing ─────────────────────────────────────────────────────────
+
+model BugReport {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  url       String
+  userAgent String   @map("user_agent") @db.Text
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("bug_reports")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  event      String
+  properties Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analytics_events")
 }

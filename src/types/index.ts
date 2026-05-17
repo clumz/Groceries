@@ -230,6 +230,7 @@ export interface Order {
 
 export interface AppState {
   isOnboarded: boolean;
+  hasSeenWelcome: boolean;
   preferences: UserPreferences | null;
   feedbackHistory: FeedbackHistory;
   currentMealPlan: WeeklyMealPlan | null;

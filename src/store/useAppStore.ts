@@ -20,6 +20,7 @@ import type {
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/analytics";
 
 const EMPTY_FEEDBACK: FeedbackHistory = {
   items: [],
@@ -63,7 +64,8 @@ interface AppActions {
   swapMeal: (mealId: string, newMeal: PlannedMeal) => void;
   updateServings: (mealId: string, servings: number) => void;
   addFeedback: (feedback: RecipeFeedback) => void;
-  setCart: (cart: Cart) => void;
+  setCart: (cart: Cart | null) => void;
+  setHasSeenWelcome: (val: boolean) => void;
   switchRetailer: (retailer: Retailer) => void;
   approveSubstitute: (cartItemId: string) => void;
   rejectSubstitute: (cartItemId: string) => void;
@@ -86,6 +88,7 @@ export const useAppStore = create<Store>()(
     (set, get) => ({
       // ─── State ─────────────────────────────────────────────────────────────
       isOnboarded: false,
+      hasSeenWelcome: false,
       preferences: null,
       feedbackHistory: EMPTY_FEEDBACK,
       currentMealPlan: null,
@@ -132,6 +135,7 @@ export const useAppStore = create<Store>()(
             currentCart: null,
           };
         });
+        track("meal_swapped", { cuisine: newMeal.recipe.cuisine });
         if (planId) {
           bgSync(`/api/user/meal-plans/${planId}`, {
             method: "PATCH",
@@ -202,6 +206,7 @@ export const useAppStore = create<Store>()(
         });
         const label = feedback.feedback === "thumbs-up" ? "Liked!" : feedback.feedback === "never-show" ? "Won't show again" : null;
         if (label) toast.success(label);
+        track("feedback_given", { feedback_type: feedback.feedback, cuisine: affectedMeal?.recipe.cuisine });
         bgSync("/api/user/feedback", {
           method: "POST",
           body: JSON.stringify(feedback),
@@ -215,6 +220,8 @@ export const useAppStore = create<Store>()(
       },
 
       setCart: (cart) => set({ currentCart: cart }),
+
+      setHasSeenWelcome: (val) => set({ hasSeenWelcome: val }),
 
       switchRetailer: (retailer) =>
         set((s) => {
@@ -386,6 +393,7 @@ export const useAppStore = create<Store>()(
       reset: () =>
         set({
           isOnboarded: false,
+          hasSeenWelcome: false,
           preferences: null,
           feedbackHistory: EMPTY_FEEDBACK,
           currentMealPlan: null,

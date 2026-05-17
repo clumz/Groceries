@@ -15,6 +15,7 @@ import { CartSkeleton } from "@/components/ui/Skeleton";
 import { haptic } from "@/lib/haptics";
 import { toast } from "@/lib/toast";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { track } from "@/lib/analytics";
 
 const CATEGORY_LABELS: Record<string, string> = {
   produce: "Fresh Produce",
@@ -93,6 +94,7 @@ export default function CartPage() {
       };
       setCart(cart);
       toast.success("Cart updated");
+      track("cart_built", { item_count: itemsWithSubs.length, retailer });
       // Auto-save to server (best-effort)
       fetch("/api/user/carts", {
         method: "POST",
@@ -277,6 +279,27 @@ export default function CartPage() {
           </div>
         )}
 
+        {/* Price disclaimer */}
+        {!isBuildingCart && currentCart && (
+          <div style={{ padding: "8px 14px", borderRadius: 12, background: "rgba(26,20,16,0.05)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "#9C9087", lineHeight: 1.4 }}>
+              ⚠️ Prices are estimates from a static catalogue and may not reflect current supermarket prices.
+            </span>
+          </div>
+        )}
+
+        {/* Empty cart state */}
+        {!isBuildingCart && currentCart && toBuyItems.length === 0 && alreadyHaveItems.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", gap: 12, textAlign: "center" }}>
+            <span style={{ fontSize: 40 }}>🥬</span>
+            <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "#1A1410" }}>All covered!</p>
+            <p style={{ fontSize: 13, color: "#9C9087", maxWidth: 260 }}>Everything in your plan is already in your pantry or staples.</p>
+            <button onClick={() => router.push("/settings/pantry")} style={{ fontSize: 13, fontWeight: 600, color: "#FF6B4A", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-display)" }}>
+              Edit pantry →
+            </button>
+          </div>
+        )}
+
         {/* "Got it" hint */}
         {!isBuildingCart && currentCart && toBuyItems.length > 0 && (
           <div style={{ padding: "10px 14px", borderRadius: 16, background: "#FFFFFF", border: "1px solid #EDE4D5", display: "flex", alignItems: "center", gap: 10 }}>
@@ -394,7 +417,7 @@ export default function CartPage() {
               </div>
             </div>
             <button
-              onClick={() => router.push("/checkout")}
+              onClick={() => { track("checkout_opened", { retailer: currentCart.retailer }); router.push("/checkout"); }}
               style={{
                 width: "100%", height: 52, borderRadius: 999,
                 background: "#C8FF3E", border: "none", cursor: "pointer",

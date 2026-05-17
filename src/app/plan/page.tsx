@@ -14,8 +14,10 @@ import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
 import { PlanSkeleton } from "@/components/ui/Skeleton";
 import { MigrationBanner } from "@/components/ui/MigrationBanner";
+import { WelcomeModal } from "@/components/ui/WelcomeModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/analytics";
 import type { WeeklyMealPlan, PlannedMeal as PlannedMealType } from "@/types";
 import { RefreshCw, ShoppingCart } from "lucide-react";
 
@@ -87,9 +89,11 @@ export default function PlanPage() {
       const data = await res.json();
       setMealPlan(data.mealPlan as WeeklyMealPlan);
       toast.success("New plan ready!");
+      track("plan_generated", { success: true, meal_count: (data.mealPlan as WeeklyMealPlan).meals.length });
     } catch {
       setError("Something went wrong. Please try again.");
       toast.error("Couldn't generate plan — please try again.");
+      track("plan_generated", { success: false });
     } finally {
       setGeneratingPlan(false);
     }
@@ -335,6 +339,8 @@ export default function PlanPage() {
       {swappingMeal && (
         <SwapSheet meal={swappingMeal} onClose={() => setSwappingMeal(null)} />
       )}
+
+      <WelcomeModal />
     </div>
   );
 }

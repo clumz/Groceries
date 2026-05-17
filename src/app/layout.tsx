@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/ui/Providers";
 import { StoreHydration } from "@/components/ui/StoreHydration";
 import { Toaster } from "@/components/ui/Toast";
+import { FeedbackWidget } from "@/components/ui/FeedbackWidget";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto max-w-[430px] min-h-screen relative bg-plate-bg">
             {children}
           </div>
+          <FeedbackWidget />
           <Toaster />
         </Providers>
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');` }} />

@@ -22,6 +22,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     verifyRequest: "/auth/verify",
   },
   callbacks: {
+    signIn({ user }) {
+      const list = process.env.ALLOWED_EMAILS;
+      if (!list) return true;
+      const allowed = list.split(",").map((e) => e.trim().toLowerCase());
+      return allowed.includes(user.email?.toLowerCase() ?? "");
+    },
     session({ session, user }) {
       session.user.id = user.id;
       return session;
