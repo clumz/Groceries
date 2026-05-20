@@ -265,6 +265,9 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Subscription card */}
+        <SubscriptionCard />
+
         {/* Nutrition card */}
         <StickerCard label="NUTRITION">
           <RowItem>
@@ -817,6 +820,85 @@ export default function SettingsPage() {
             </pre>
           </div>
         </Sheet>
+      )}
+    </div>
+  );
+}
+
+function SubscriptionCard() {
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useState(() => {
+    fetch("/api/user/subscription")
+      .then((r) => r.json())
+      .then((d) => setIsPremium(d.isPremium ?? false))
+      .catch(() => setIsPremium(false));
+  });
+
+  async function handleUpgrade() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleManage() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      background: isPremium ? "#1A1410" : "#FFF8EE",
+      border: "1.5px solid #1A1410",
+      borderRadius: 22,
+      boxShadow: "3px 3px 0 #1A1410",
+      padding: "18px 18px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div>
+          <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: isPremium ? "#C8FF3E" : "#1A1410" }}>
+            {isPremium ? "Plate Premium" : "Free Plan"}
+          </p>
+          <p style={{ fontSize: 12, color: isPremium ? "rgba(255,255,255,0.6)" : "#1A1410", opacity: isPremium ? 1 : 0.55, marginTop: 2 }}>
+            {isPremium
+              ? "AI meal plans · Unlimited generations · Semantic search"
+              : "Algorithmic plans · 5 generations/hour"}
+          </p>
+        </div>
+        {!isPremium && (
+          <span style={{ fontSize: 10, fontWeight: 700, background: "#C8FF3E", color: "#1A1410", border: "1.5px solid #1A1410", borderRadius: 999, padding: "3px 8px" }}>
+            FREE
+          </span>
+        )}
+      </div>
+      {isPremium ? (
+        <button
+          onClick={handleManage}
+          disabled={loading}
+          style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1.5px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.08)", color: "#FFF8EE", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          {loading ? "Loading…" : "Manage subscription →"}
+        </button>
+      ) : (
+        <button
+          onClick={handleUpgrade}
+          disabled={loading || !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+          style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1.5px solid #1A1410", background: "#C8FF3E", color: "#1A1410", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "2px 2px 0 #1A1410" }}
+        >
+          {loading ? "Loading…" : "Upgrade to Premium — A$12.99/mo →"}
+        </button>
       )}
     </div>
   );

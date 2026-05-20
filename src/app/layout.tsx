@@ -5,6 +5,8 @@ import { Providers } from "@/components/ui/Providers";
 import { StoreHydration } from "@/components/ui/StoreHydration";
 import { Toaster } from "@/components/ui/Toast";
 import { FeedbackWidget } from "@/components/ui/FeedbackWidget";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -57,6 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Plate" />
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+        )}
       </head>
       <body className="min-h-screen bg-plate-bg">
         <Providers>
@@ -66,6 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <FeedbackWidget />
           <Toaster />
+          <Analytics />
+          <SpeedInsights />
         </Providers>
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');` }} />
       </body>

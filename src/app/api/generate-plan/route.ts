@@ -4,6 +4,8 @@ import { buildMealPlanSystemPrompt } from "@/lib/prompts";
 import { generateMealPlan } from "@/lib/mealPlanAlgorithm";
 import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal, FeedbackHistory } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
+import { getUserIsPremium } from "@/lib/subscription";
+import { generatePlanLimiter } from "@/lib/upstash";
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,8 +63,30 @@ export async function POST(req: NextRequest) {
 
     const preferenceEvolution = computePreferenceEvolution(feedbackHistory);
 
-    // Use deterministic algorithm as primary path — Claude is opt-in when ANTHROPIC_API_KEY is set
-    if (!process.env.ANTHROPIC_API_KEY) {
+    // Rate limiting (skip if Upstash not configured)
+    if (process.env.UPSTASH_REDIS_REST_URL) {
+      const isPremium = await getUserIsPremium(planUserId).catch(() => false);
+      const limiter = isPremium ? generatePlanLimiter.premium : generatePlanLimiter.free;
+      const identifier = planUserId ?? (req.headers.get("x-forwarded-for") ?? "anon");
+      const { success, limit, remaining, reset } = await limiter.limit(identifier);
+      if (!success) {
+        return NextResponse.json(
+          { error: "Rate limit exceeded. Try again later." },
+          {
+            status: 429,
+            headers: {
+              "X-RateLimit-Limit": String(limit),
+              "X-RateLimit-Remaining": String(remaining),
+              "X-RateLimit-Reset": String(reset),
+            },
+          }
+        );
+      }
+    }
+
+    // Use deterministic algorithm for free tier; Claude for premium (when ANTHROPIC_API_KEY set)
+    const isPremiumUser = await getUserIsPremium(planUserId).catch(() => false);
+    if (!process.env.ANTHROPIC_API_KEY || !isPremiumUser) {
       const mealPlan = generateMealPlan(preferences, feedbackHistory, preferenceEvolution);
       if (planUserId) await savePlanToDB(planUserId, mealPlan);
       return NextResponse.json({ mealPlan, planId: mealPlan.id });

@@ -2,11 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { matchAllIngredients, findSubstitute } from "@/lib/skuMatcher";
 import type { MapIngredientsRequest, Product } from "@/types";
+import { mapIngredientsLimiter, cacheGet, cacheSet } from "@/lib/upstash";
+
+function hashIngredients(ingredients: { name: string }[], retailer: string): string {
+  const key = retailer + ":" + ingredients.map((i) => i.name.toLowerCase()).sort().join(",");
+  let h = 5381;
+  for (let i = 0; i < key.length; i++) h = ((h << 5) + h) ^ key.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
 
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  if (process.env.UPSTASH_REDIS_REST_URL) {
+    const identifier = req.headers.get("x-forwarded-for") ?? "anon";
+    const { success } = await mapIngredientsLimiter.limit(identifier).catch(() => ({ success: true }));
+    if (!success) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   try {
     const body: MapIngredientsRequest = await req.json();
     const { ingredients, retailer } = body;
+
+    // Cache lookup
+    if (process.env.UPSTASH_REDIS_REST_URL) {
+      const cacheKey = `map:${hashIngredients(ingredients, retailer)}`;
+      const cached = await cacheGet<{ mappings: unknown[] }>(cacheKey).catch(() => null);
+      if (cached) return NextResponse.json(cached);
+    }
 
     try {
       // Try DB-backed trigram matching first
@@ -94,7 +116,12 @@ export async function POST(req: NextRequest) {
         })
       );
 
-      return NextResponse.json({ mappings: results });
+      const response = { mappings: results };
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        const cacheKey = `map:${hashIngredients(ingredients, retailer)}`;
+        cacheSet(cacheKey, response, 24 * 60 * 60).catch(() => {}); // 24h TTL, fire-and-forget
+      }
+      return NextResponse.json(response);
     } catch {
       // DB unavailable — fall back to in-memory Jaccard matching
       console.warn("DB unavailable for map-ingredients, using in-memory fallback");

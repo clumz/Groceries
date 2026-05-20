@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { cacheGet, cacheSet } from "@/lib/upstash";
 
 // Fallback: if DB is unavailable, serve from the bundled JSON
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -37,6 +38,11 @@ export async function GET(req: NextRequest) {
 
     // Full-text search via tsvector when ?q= is provided
     if (q) {
+      const cacheKey = `recipes:q:${q}:${cuisine ?? ""}:${protein ?? ""}:${difficulty ?? ""}:${limit}`;
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        const cached = await cacheGet<{ recipes: unknown[]; total: number }>(cacheKey).catch(() => null);
+        if (cached) return NextResponse.json(cached);
+      }
       // Use raw query for full-text ranking; fall back to ILIKE if tsvector column not yet set up
       const results = await prisma.$queryRaw<{ id: string }[]>`
         SELECT id FROM recipes
@@ -58,7 +64,11 @@ export async function GET(req: NextRequest) {
       const recipes = await prisma.recipe.findMany({ where: { id: { in: ids } } });
       // Preserve ranking order
       const ordered = ids.map((rid) => recipes.find((r) => r.id === rid)).filter(Boolean);
-      return NextResponse.json({ recipes: ordered, total: ordered.length });
+      const response = { recipes: ordered, total: ordered.length };
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        cacheSet(cacheKey, response, 5 * 60).catch(() => {}); // 5 min TTL, fire-and-forget
+      }
+      return NextResponse.json(response);
     }
 
     // Standard filtered listing with deterministic seeded ordering
