@@ -9,6 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"] ?? "",
+    // DIRECT_URL = non-pooled URL (required for Supabase migrations via PgBouncer)
+    // Falls back to Neon unpooled or regular DATABASE_URL
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"] ?? "",
   },
 });

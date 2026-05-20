@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import { useAppStore } from "@/store/useAppStore";
 
 const MIGRATION_KEY = "plate-migration-offered";
 
 export function MigrationBanner() {
-  const { status } = useSession();
+  const { isSignedIn, isLoaded } = useUser();
   const preferences = useAppStore((s) => s.preferences);
   const feedbackHistory = useAppStore((s) => s.feedbackHistory);
   const pantryItems = useAppStore((s) => s.pantryItems);
@@ -19,7 +19,7 @@ export function MigrationBanner() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (!isLoaded || !isSignedIn) return;
     if (typeof window === "undefined") return;
     if (localStorage.getItem(MIGRATION_KEY)) return;
 
@@ -35,7 +35,7 @@ export function MigrationBanner() {
     }
 
     setVisible(true);
-  }, [status]);
+  }, [isLoaded, isSignedIn]);
 
   if (!visible || done) return null;
 

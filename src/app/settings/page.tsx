@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useClerk } from "@clerk/nextjs";
 import { useAppStore } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
@@ -101,6 +101,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const preferences = useAppStore((s) => s.preferences);
   const updatePreferences = useAppStore((s) => s.updatePreferences);
   const clearOrderHistory = useAppStore((s) => s.clearOrderHistory);
@@ -654,7 +655,7 @@ export default function SettingsPage() {
         {/* Danger zone */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ redirectUrl: "/" })}
             style={{
               background: "#FFFFFF",
               border: "1.5px solid #1A1410",

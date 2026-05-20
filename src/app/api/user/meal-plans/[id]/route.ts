@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 
 function unauthorized() {
@@ -10,12 +11,13 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { id } = await params;
   const plan = await prisma.mealPlan.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     include: { plannedMeals: { include: { recipe: true } }, snacks: true },
   });
 
@@ -28,19 +30,18 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { id } = await params;
   const body = await req.json();
 
-  // Verify ownership
   const plan = await prisma.mealPlan.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   });
   if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Update a specific planned meal (swap, servings change, feedback)
   if (body.mealId) {
     await prisma.plannedMeal.updateMany({
       where: { id: body.mealId, mealPlanId: id },
@@ -59,12 +60,13 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { id } = await params;
   await prisma.mealPlan.updateMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     data: { isActive: false },
   });
 

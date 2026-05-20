@@ -5,7 +5,8 @@
  * Fully idempotent — safe to call multiple times.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -44,9 +45,9 @@ const PrefsSchema = z.object({
 }).passthrough();
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const body = await req.json();
   const result = { preferences: false, feedback: 0, pantry: 0, staples: 0, mealPlan: false, orders: 0 };

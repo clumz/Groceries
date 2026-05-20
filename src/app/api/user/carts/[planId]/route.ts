@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 
 function unauthorized() {
@@ -10,13 +11,14 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ planId: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { planId } = await params;
 
   const cart = await prisma.cart.findFirst({
-    where: { mealPlanId: planId, userId: session.user.id },
+    where: { mealPlanId: planId, userId },
     orderBy: { createdAt: "desc" },
   });
 

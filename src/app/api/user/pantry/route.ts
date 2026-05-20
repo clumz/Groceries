@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_STAPLES } from "@/lib/pantryManager";
 
@@ -8,9 +9,9 @@ function unauthorized() {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const [pantryItems, userStaples] = await Promise.all([
     prisma.pantryItem.findMany({ where: { userId }, orderBy: { addedAt: "desc" } }),
@@ -36,9 +37,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const body = await req.json();
 
@@ -73,9 +74,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { ingredientName, unit } = await req.json();
   await prisma.pantryItem.deleteMany({ where: { userId, ingredientName, unit } });

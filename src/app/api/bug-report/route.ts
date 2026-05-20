@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
   const body = await req.json().catch(() => ({}));
   const { url, message } = body as { url?: string; message?: string };
 
@@ -13,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.bugReport.create({
     data: {
-      userId: session?.user?.id ?? null,
+      userId: userId ?? null,
       url: url ?? "",
       userAgent: req.headers.get("user-agent") ?? "",
       message: message.trim(),

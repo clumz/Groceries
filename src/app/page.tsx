@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useUser, useSignIn } from "@clerk/nextjs";
 import { useAppStore } from "@/store/useAppStore";
 import Image from "next/image";
 
 export default function RootPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { isSignedIn, isLoaded } = useUser();
+  const { signIn } = useSignIn();
   const isOnboarded = useAppStore((s) => s.isOnboarded);
   const [showSignIn, setShowSignIn] = useState(false);
   const [isNewUser, setIsNewUser] = useState(true);
@@ -17,15 +18,14 @@ export default function RootPage() {
   const [signingIn, setSigningIn] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  // After auth: new users go to onboarding, returning users go to plan
   useEffect(() => {
-    if (status === "authenticated") {
+    if (isLoaded && isSignedIn) {
       setRedirecting(true);
       router.replace(isOnboarded ? "/plan" : "/onboarding");
     }
-  }, [status, isOnboarded, router]);
+  }, [isLoaded, isSignedIn, isOnboarded, router]);
 
-  if (redirecting || status === "loading") {
+  if (redirecting || !isLoaded) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#1A1410" }}>
         <div style={{ width: 32, height: 32, borderRadius: 999, border: "2px solid #C8FF3E", borderTopColor: "transparent", animation: "spin 0.7s linear infinite" }} />
@@ -34,17 +34,35 @@ export default function RootPage() {
   }
 
   async function handleGoogleSignIn() {
+    if (!signIn) return;
     setSigningIn(true);
-    await signIn("google", { callbackUrl: "/" });
+    try {
+      await signIn.sso({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectCallbackUrl: "/",
+      });
+    } catch {
+      setSigningIn(false);
+    }
   }
 
   async function handleEmailSignIn(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !signIn) return;
     setSigningIn(true);
-    await signIn("resend", { email, callbackUrl: "/", redirect: false });
-    setEmailSent(true);
-    setSigningIn(false);
+    try {
+      await signIn.create({ identifier: email.trim() });
+      await signIn.emailLink.sendLink({
+        verificationUrl: `${window.location.origin}/sso-callback`,
+        emailAddress: email.trim(),
+      });
+      setEmailSent(true);
+    } catch {
+      setEmailSent(true);
+    } finally {
+      setSigningIn(false);
+    }
   }
 
   return (

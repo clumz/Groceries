@@ -79,6 +79,7 @@ interface AppActions {
   clearPantryItem: (ingredientName: string) => void;
   adjustPantryItem: (ingredientName: string, quantity: number) => void;
   setPantryFromOrder: (orderId: string, cartItems: CartItem[]) => void;
+  subscribePantryRealtime: (userId: string) => () => void;
 }
 
 type Store = AppState & AppActions;
@@ -389,6 +390,20 @@ export const useAppStore = create<Store>()(
         set((s) => ({
           pantryItems: updatePantryAfterOrder(cartItems, s.pantryItems, orderId),
         })),
+
+      subscribePantryRealtime: (userId) => {
+        if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_SUPABASE_URL) return () => {};
+        const { getSupabaseClient } = require("@/lib/supabaseClient");
+        const supabase = getSupabaseClient();
+        const channel = supabase.channel(`pantry:${userId}`)
+          .on("broadcast", { event: "pantry_updated" }, ({ payload }: { payload: { pantryItems?: unknown[] } }) => {
+            if (payload?.pantryItems) {
+              set({ pantryItems: payload.pantryItems as Store["pantryItems"] });
+            }
+          })
+          .subscribe();
+        return () => { supabase.removeChannel(channel); };
+      },
 
       reset: () =>
         set({

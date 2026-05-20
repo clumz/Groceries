@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import type { Order, Cart } from "@/types";
 
@@ -8,9 +9,9 @@ function unauthorized() {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "52"), 52);
   const cursor = req.nextUrl.searchParams.get("cursor");
@@ -34,9 +35,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { order }: { order: Order } = await req.json();
 

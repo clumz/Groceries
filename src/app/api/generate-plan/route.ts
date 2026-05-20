@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { buildMealPlanSystemPrompt } from "@/lib/prompts";
 import { generateMealPlan } from "@/lib/mealPlanAlgorithm";
 import type { GeneratePlanRequest, WeeklyMealPlan, PlannedMeal, FeedbackHistory } from "@/types";
@@ -16,9 +17,9 @@ export async function POST(req: NextRequest) {
     let feedbackHistory: FeedbackHistory = body.feedbackHistory ?? { items: [], servingAdjustments: [], substituteDecisions: [] };
     let planUserId: string | null = null;
 
-    const session = await auth();
-    if (session?.user?.id) {
-      planUserId = session.user.id;
+    const { userId: clerkId } = await auth();
+    planUserId = await getPrismaUserId(clerkId);
+    if (planUserId) {
       try {
         const { prisma } = await import("@/lib/prisma");
         const [dbFeedback, dbPrefsRow] = await Promise.all([

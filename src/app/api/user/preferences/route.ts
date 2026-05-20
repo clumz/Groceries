@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import type { UserPreferences } from "@/types";
 
@@ -8,11 +9,12 @@ function unauthorized() {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const prefs = await prisma.userPreferences.findUnique({
-    where: { userId: session.user.id },
+    where: { userId },
   });
 
   if (!prefs) return NextResponse.json({ preferences: null });
@@ -21,14 +23,15 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const body: UserPreferences & { isOnboarded?: boolean } = await req.json();
 
-  const data = prefsToDb(body, session.user.id);
+  const data = prefsToDb(body, userId);
   const prefs = await prisma.userPreferences.upsert({
-    where: { userId: session.user.id },
+    where: { userId },
     create: { ...data, isOnboarded: body.isOnboarded ?? true },
     update: { ...data, isOnboarded: body.isOnboarded ?? true },
   });
@@ -37,12 +40,12 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const patch = await req.json();
 
-  // Map camelCase fields to DB columns
   const mapped: Record<string, unknown> = {};
   const fieldMap: Record<string, string> = {
     preferredStore: "preferredStore",
@@ -64,7 +67,6 @@ export async function PATCH(req: NextRequest) {
   for (const [k, v] of Object.entries(patch)) {
     if (fieldMap[k]) mapped[fieldMap[k]] = v;
   }
-  // Handle macroGoal separately
   if (patch.macroGoal !== undefined) {
     if (patch.macroGoal === null) {
       mapped.macroProteinPct = null;
@@ -78,8 +80,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   const prefs = await prisma.userPreferences.upsert({
-    where: { userId: session.user.id },
-    create: { userId: session.user.id, ...mapped },
+    where: { userId },
+    create: { userId, ...mapped },
     update: mapped,
   });
 

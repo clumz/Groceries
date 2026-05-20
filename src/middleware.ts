@@ -1,31 +1,21 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const PUBLIC_PATHS = ["/", "/auth/verify", "/api/auth", "/api/stripe/webhook", "/api/cron"];
+const isPublic = createRouteMatcher([
+  "/",
+  "/sso-callback(.*)",
+  "/auth/verify(.*)",
+  "/api/auth(.*)",
+  "/api/stripe/webhook(.*)",
+  "/api/cron(.*)",
+  "/api/webhooks/clerk(.*)",
+]);
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-
-  // Allow public paths and static assets
-  if (
-    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")) ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/icon") ||
-    pathname.startsWith("/apple-icon") ||
-    pathname.match(/\.(png|jpg|svg|ico|webp)$/)
-  ) {
-    return NextResponse.next();
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublic(req)) {
+    await auth.protect();
   }
-
-  // Redirect unauthenticated users to sign-in
-  if (!req.auth) {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|svg|ico|webp)).*)"],
 };

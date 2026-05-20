@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@clerk/nextjs/server";
+import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import type { RecipeFeedback, FeedbackHistory } from "@/types";
 
@@ -8,9 +9,9 @@ function unauthorized() {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const [items, servingAdjustments, substituteDecisions] = await Promise.all([
     prisma.recipeFeedback.findMany({
@@ -54,9 +55,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const body: RecipeFeedback = await req.json();
 
@@ -84,9 +85,9 @@ export async function POST(req: NextRequest) {
 
 // Bulk upsert — used for localStorage migration
 export async function PUT(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return unauthorized();
-  const userId = session.user.id;
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
 
   const { items }: { items: RecipeFeedback[] } = await req.json();
 
