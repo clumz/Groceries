@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, clearLocalUserData } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   ChevronRight, Leaf, User, MapPin,
@@ -655,7 +655,7 @@ export default function SettingsPage() {
         {/* Danger zone */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
           <button
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => { clearLocalUserData(); signOut({ redirectUrl: "/" }); }}
             style={{
               background: "#FFFFFF",
               border: "1.5px solid #1A1410",

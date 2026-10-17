@@ -1,20 +1,24 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAppStore } from "@/store/useAppStore";
+import { useAuth } from "@clerk/nextjs";
+import { useAppStore, claimLocalDataFor } from "@/store/useAppStore";
 
 export function StoreHydration() {
-  const hydrated = useRef(false);
+  const { isLoaded, userId } = useAuth();
+  const hydratedFor = useRef<string | null>(null);
 
   // Rehydrate Zustand from localStorage first
   useEffect(() => {
     useAppStore.persist.rehydrate();
   }, []);
 
-  // Then pull server state (no-ops if not authenticated)
+  // Then, once we know who's signed in, drop another account's local data and
+  // pull this user's server state.
   useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
+    if (!isLoaded || !userId || hydratedFor.current === userId) return;
+    hydratedFor.current = userId;
+    claimLocalDataFor(userId);
 
     async function hydrateFromServer() {
       try {
@@ -69,7 +73,7 @@ export function StoreHydration() {
     }
 
     hydrateFromServer();
-  }, []);
+  }, [isLoaded, userId]);
 
   return null;
 }

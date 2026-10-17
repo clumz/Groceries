@@ -443,3 +443,31 @@ export const useAppStore = create<Store>()(
 
 export const selectPreferenceEvolution = (s: Store) =>
   computePreferenceEvolution(s.feedbackHistory);
+
+// ─── Device ownership ─────────────────────────────────────────────────────────
+// localStorage outlives a session, so remember whose data it is and wipe it on
+// sign-out or when a different account signs in on the same device.
+
+const OWNER_KEY = "plate-owner";
+const MIGRATION_KEY = "plate-migration-offered";
+
+export function clearLocalUserData() {
+  useAppStore.getState().reset();
+  try {
+    localStorage.removeItem(OWNER_KEY);
+    localStorage.removeItem(MIGRATION_KEY);
+  } catch {
+    // Storage unavailable — in-memory state is already reset
+  }
+}
+
+/** Claims local data for this user; clears it first if it belongs to someone else. */
+export function claimLocalDataFor(userId: string) {
+  try {
+    const owner = localStorage.getItem(OWNER_KEY);
+    if (owner && owner !== userId) clearLocalUserData();
+    localStorage.setItem(OWNER_KEY, userId);
+  } catch {
+    // Storage unavailable — nothing persisted to leak
+  }
+}
