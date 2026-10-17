@@ -12,13 +12,16 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
+    { name: "setup", testMatch: /global\.setup\.ts/ },
     {
       name: "Mobile Safari",
       use: { ...devices["iPhone 14"] },
+      dependencies: ["setup"],
     },
     {
       name: "Mobile Chrome",
       use: { ...devices["Pixel 7"] },
+      dependencies: ["setup"],
     },
   ],
   webServer: process.env.CI

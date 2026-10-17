@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { clerk } from "@clerk/testing/playwright";
 
-// TODO: implement auth bypass for Google OAuth
-// Current approach: tests that require auth use magic-link with TEST_EMAIL + TEST_MAGIC_TOKEN env vars.
-// Until that bypass is wired, auth-gated tests are skipped in CI.
+// Auth-gated tests sign in as an existing user of a Clerk *development*
+// instance: set E2E_CLERK_USER_EMAIL plus the dev instance's Clerk keys.
 
 test.describe("Landing page", () => {
   test("shows hero and Get Started CTA", async ({ page }) => {
@@ -26,19 +26,18 @@ test.describe("Landing page", () => {
 
 test.describe("Browse page (unauthenticated redirect)", () => {
   test("redirects unauthenticated users away from /browse", async ({ page }) => {
-    const response = await page.goto("/browse");
+    await page.goto("/browse");
     // Middleware should redirect to sign-in or landing page
     expect(page.url()).not.toContain("/browse");
   });
 });
 
 test.describe("Auth-gated flows", () => {
-  test.skip(!process.env.TEST_EMAIL || !process.env.TEST_MAGIC_TOKEN, "Requires TEST_EMAIL + TEST_MAGIC_TOKEN env vars");
+  test.skip(!process.env.E2E_CLERK_USER_EMAIL, "Requires E2E_CLERK_USER_EMAIL");
 
   test.beforeEach(async ({ page }) => {
-    // Use magic-link token to authenticate
-    await page.goto(`/api/auth/callback/email?token=${process.env.TEST_MAGIC_TOKEN}&email=${process.env.TEST_EMAIL}`);
-    await page.waitForURL(/\/(plan|onboarding)/);
+    await page.goto("/");
+    await clerk.signIn({ page, emailAddress: process.env.E2E_CLERK_USER_EMAIL! });
   });
 
   test("plan page shows generate button", async ({ page }) => {
