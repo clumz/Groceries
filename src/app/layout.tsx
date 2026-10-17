@@ -59,9 +59,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Plate" />
-        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-        )}
       </head>
       <body className="min-h-screen bg-plate-bg">
         <Providers>
