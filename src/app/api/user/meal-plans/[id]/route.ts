@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
+import { MealPatchSchema, parseBody } from "@/lib/validation";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,7 +36,9 @@ export async function PATCH(
   if (!userId) return unauthorized();
 
   const { id } = await params;
-  const body = await req.json();
+  const parsed = await parseBody(req, MealPatchSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
 
   const plan = await prisma.mealPlan.findFirst({
     where: { id, userId },

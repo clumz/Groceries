@@ -36,54 +36,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ plans });
 }
 
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth();
-  const userId = await getPrismaUserId(clerkId);
-  if (!userId) return unauthorized();
-
-  const { mealPlan }: { mealPlan: WeeklyMealPlan } = await req.json();
-
-  // Archive any existing active plan
-  await prisma.mealPlan.updateMany({
-    where: { userId, isActive: true },
-    data: { isActive: false },
-  });
-
-  // Create the new plan
-  const created = await prisma.mealPlan.create({
-    data: {
-      id: mealPlan.id,
-      userId,
-      generatedAt: new Date(mealPlan.generatedAt),
-      preferenceSnapshot: mealPlan.preferenceSnapshot as object,
-      isActive: true,
-      plannedMeals: {
-        create: mealPlan.meals.map((m) => ({
-          id: m.id,
-          recipeId: m.recipe.id,
-          dayIndex: m.dayIndex,
-          mealType: m.mealType,
-          servings: m.servings,
-          feedback: m.feedback ?? null,
-        })),
-      },
-      snacks: {
-        create: mealPlan.snacks.map((s) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description,
-          quantity: s.quantity,
-          unit: s.unit,
-          estimatedCost: s.estimatedCost,
-        })),
-      },
-    },
-    include: { plannedMeals: { include: { recipe: true } }, snacks: true },
-  });
-
-  return NextResponse.json({ mealPlan: dbPlanToClient(created), planId: created.id });
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function dbPlanToClient(plan: any): WeeklyMealPlan {
   const meals: PlannedMeal[] = plan.plannedMeals.map((m: any) => ({

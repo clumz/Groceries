@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
-import { getPrismaUserId } from "@/lib/clerk";
+import { getPrismaUserId, ownedMealPlanId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
 import type { Order, Cart } from "@/types";
+import { OrderSchema, parseBody } from "@/lib/validation";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,16 +41,24 @@ export async function POST(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const { order }: { order: Order } = await req.json();
+  const parsed = await parseBody(req, z.object({ order: OrderSchema }));
+  if (parsed.error) return parsed.error;
+  const { order } = parsed.data;
 
-  // Save the cart first if it doesn't exist
-  const cartExists = await prisma.cart.findUnique({ where: { id: order.cart.id } });
-  if (!cartExists) {
+  // The cart id comes from the client: only attach a cart this user owns.
+  const existingCart = await prisma.cart.findUnique({
+    where: { id: order.cart.id },
+    select: { userId: true },
+  });
+  if (existingCart && existingCart.userId !== userId) {
+    return NextResponse.json({ error: "Cart not found" }, { status: 404 });
+  }
+  if (!existingCart) {
     await prisma.cart.create({
       data: {
         id: order.cart.id,
         userId,
-        mealPlanId: order.cart.mealPlanId ?? null,
+        mealPlanId: await ownedMealPlanId(userId, order.cart.mealPlanId),
         retailer: order.cart.retailer,
         estimatedTotal: order.cart.estimatedTotal,
         items: order.cart.items as object,

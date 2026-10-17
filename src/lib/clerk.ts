@@ -74,3 +74,10 @@ export async function syncClerkUser(profile: ClerkProfile): Promise<string> {
     throw e;
   }
 }
+
+/** Returns the meal plan id only if it belongs to this user (client-supplied ids aren't trusted). */
+export async function ownedMealPlanId(userId: string, mealPlanId: string | null | undefined): Promise<string | null> {
+  if (!mealPlanId) return null;
+  const plan = await prisma.mealPlan.findFirst({ where: { id: mealPlanId, userId }, select: { id: true } });
+  return plan?.id ?? null;
+}
