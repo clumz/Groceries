@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "svix";
+import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { syncClerkUser } from "@/lib/clerk";
 
@@ -48,6 +49,18 @@ export async function POST(req: NextRequest) {
         image: data.image_url,
       });
     } else if (type === "user.deleted") {
+      // Stop billing before the rows (and our link to Stripe) go away.
+      const sub = await prisma.subscription.findFirst({
+        where: { user: { clerkId: data.id }, stripeSubscriptionId: { not: null }, status: { notIn: ["canceled", "incomplete_expired"] } },
+        select: { stripeSubscriptionId: true },
+      });
+      if (sub?.stripeSubscriptionId) {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+        await stripe.subscriptions.cancel(sub.stripeSubscriptionId).catch((e: unknown) => {
+          // Already canceled on Stripe's side is fine; anything else should retry.
+          if (!(e instanceof Stripe.errors.StripeInvalidRequestError && e.code === "resource_missing")) throw e;
+        });
+      }
       await prisma.user.deleteMany({ where: { clerkId: data.id } });
     }
   } catch (e) {

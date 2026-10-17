@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
     sub.metadata?.userId ??
     (await prisma.subscription.findUnique({ where: { stripeCustomerId: customerId }, select: { userId: true } }))
       ?.userId;
-  if (!userId) {
+  // No user, or the account was deleted (we cancel its subscription first, so
+  // Stripe's deleted event can land after the row is gone) — nothing to update.
+  if (!userId || !(await prisma.user.findUnique({ where: { id: userId }, select: { id: true } }))) {
     console.warn(`Stripe webhook: no user for subscription ${sub.id} / customer ${customerId}`);
     return NextResponse.json({ received: true });
   }
