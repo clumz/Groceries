@@ -32,3 +32,10 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet(key: string, value: unknown, ttlSeconds: number) {
   return redis.setex(key, ttlSeconds, JSON.stringify(value));
 }
+
+/** Per-user key when signed in; otherwise the client IP as set by the platform proxy. */
+export function rateLimitKey(headers: Headers, userId: string | null | undefined): string {
+  if (userId) return `user:${userId}`;
+  const ip = headers.get("x-real-ip") ?? headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return `ip:${ip || "unknown"}`;
+}

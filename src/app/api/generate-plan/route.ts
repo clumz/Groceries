@@ -6,7 +6,7 @@ import { generateAiMealPlan } from "@/lib/aiMealPlan";
 import type { GeneratePlanRequest, WeeklyMealPlan, FeedbackHistory } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { getUserIsPremium } from "@/lib/subscription";
-import { generatePlanLimiter } from "@/lib/upstash";
+import { generatePlanLimiter, rateLimitKey } from "@/lib/upstash";
 
 // Premium plans call Claude; leave room for one model call plus DB writes.
 export const maxDuration = 60;
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     // Rate limiting (skip if Upstash not configured)
     if (process.env.UPSTASH_REDIS_REST_URL) {
       const limiter = isPremium ? generatePlanLimiter.premium : generatePlanLimiter.free;
-      const identifier = planUserId ?? (req.headers.get("x-forwarded-for") ?? "anon");
+      const identifier = rateLimitKey(req.headers, planUserId);
       const { success, limit, remaining, reset } = await limiter.limit(identifier);
       if (!success) {
         return NextResponse.json(

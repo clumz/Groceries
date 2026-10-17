@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { matchAllIngredients, findSubstitute } from "@/lib/skuMatcher";
 import type { MapIngredientsRequest, Product } from "@/types";
-import { mapIngredientsLimiter, cacheGet, cacheSet } from "@/lib/upstash";
+import { mapIngredientsLimiter, cacheGet, cacheSet, rateLimitKey } from "@/lib/upstash";
+import { auth } from "@clerk/nextjs/server";
 
 function hashIngredients(ingredients: { name: string }[], retailer: string): string {
   const key = retailer + ":" + ingredients.map((i) => i.name.toLowerCase()).sort().join(",");
@@ -14,7 +15,8 @@ function hashIngredients(ingredients: { name: string }[], retailer: string): str
 export async function POST(req: NextRequest) {
   // Rate limiting
   if (process.env.UPSTASH_REDIS_REST_URL) {
-    const identifier = req.headers.get("x-forwarded-for") ?? "anon";
+    const { userId } = await auth();
+    const identifier = rateLimitKey(req.headers, userId);
     const { success } = await mapIngredientsLimiter.limit(identifier).catch(() => ({ success: true }));
     if (!success) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
