@@ -5,10 +5,9 @@
  */
 
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/prisma";
 import recipesData from "../src/data/recipes.json";
 
-const prisma = new PrismaClient();
 
 interface RawRecipe {
   id: string;
@@ -74,41 +73,7 @@ async function main() {
   }
 
   console.log(`\n✅ Migrated ${count} recipes.`);
-
-  // Enable pg_trgm and full-text search trigger
-  console.log("Setting up full-text search trigger...");
-  await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
-  await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS unaccent`);
-  await prisma.$executeRawUnsafe(`
-    ALTER TABLE recipes ADD COLUMN IF NOT EXISTS search_vector tsvector
-  `);
-  await prisma.$executeRawUnsafe(`
-    UPDATE recipes SET search_vector =
-      setweight(to_tsvector('english', name), 'A') ||
-      setweight(to_tsvector('english', array_to_string(tags, ' ')), 'B') ||
-      setweight(to_tsvector('english', cuisine), 'C')
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS recipes_fts_idx ON recipes USING GIN(search_vector)
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE OR REPLACE FUNCTION recipes_search_vector_update() RETURNS trigger AS $$
-    BEGIN
-      NEW.search_vector :=
-        setweight(to_tsvector('english', NEW.name), 'A') ||
-        setweight(to_tsvector('english', array_to_string(NEW.tags, ' ')), 'B') ||
-        setweight(to_tsvector('english', NEW.cuisine), 'C');
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql
-  `);
-  await prisma.$executeRawUnsafe(`
-    DROP TRIGGER IF EXISTS recipes_search_vector_trigger ON recipes;
-    CREATE TRIGGER recipes_search_vector_trigger
-    BEFORE INSERT OR UPDATE ON recipes
-    FOR EACH ROW EXECUTE FUNCTION recipes_search_vector_update()
-  `);
-  console.log("✅ Full-text search configured.");
+  // Search vectors/indexes are maintained by triggers from the migrations.
 }
 
 main()
