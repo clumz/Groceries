@@ -133,3 +133,13 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* iOS zooms into focused fields under 16px; keep them at 16px on touch
+   devices instead of disabling pinch-zoom with maximum-scale. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
