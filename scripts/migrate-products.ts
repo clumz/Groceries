@@ -1,10 +1,10 @@
 /**
  * One-shot migration: imports all products from the static TS catalogues into Postgres.
- * Run with: npx tsx scripts/migrate-products.ts
+ * Run with: npm run db:seed (or npx tsx scripts/migrate-products.ts)
  * Safe to re-run (upserts).
  */
 
-import "dotenv/config";
+import "./env";
 import { prisma } from "../src/lib/prisma";
 
 // Dynamic imports to avoid TypeScript path alias issues in scripts/

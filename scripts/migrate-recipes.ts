@@ -1,10 +1,10 @@
 /**
  * One-shot migration: imports all recipes from src/data/recipes.json into Postgres.
- * Run with: npx tsx scripts/migrate-recipes.ts
+ * Run with: npm run db:seed (or npx tsx scripts/migrate-recipes.ts)
  * Safe to re-run (upserts).
  */
 
-import "dotenv/config";
+import "./env";
 import { prisma } from "../src/lib/prisma";
 import recipesData from "../src/data/recipes.json";
 
