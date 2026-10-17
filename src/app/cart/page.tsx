@@ -241,7 +241,7 @@ export default function CartPage() {
             <Tag size={14} />
             <div style={{ flex: 1, fontSize: 13, lineHeight: 1.3 }}>
               {priceComparison.cheaperStore === currentCart.retailer ? (
-                <span><strong style={{ fontFamily: "var(--font-display)" }}>You're at the cheapest store</strong> — saving A${priceComparison.savings.toFixed(2)} vs the alternative</span>
+                <span><strong style={{ fontFamily: "var(--font-display)" }}>You&apos;re at the cheapest store</strong> — saving A${priceComparison.savings.toFixed(2)} vs the alternative</span>
               ) : (
                 <span>Switch to <strong style={{ fontFamily: "var(--font-display)" }}>{priceComparison.cheaperStore === "woolworths" ? "Woolworths" : "Coles"}</strong> and save A${priceComparison.savings.toFixed(2)}</span>
               )}

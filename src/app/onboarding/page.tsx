@@ -416,7 +416,7 @@ export default function OnboardingPage() {
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
           Dietary needs
         </h2>
-        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Select all that apply — we'll never suggest something you can't eat</p>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Select all that apply — we&apos;ll never suggest something you can&apos;t eat</p>
       </div>
       <MultiSelectPill options={DIETARY_OPTIONS} selected={dietary} onToggle={toggleDietary} />
       {dietary.length === 0 && (
@@ -430,7 +430,7 @@ export default function OnboardingPage() {
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
           Favourite cuisines
         </h2>
-        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Pick your favourites — we'll rotate through them each week</p>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Pick your favourites — we&apos;ll rotate through them each week</p>
       </div>
       <MultiSelectPill options={CUISINE_OPTIONS} selected={cuisines} onToggle={toggleCuisine} />
     </div>,
@@ -450,7 +450,7 @@ export default function OnboardingPage() {
     <div key="step4" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
-          Pick dishes you'd love
+          Pick dishes you&apos;d love
         </h2>
         <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>Select at least 3 — personalises your first meal plan</p>
       </div>
@@ -527,7 +527,7 @@ export default function OnboardingPage() {
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
           Your household
         </h2>
-        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We'll scale recipes and quantities to match</p>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We&apos;ll scale recipes and quantities to match</p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Household size */}
@@ -588,7 +588,7 @@ export default function OnboardingPage() {
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontStyle: "italic", fontSize: 28, color: "#1A1410", lineHeight: 1.15, marginBottom: 6 }}>
           Budget &amp; time
         </h2>
-        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We'll keep recommendations practical</p>
+        <p style={{ fontSize: 14, color: "#1A1410", opacity: 0.6 }}>We&apos;ll keep recommendations practical</p>
       </div>
       <div>
         <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1410", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-mono)", marginBottom: 10 }}>WEEKLY GROCERY BUDGET</p>

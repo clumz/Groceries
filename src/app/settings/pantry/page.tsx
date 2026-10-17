@@ -137,7 +137,7 @@ export default function PantrySettingsPage() {
         {activeTab === "pantry" && (
           <>
             <p className="text-sm text-plate-ink-2 px-1">
-              Carry-forward stock from previous orders. We'll deduct these from your next cart.
+              Carry-forward stock from previous orders. We&apos;ll deduct these from your next cart.
             </p>
 
             {pantryItems.length === 0 ? (
