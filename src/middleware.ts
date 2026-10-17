@@ -7,6 +7,7 @@ const isPublic = createRouteMatcher([
   "/api/stripe/webhook(.*)",
   "/api/cron(.*)",
   "/api/webhooks/clerk(.*)",
+  "/api/email/unsubscribe(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

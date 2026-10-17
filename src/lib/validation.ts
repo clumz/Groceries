@@ -39,6 +39,7 @@ export const PreferencesPutSchema = PreferencesSchema.extend({
 export const PreferencesPatchSchema = PreferencesSchema.partial().extend({
   theme: z.enum(["light", "dark", "system"]).optional(),
   isOnboarded: z.boolean().optional(),
+  emailReminders: z.boolean().optional(),
 });
 
 export const RecipeFeedbackSchema = z.object({

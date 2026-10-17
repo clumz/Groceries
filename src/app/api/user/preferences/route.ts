@@ -69,6 +69,7 @@ export async function PATCH(req: NextRequest) {
     calorieGoal: "calorieGoal",
     theme: "theme",
     isOnboarded: "isOnboarded",
+    emailReminders: "emailReminders",
   };
   for (const [k, v] of Object.entries(patch)) {
     if (fieldMap[k]) mapped[fieldMap[k]] = v;
