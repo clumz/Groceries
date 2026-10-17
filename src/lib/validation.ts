@@ -8,19 +8,19 @@ const id = z.string().min(1).max(200);
 const shortText = z.string().max(200);
 const tagList = z.array(z.string().max(60)).max(30);
 
-export const PreferencesSchema = z.object({
+const preferenceFields = {
   preferredStore: z.enum(["woolworths", "coles"]),
-  suburb: shortText.default(""),
-  postcode: z.string().max(10).default(""),
-  dietaryRequirements: tagList.default([]),
-  cuisinePreferences: tagList.default([]),
-  proteinPreferences: tagList.default([]),
-  householdSize: z.number().int().min(1).max(20).default(2),
-  defaultServings: z.number().int().min(1).max(20).default(2),
+  suburb: shortText,
+  postcode: z.string().max(10),
+  dietaryRequirements: tagList,
+  cuisinePreferences: tagList,
+  proteinPreferences: tagList,
+  householdSize: z.number().int().min(1).max(20),
+  defaultServings: z.number().int().min(1).max(20),
   budgetRange: z.enum(["under-150", "150-250", "250-350", "350-plus"]),
   cookTimePreference: z.enum(["under-20", "20-40", "40-plus"]),
-  includeLunches: z.boolean().default(false),
-  includeSnacks: z.boolean().default(true),
+  includeLunches: z.boolean(),
+  includeSnacks: z.boolean(),
   calorieGoal: z.number().min(0).max(10000).nullable().optional(),
   macroGoal: z
     .object({
@@ -30,13 +30,28 @@ export const PreferencesSchema = z.object({
     })
     .nullable()
     .optional(),
+};
+
+/** Full preferences (PUT, sync): missing optional fields get their defaults. */
+export const PreferencesSchema = z.object({
+  ...preferenceFields,
+  suburb: preferenceFields.suburb.default(""),
+  postcode: preferenceFields.postcode.default(""),
+  dietaryRequirements: preferenceFields.dietaryRequirements.default([]),
+  cuisinePreferences: preferenceFields.cuisinePreferences.default([]),
+  proteinPreferences: preferenceFields.proteinPreferences.default([]),
+  householdSize: preferenceFields.householdSize.default(2),
+  defaultServings: preferenceFields.defaultServings.default(2),
+  includeLunches: preferenceFields.includeLunches.default(false),
+  includeSnacks: preferenceFields.includeSnacks.default(true),
 });
 
 export const PreferencesPutSchema = PreferencesSchema.extend({
   isOnboarded: z.boolean().optional(),
 });
 
-export const PreferencesPatchSchema = PreferencesSchema.partial().extend({
+// No defaults here: a PATCH must only touch the fields it sends.
+export const PreferencesPatchSchema = z.object(preferenceFields).partial().extend({
   theme: z.enum(["light", "dark", "system"]).optional(),
   isOnboarded: z.boolean().optional(),
   emailReminders: z.boolean().optional(),
