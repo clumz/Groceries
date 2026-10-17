@@ -1,13 +1,21 @@
 import { prisma } from "@/lib/prisma";
 
+const PREMIUM_STATUSES = new Set(["active", "trialing"]);
+
+export function isPremiumSubscription(
+  sub: { status: string; currentPeriodEnd: Date | null } | null | undefined
+): boolean {
+  if (!sub || !PREMIUM_STATUSES.has(sub.status)) return false;
+  return sub.currentPeriodEnd == null || sub.currentPeriodEnd > new Date();
+}
+
 export async function getUserIsPremium(userId: string | null): Promise<boolean> {
   if (!userId) return false;
   const sub = await prisma.subscription.findUnique({
     where: { userId },
     select: { status: true, currentPeriodEnd: true },
   });
-  if (!sub) return false;
-  return sub.status === "active" && (sub.currentPeriodEnd == null || sub.currentPeriodEnd > new Date());
+  return isPremiumSubscription(sub);
 }
 
 export async function getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {

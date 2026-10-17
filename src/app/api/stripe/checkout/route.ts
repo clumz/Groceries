@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
-import { getOrCreateStripeCustomer } from "@/lib/subscription";
+import { getOrCreateStripeCustomer, getUserIsPremium } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
@@ -12,6 +12,11 @@ export async function POST() {
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
   if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Avoid a second, double-billed subscription — manage the existing one via the portal.
+  if (await getUserIsPremium(userId)) {
+    return NextResponse.json({ error: "Already subscribed" }, { status: 409 });
+  }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const customerId = await getOrCreateStripeCustomer(userId, user.email);
