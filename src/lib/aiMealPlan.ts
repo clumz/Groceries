@@ -45,8 +45,9 @@ export async function generateAiMealPlan(
   const pool = getCandidatePool(preferences, feedbackHistory);
   const byId = new Map(pool.map((r) => [r.id, r]));
 
-  // Keep well inside the route's maxDuration; the caller falls back on error.
-  const client = new Anthropic({ timeout: 50_000, maxRetries: 1 });
+  // timeout is per attempt, so no retries: one attempt must leave room inside the
+  // route's 60s maxDuration for the caller's deterministic fallback and DB save.
+  const client = new Anthropic({ timeout: 45_000, maxRetries: 0 });
   const response = await client.beta.messages.parse({
     model: MODEL,
     max_tokens: 16000,
