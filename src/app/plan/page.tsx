@@ -102,7 +102,10 @@ export default function PlanPage() {
   const { pullY, progress, refreshing } = usePullToRefresh(generatePlan);
 
   const isSnacksTab = activeDay === 7;
-  const dayMeals = currentMealPlan?.meals.filter((m) => m.dayIndex === activeDay) ?? [];
+  const dayMeals = useMemo(
+    () => currentMealPlan?.meals.filter((m) => m.dayIndex === activeDay) ?? [],
+    [currentMealPlan, activeDay]
+  );
   const dinners = dayMeals.filter((m) => m.mealType === "dinner");
   const lunches = dayMeals.filter((m) => m.mealType === "lunch");
 

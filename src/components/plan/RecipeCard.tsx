@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import type { PlannedMeal, FeedbackType } from "@/types";
@@ -68,11 +69,12 @@ export function RecipeCard({ meal, onSwapRequest }: RecipeCardProps) {
     >
       {/* Image */}
       <div className="relative h-44 overflow-hidden">
-        <img
+        <Image
           src={imageUrl}
           alt={recipe.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          fill
+          sizes="(max-width: 430px) 100vw, 430px"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 

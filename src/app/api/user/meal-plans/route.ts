@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
-import type { WeeklyMealPlan, PlannedMeal, SnackItem } from "@/types";
+import type { Prisma } from "@prisma/client";
+import type { WeeklyMealPlan, PlannedMeal, SnackItem, Recipe, UserPreferences } from "@/types";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,71 +37,20 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ plans });
 }
 
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth();
-  const userId = await getPrismaUserId(clerkId);
-  if (!userId) return unauthorized();
+type DbPlan = Prisma.MealPlanGetPayload<{ include: { plannedMeals: { include: { recipe: true } }; snacks: true } }>;
 
-  const { mealPlan }: { mealPlan: WeeklyMealPlan } = await req.json();
-
-  // Archive any existing active plan
-  await prisma.mealPlan.updateMany({
-    where: { userId, isActive: true },
-    data: { isActive: false },
-  });
-
-  // Create the new plan
-  const created = await prisma.mealPlan.create({
-    data: {
-      id: mealPlan.id,
-      userId,
-      generatedAt: new Date(mealPlan.generatedAt),
-      preferenceSnapshot: mealPlan.preferenceSnapshot as object,
-      isActive: true,
-      plannedMeals: {
-        create: mealPlan.meals.map((m) => ({
-          id: m.id,
-          recipeId: m.recipe.id,
-          dayIndex: m.dayIndex,
-          mealType: m.mealType,
-          servings: m.servings,
-          feedback: m.feedback ?? null,
-        })),
-      },
-      snacks: {
-        create: mealPlan.snacks.map((s) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description,
-          quantity: s.quantity,
-          unit: s.unit,
-          estimatedCost: s.estimatedCost,
-        })),
-      },
-    },
-    include: { plannedMeals: { include: { recipe: true } }, snacks: true },
-  });
-
-  return NextResponse.json({ mealPlan: dbPlanToClient(created), planId: created.id });
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function dbPlanToClient(plan: any): WeeklyMealPlan {
-  const meals: PlannedMeal[] = plan.plannedMeals.map((m: any) => ({
+function dbPlanToClient(plan: DbPlan): WeeklyMealPlan {
+  // String/JSON columns hold values the app wrote, so narrow them back to the client types.
+  const meals: PlannedMeal[] = plan.plannedMeals.map((m) => ({
     id: m.id,
     dayIndex: m.dayIndex,
-    mealType: m.mealType,
+    mealType: m.mealType as PlannedMeal["mealType"],
     servings: m.servings,
-    feedback: m.feedback ?? undefined,
-    recipe: {
-      ...m.recipe,
-      ingredients: m.recipe.ingredients,
-      cookTimeMinutes: m.recipe.cookTimeMinutes,
-      prepTimeMinutes: m.recipe.prepTimeMinutes,
-    },
+    feedback: (m.feedback ?? undefined) as PlannedMeal["feedback"],
+    recipe: m.recipe as unknown as Recipe,
   }));
 
-  const snacks: SnackItem[] = plan.snacks.map((s: any) => ({
+  const snacks: SnackItem[] = plan.snacks.map((s) => ({
     id: s.id,
     name: s.name,
     description: s.description,
@@ -114,6 +64,6 @@ function dbPlanToClient(plan: any): WeeklyMealPlan {
     generatedAt: plan.generatedAt.getTime(),
     meals,
     snacks,
-    preferenceSnapshot: plan.preferenceSnapshot,
+    preferenceSnapshot: plan.preferenceSnapshot as unknown as UserPreferences,
   };
 }

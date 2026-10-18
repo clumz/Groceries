@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 
 function VerifyContent() {
   const params = useSearchParams();
@@ -21,9 +22,9 @@ function VerifyContent() {
           <p style={{ fontSize: 15, color: "#1A1410", opacity: 0.65, lineHeight: 1.5, maxWidth: 320, marginBottom: 28 }}>
             That sign-in link has expired or already been used. Head back to request a new one.
           </p>
-          <a href="/" style={{ display: "inline-flex", alignItems: "center", height: 48, padding: "0 28px", borderRadius: 999, background: "#1A1410", border: "1.5px solid #1A1410", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "#FFF8EE", textDecoration: "none" }}>
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", height: 48, padding: "0 28px", borderRadius: 999, background: "#1A1410", border: "1.5px solid #1A1410", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "#FFF8EE", textDecoration: "none" }}>
             Back to Plate
-          </a>
+          </Link>
         </>
       ) : (
         <>

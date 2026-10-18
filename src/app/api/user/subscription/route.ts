@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
+import { isPremiumSubscription } from "@/lib/subscription";
 
 export async function GET() {
   const { userId: clerkId } = await auth();
@@ -18,9 +19,7 @@ export async function GET() {
     },
   });
 
-  const isPremium =
-    sub?.status === "active" &&
-    (sub.currentPeriodEnd == null || sub.currentPeriodEnd > new Date());
+  const isPremium = isPremiumSubscription(sub);
 
   return NextResponse.json({ subscription: sub, isPremium });
 }

@@ -138,17 +138,13 @@ function scoreRecipe(
   return score;
 }
 
-// ─── Main algorithm ────────────────────────────────────────────────────────────
+// ─── Candidate pool ────────────────────────────────────────────────────────────
 
-export function generateMealPlan(
+/** Recipes eligible for this user: never-show removed, then dietary/cuisine/protein filters. */
+export function getCandidatePool(
   preferences: UserPreferences,
   feedbackHistory?: FeedbackHistory,
-  evolution?: PreferenceEvolution,
-): WeeklyMealPlan {
-  const planId = `plan-${Date.now()}`;
-  const seed = Date.now();
-  const costCap = budgetToCostCap(preferences.budgetRange);
-
+): Recipe[] {
   let pool = getRecipeLibrary();
 
   // Hard-exclude never-show recipes
@@ -193,6 +189,22 @@ export function generateMealPlan(
     const f = pool.filter((r) => r.primaryProtein && preferences.proteinPreferences.includes(r.primaryProtein as never));
     if (f.length >= 4) pool = f;
   }
+
+  return pool;
+}
+
+// ─── Main algorithm ────────────────────────────────────────────────────────────
+
+export function generateMealPlan(
+  preferences: UserPreferences,
+  feedbackHistory?: FeedbackHistory,
+  evolution?: PreferenceEvolution,
+): WeeklyMealPlan {
+  const planId = `plan-${Date.now()}`;
+  const seed = Date.now();
+  const costCap = budgetToCostCap(preferences.budgetRange);
+
+  let pool = getCandidatePool(preferences, feedbackHistory);
 
   // Seeded shuffle for variety between regenerations
   pool = seededShuffle(pool, seed);
@@ -250,7 +262,7 @@ export function generateMealPlan(
         id: `lunch-${planId}-${dayIndex}`,
         dayIndex,
         mealType: "lunch",
-        recipe: { ...best.recipe, id: `${best.recipe.id}-lunch`, name: `${best.recipe.name} (Lunch)`, servings: preferences.defaultServings },
+        recipe: { ...best.recipe, servings: preferences.defaultServings },
         servings: preferences.defaultServings,
       });
     }

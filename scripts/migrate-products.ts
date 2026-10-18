@@ -1,11 +1,11 @@
 /**
  * One-shot migration: imports all products from the static TS catalogues into Postgres.
- * Run with: npx tsx scripts/migrate-products.ts
+ * Run with: npm run db:seed (or npx tsx scripts/migrate-products.ts)
  * Safe to re-run (upserts).
  */
 
-import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import "./env";
+import { prisma } from "../src/lib/prisma";
 
 // Dynamic imports to avoid TypeScript path alias issues in scripts/
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -13,7 +13,6 @@ const { woolworthsCatalogue } = require("../src/data/woolworths");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { colesCatalogue } = require("../src/data/coles");
 
-const prisma = new PrismaClient();
 
 interface RawProduct {
   id: string;
@@ -71,47 +70,7 @@ async function main() {
     if (count % 50 === 0) console.log(`  ${count}/${all.length}`);
   }
   console.log(`\n✅ Migrated ${count} products.`);
-
-  // Set up trigram-based product search
-  console.log("Setting up product trigram search...");
-  await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
-  await prisma.$executeRawUnsafe(`
-    ALTER TABLE products ADD COLUMN IF NOT EXISTS search_vector tsvector
-  `);
-  await prisma.$executeRawUnsafe(`
-    UPDATE products SET search_vector =
-      to_tsvector('english',
-        name || ' ' ||
-        COALESCE(brand, '') || ' ' ||
-        category
-      )
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS products_fts_idx ON products USING GIN(search_vector)
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING GIN(name gin_trgm_ops)
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE OR REPLACE FUNCTION products_search_vector_update() RETURNS trigger AS $$
-    BEGIN
-      NEW.search_vector :=
-        to_tsvector('english',
-          NEW.name || ' ' ||
-          COALESCE(NEW.brand, '') || ' ' ||
-          NEW.category
-        );
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql
-  `);
-  await prisma.$executeRawUnsafe(`
-    DROP TRIGGER IF EXISTS products_search_vector_trigger ON products;
-    CREATE TRIGGER products_search_vector_trigger
-    BEFORE INSERT OR UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION products_search_vector_update()
-  `);
-  console.log("✅ Product trigram search configured.");
+  // Search vectors/indexes are maintained by triggers from the migrations.
 }
 
 main()

@@ -96,7 +96,7 @@ function parseIngredient(raw: string): { name: string; quantity: number; unit: s
   }
 
   const quantity = parseFractionStr(m[1]);
-  let rest = m[2].trim();
+  const rest = m[2].trim();
 
   // Try to strip unit
   for (const unit of UNITS) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
+import { PantryDeleteSchema, PantryPostSchema, PantryPutSchema, parseBody } from "@/lib/validation";
 import { DEFAULT_STAPLES } from "@/lib/pantryManager";
 
 function unauthorized() {
@@ -41,7 +42,9 @@ export async function POST(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const body = await req.json();
+  const parsed = await parseBody(req, PantryPostSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
 
   if (body.type === "staple") {
     // Toggle a staple ingredient
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert a pantry item
-  const { ingredientName, quantity, unit, sourceOrderId } = body;
+  const { ingredientName, quantity, unit, sourceOrderId } = body as Extract<typeof body, { quantity: number }>;
   if (quantity <= 0) {
     await prisma.pantryItem.deleteMany({ where: { userId, ingredientName, unit } });
   } else {
@@ -78,8 +81,37 @@ export async function DELETE(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const { ingredientName, unit } = await req.json();
+  const parsedDelete = await parseBody(req, PantryDeleteSchema);
+  if (parsedDelete.error) return parsedDelete.error;
+  const { ingredientName, unit } = parsedDelete.data;
   await prisma.pantryItem.deleteMany({ where: { userId, ingredientName, unit } });
+
+  return NextResponse.json({ ok: true });
+}
+
+// Replace the whole pantry — used after an order, where many items change at once.
+export async function PUT(req: NextRequest) {
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
+
+  const parsed = await parseBody(req, PantryPutSchema);
+  if (parsed.error) return parsed.error;
+
+  await prisma.$transaction([
+    prisma.pantryItem.deleteMany({ where: { userId } }),
+    prisma.pantryItem.createMany({
+      data: parsed.data.pantryItems.map((p) => ({
+        userId,
+        ingredientName: p.ingredientName,
+        quantity: p.quantity,
+        unit: p.unit,
+        addedAt: new Date(p.addedAt ?? Date.now()),
+        sourceOrderId: p.sourceOrderId ?? null,
+      })),
+      skipDuplicates: true,
+    }),
+  ]);
 
   return NextResponse.json({ ok: true });
 }

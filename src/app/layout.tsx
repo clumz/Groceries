@@ -43,7 +43,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   themeColor: "#1A1410",
 };
 
@@ -59,9 +58,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Plate" />
-        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-        )}
       </head>
       <body className="min-h-screen bg-plate-bg">
         <Providers>
@@ -74,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Analytics />
           <SpeedInsights />
         </Providers>
-        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');` }} />
+        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=${process.env.NEXT_PUBLIC_COMMIT_SHA}');` }} />
       </body>
     </html>
   );

@@ -3,14 +3,14 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, clearLocalUserData, cancelPendingPreferenceSync } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
-  ChevronRight, Leaf, User, MapPin,
+  ChevronRight, Leaf, MapPin,
   Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
-  UtensilsCrossed, ChevronDown, Check, Flame, X, LogOut
+  UtensilsCrossed, ChevronDown, Check, Flame, X, LogOut, Mail, UserX
 } from "lucide-react";
-import { clsx } from "clsx";
+import { toast } from "@/lib/toast";
 import type { BudgetRange, CookTimePreference } from "@/types";
 
 function adjustMacros(
@@ -118,6 +118,8 @@ export default function SettingsPage() {
   const [localFat, setLocalFat] = useState(preferences?.macroGoal?.fatPct ?? 30);
   const [clearHistorySheet, setClearHistorySheet] = useState(false);
   const [resetSheet, setResetSheet] = useState(false);
+  const [deleteAccountSheet, setDeleteAccountSheet] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [suburb, setSuburb] = useState(preferences?.suburb ?? "");
   const [postcode, setPostcode] = useState(preferences?.postcode ?? "");
   const [debugOpen, setDebugOpen] = useState(false);
@@ -129,9 +131,43 @@ export default function SettingsPage() {
     setLocationExpanded(false);
   }
 
-  function handleReset() {
+  async function handleReset() {
+    // Clear the server first; a local-only reset is undone by the next hydration.
+    // Drop any queued preference save so it can't recreate prefs after the wipe.
+    cancelPendingPreferenceSync();
+    setBusy(true);
+    const res = await fetch("/api/user/data", { method: "DELETE" }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) {
+      toast.error("Couldn't reset your data. Check your connection and try again.");
+      return;
+    }
+    setResetSheet(false);
     reset();
     router.replace("/onboarding");
+  }
+
+  async function handleDeleteAccount() {
+    setBusy(true);
+    const res = await fetch("/api/user/account", { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) {
+      setBusy(false);
+      toast.error("Couldn't delete your account. Check your connection and try again.");
+      return;
+    }
+    clearLocalUserData();
+    // The Clerk user is already gone server-side; signOut just clears the session.
+    await signOut().catch(() => {});
+    window.location.replace("/");
+  }
+
+  function setEmailReminders(enabled: boolean) {
+    updatePreferences({ emailReminders: enabled });
+    fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emailReminders: enabled }),
+    }).catch(() => {});
   }
 
   if (!preferences) return null;
@@ -433,6 +469,17 @@ export default function SettingsPage() {
 
           <Divider />
 
+          {/* Weekly reminder email */}
+          <RowItem>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Mail size={16} color="#1A1410" />
+            </div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Weekly reminder email</span>
+            <Toggle checked={preferences.emailReminders ?? true} onChange={setEmailReminders} />
+          </RowItem>
+
+          <Divider />
+
           {/* Servings */}
           <RowItem>
             <div style={{ width: 36, height: 36, borderRadius: 12, background: "#FFF8EE", border: "1.5px solid #1A1410", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -655,7 +702,7 @@ export default function SettingsPage() {
         {/* Danger zone */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
           <button
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => { clearLocalUserData(); signOut({ redirectUrl: "/" }); }}
             style={{
               background: "#FFFFFF",
               border: "1.5px solid #1A1410",
@@ -704,6 +751,23 @@ export default function SettingsPage() {
           >
             <RotateCcw size={16} color="#FF6B4A" />
             <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#FF6B4A", textAlign: "left", fontFamily: "var(--font-display)" }}>Reset all data</span>
+          </button>
+          <button
+            onClick={() => setDeleteAccountSheet(true)}
+            style={{
+              background: "#FFFFFF",
+              border: "1.5px solid #FF6B4A",
+              borderRadius: 16,
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+              width: "100%",
+            }}
+          >
+            <UserX size={16} color="#FF6B4A" />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#FF6B4A", textAlign: "left", fontFamily: "var(--font-display)" }}>Delete account</span>
           </button>
         </div>
       </div>
@@ -785,9 +849,20 @@ export default function SettingsPage() {
         <ConfirmSheet
           title="Reset all data?"
           body="This will delete your profile, meal plan, cart, order history, and pantry. You'll restart onboarding. This cannot be undone."
-          confirmLabel="Reset everything"
-          onConfirm={handleReset}
+          confirmLabel={busy ? "Resetting…" : "Reset everything"}
+          onConfirm={() => { if (!busy) handleReset(); }}
           onClose={() => setResetSheet(false)}
+          danger
+        />
+      )}
+
+      {deleteAccountSheet && (
+        <ConfirmSheet
+          title="Delete your account?"
+          body="This permanently deletes your Plate account and all your data, and cancels any Premium subscription. This cannot be undone."
+          confirmLabel={busy ? "Deleting…" : "Delete account"}
+          onConfirm={() => { if (!busy) handleDeleteAccount(); }}
+          onClose={() => setDeleteAccountSheet(false)}
           danger
         />
       )}

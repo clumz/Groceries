@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ShoppingBag, ChevronDown, TrendingUp } from "lucide-react";
@@ -16,7 +15,6 @@ const BUDGET_MAP: Record<string, number> = {
 };
 
 export default function OrdersPage() {
-  const router = useRouter();
   const orderHistory = useAppStore((s) => s.orderHistory);
   const preferences = useAppStore((s) => s.preferences);
   const [expandedId, setExpandedId] = useState<string | null>(null);

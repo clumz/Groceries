@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { estimatePantrySavings } from "@/lib/cartAggregator";
 import type { CartItem, Order } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { ChevronLeft, ShoppingBag, ArrowUpRight, Copy, Check, Leaf, Share2, Circle, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ShoppingBag, ArrowUpRight, Check, Leaf, Share2, Circle, CheckCircle2 } from "lucide-react";
 import { clsx } from "clsx";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -104,12 +104,6 @@ export default function CheckoutPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }
-
-  async function copyList() {
-    await navigator.clipboard.writeText(shareText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   function toggleChecked(id: string) {

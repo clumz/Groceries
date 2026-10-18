@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { RecipeFeedbackSchema, parseBody } from "@/lib/validation";
 import type { RecipeFeedback, FeedbackHistory } from "@/types";
 
 function unauthorized() {
@@ -59,7 +61,9 @@ export async function POST(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const body: RecipeFeedback = await req.json();
+  const parsed = await parseBody(req, RecipeFeedbackSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
 
   await prisma.recipeFeedback.upsert({
     where: { userId_recipeId: { userId, recipeId: body.recipeId } },
@@ -89,7 +93,9 @@ export async function PUT(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const { items }: { items: RecipeFeedback[] } = await req.json();
+  const parsed = await parseBody(req, z.object({ items: z.array(RecipeFeedbackSchema).max(1000) }));
+  if (parsed.error) return parsed.error;
+  const { items } = parsed.data;
 
   let count = 0;
   for (const item of items) {

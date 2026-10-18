@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import type { DietaryRequirement, CuisinePreference, ProteinPreference, BudgetRange, CookTimePreference, StorePreference } from "@/types";
+import type { DietaryRequirement, CuisinePreference, ProteinPreference, StorePreference } from "@/types";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Check, ThumbsUp, ThumbsDown, XCircle, ChevronRight, RefreshCw, LogOut } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, XCircle, ChevronRight, RefreshCw } from "lucide-react";
 import { clsx } from "clsx";
 
 const DIETARY_LABELS: Record<DietaryRequirement, string> = {

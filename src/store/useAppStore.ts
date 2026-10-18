@@ -10,12 +10,9 @@ import type {
   Order,
   FeedbackHistory,
   RecipeFeedback,
-  FeedbackType,
   PlannedMeal,
   Retailer,
   CartItem,
-  Product,
-  PantryItem,
 } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
@@ -43,6 +40,12 @@ async function bgSync(url: string, opts: RequestInit = {}): Promise<void> {
 }
 
 let prefsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Drop a queued preference save (e.g. before wiping the user's server data). */
+export function cancelPendingPreferenceSync() {
+  if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
+  prefsDebounceTimer = null;
+}
 function syncPrefsDebounced(preferences: UserPreferences) {
   if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
   prefsDebounceTimer = setTimeout(() => {
@@ -79,7 +82,6 @@ interface AppActions {
   clearPantryItem: (ingredientName: string) => void;
   adjustPantryItem: (ingredientName: string, quantity: number) => void;
   setPantryFromOrder: (orderId: string, cartItems: CartItem[]) => void;
-  subscribePantryRealtime: (userId: string) => () => void;
 }
 
 type Store = AppState & AppActions;
@@ -287,7 +289,10 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      clearOrderHistory: () => set({ orderHistory: [] }),
+      clearOrderHistory: () => {
+        set({ orderHistory: [] });
+        bgSync("/api/user/orders", { method: "DELETE" });
+      },
 
       toggleItemHave: (cartItemId) =>
         set((s) => {
@@ -386,26 +391,21 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      setPantryFromOrder: (orderId, cartItems) =>
+      setPantryFromOrder: (orderId, cartItems) => {
         set((s) => ({
           pantryItems: updatePantryAfterOrder(cartItems, s.pantryItems, orderId),
-        })),
-
-      subscribePantryRealtime: (userId) => {
-        if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_SUPABASE_URL) return () => {};
-        const { getSupabaseClient } = require("@/lib/supabaseClient");
-        const supabase = getSupabaseClient();
-        const channel = supabase.channel(`pantry:${userId}`)
-          .on("broadcast", { event: "pantry_updated" }, ({ payload }: { payload: { pantryItems?: unknown[] } }) => {
-            if (payload?.pantryItems) {
-              set({ pantryItems: payload.pantryItems as Store["pantryItems"] });
-            }
-          })
-          .subscribe();
-        return () => { supabase.removeChannel(channel); };
+        }));
+        // Many items change at once, so replace the server copy wholesale —
+        // otherwise the next hydration restores the pre-order pantry.
+        bgSync("/api/user/pantry", {
+          method: "PUT",
+          body: JSON.stringify({ pantryItems: get().pantryItems }),
+        });
       },
 
-      reset: () =>
+      reset: () => {
+        // A queued preference save would otherwise recreate the prefs we just wiped.
+        cancelPendingPreferenceSync();
         set({
           isOnboarded: false,
           hasSeenWelcome: false,
@@ -417,7 +417,8 @@ export const useAppStore = create<Store>()(
           pantryItems: [],
           stapleIngredients: DEFAULT_STAPLES,
           theme: "system",
-        }),
+        });
+      },
     }),
     {
       name: "plate-app-storage",
@@ -443,3 +444,31 @@ export const useAppStore = create<Store>()(
 
 export const selectPreferenceEvolution = (s: Store) =>
   computePreferenceEvolution(s.feedbackHistory);
+
+// ─── Device ownership ─────────────────────────────────────────────────────────
+// localStorage outlives a session, so remember whose data it is and wipe it on
+// sign-out or when a different account signs in on the same device.
+
+const OWNER_KEY = "plate-owner";
+const MIGRATION_KEY = "plate-migration-offered";
+
+export function clearLocalUserData() {
+  useAppStore.getState().reset();
+  try {
+    localStorage.removeItem(OWNER_KEY);
+    localStorage.removeItem(MIGRATION_KEY);
+  } catch {
+    // Storage unavailable — in-memory state is already reset
+  }
+}
+
+/** Claims local data for this user; clears it first if it belongs to someone else. */
+export function claimLocalDataFor(userId: string) {
+  try {
+    const owner = localStorage.getItem(OWNER_KEY);
+    if (owner && owner !== userId) clearLocalUserData();
+    localStorage.setItem(OWNER_KEY, userId);
+  } catch {
+    // Storage unavailable — nothing persisted to leak
+  }
+}

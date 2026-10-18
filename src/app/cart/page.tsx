@@ -241,7 +241,7 @@ export default function CartPage() {
             <Tag size={14} />
             <div style={{ flex: 1, fontSize: 13, lineHeight: 1.3 }}>
               {priceComparison.cheaperStore === currentCart.retailer ? (
-                <span><strong style={{ fontFamily: "var(--font-display)" }}>You're at the cheapest store</strong> — saving A${priceComparison.savings.toFixed(2)} vs the alternative</span>
+                <span><strong style={{ fontFamily: "var(--font-display)" }}>You&apos;re at the cheapest store</strong> — saving A${priceComparison.savings.toFixed(2)} vs the alternative</span>
               ) : (
                 <span>Switch to <strong style={{ fontFamily: "var(--font-display)" }}>{priceComparison.cheaperStore === "woolworths" ? "Woolworths" : "Coles"}</strong> and save A${priceComparison.savings.toFixed(2)}</span>
               )}
@@ -355,8 +355,8 @@ export default function CartPage() {
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9C9087" }}>{items.length} items</span>
                 </div>
                 <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #EDE4D5", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 28px -12px rgba(26,20,16,0.12)" }}>
-                  {items.map((item, idx) => (
-                    <CartItemRow key={item.id} item={item} onToggleHave={() => { haptic("light"); toggleItemHave(item.id); }} last={idx === items.length - 1} />
+                  {items.map((item) => (
+                    <CartItemRow key={item.id} item={item} onToggleHave={() => { haptic("light"); toggleItemHave(item.id); }} />
                   ))}
                 </div>
               </div>
@@ -444,7 +444,7 @@ function getProductSearchUrl(product: { retailer: string; name: string }): strin
     : `https://www.coles.com.au/search?q=${encoded}`;
 }
 
-function CartItemRow({ item, onToggleHave, last }: { item: CartItem; onToggleHave: () => void; last?: boolean }) {
+function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () => void }) {
   const activeProduct = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
   const netQty = item.totalQuantity - (item.pantryContribution ?? 0);
   const searchUrl = activeProduct ? getProductSearchUrl(activeProduct) : null;

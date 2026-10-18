@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import type { PlannedMeal, Recipe } from "@/types";
@@ -160,11 +161,12 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
                 onClick={() => handleSwap(recipe)}
                 className="flex items-center gap-3 w-full p-3 rounded-2xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
               >
-                <img
+                <Image
                   src={image}
                   alt={recipe.name}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-                  loading="lazy"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-ink leading-snug">{recipe.name}</p>

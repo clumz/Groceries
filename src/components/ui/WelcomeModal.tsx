@@ -51,7 +51,7 @@ export function WelcomeModal() {
           </h2>
         </div>
         <p style={{ fontSize: 14, color: "rgba(26,20,16,0.6)", marginBottom: 24, lineHeight: 1.5 }}>
-          You're one of the first testers. Here's what to know before you dive in.
+          You&apos;re one of the first testers. Here&apos;s what to know before you dive in.
         </p>
 
         <Section title="✅ What's real" items={WORKS} color="#C8FF3E" />
@@ -72,7 +72,7 @@ export function WelcomeModal() {
             fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "#C8FF3E",
           }}
         >
-          Got it, let's go →
+          Got it, let&apos;s go →
         </button>
       </div>
     </div>

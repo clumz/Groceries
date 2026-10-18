@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
+import type { z } from "zod";
+import { PreferencesPatchSchema, PreferencesPutSchema, PreferencesSchema, parseBody } from "@/lib/validation";
 import type { UserPreferences } from "@/types";
 
 function unauthorized() {
@@ -27,7 +29,9 @@ export async function PUT(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const body: UserPreferences & { isOnboarded?: boolean } = await req.json();
+  const parsed = await parseBody(req, PreferencesPutSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
 
   const data = prefsToDb(body, userId);
   const prefs = await prisma.userPreferences.upsert({
@@ -44,7 +48,9 @@ export async function PATCH(req: NextRequest) {
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const patch = await req.json();
+  const parsed = await parseBody(req, PreferencesPatchSchema);
+  if (parsed.error) return parsed.error;
+  const patch = parsed.data;
 
   const mapped: Record<string, unknown> = {};
   const fieldMap: Record<string, string> = {
@@ -63,12 +69,13 @@ export async function PATCH(req: NextRequest) {
     calorieGoal: "calorieGoal",
     theme: "theme",
     isOnboarded: "isOnboarded",
+    emailReminders: "emailReminders",
   };
   for (const [k, v] of Object.entries(patch)) {
     if (fieldMap[k]) mapped[fieldMap[k]] = v;
   }
   if (patch.macroGoal !== undefined) {
-    if (patch.macroGoal === null) {
+    if (!patch.macroGoal) {
       mapped.macroProteinPct = null;
       mapped.macroCarbsPct = null;
       mapped.macroFatPct = null;
@@ -108,10 +115,11 @@ function dbToPrefs(p: any): UserPreferences {
       p.macroProteinPct != null
         ? { proteinPct: p.macroProteinPct, carbsPct: p.macroCarbsPct, fatPct: p.macroFatPct }
         : null,
+    emailReminders: p.emailReminders,
   };
 }
 
-function prefsToDb(p: UserPreferences, userId: string) {
+function prefsToDb(p: z.infer<typeof PreferencesSchema>, userId: string) {
   return {
     userId,
     preferredStore: p.preferredStore,

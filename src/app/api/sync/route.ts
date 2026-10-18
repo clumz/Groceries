@@ -8,48 +8,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPrismaUserId } from "@/lib/clerk";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
+import { PreferencesSchema as PrefsSchema, RecipeFeedbackSchema } from "@/lib/validation";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
-
-const RecipeFeedbackSchema = z.object({
-  recipeId: z.string(),
-  recipeName: z.string(),
-  feedback: z.enum(["thumbs-up", "thumbs-down", "never-show", "swapped"]),
-  timestamp: z.number(),
-  cuisineType: z.string().optional(),
-  primaryProtein: z.string().optional(),
-});
-
-const PrefsSchema = z.object({
-  preferredStore: z.enum(["woolworths", "coles"]),
-  suburb: z.string().default(""),
-  postcode: z.string().default(""),
-  dietaryRequirements: z.array(z.string()).default([]),
-  cuisinePreferences: z.array(z.string()).default([]),
-  proteinPreferences: z.array(z.string()).default([]),
-  householdSize: z.number().default(2),
-  defaultServings: z.number().default(2),
-  budgetRange: z.enum(["under-150", "150-250", "250-350", "350-plus"]),
-  cookTimePreference: z.enum(["under-20", "20-40", "40-plus"]),
-  includeLunches: z.boolean().default(false),
-  includeSnacks: z.boolean().default(true),
-  calorieGoal: z.number().nullable().optional(),
-  macroGoal: z.object({
-    proteinPct: z.number(),
-    carbsPct: z.number(),
-    fatPct: z.number(),
-  }).nullable().optional(),
-}).passthrough();
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth();
   const userId = await getPrismaUserId(clerkId);
   if (!userId) return unauthorized();
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const result = { preferences: false, feedback: 0, pantry: 0, staples: 0, mealPlan: false, orders: 0 };
 
   // 1. Preferences
