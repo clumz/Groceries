@@ -115,6 +115,7 @@ function dbToPrefs(p: any): UserPreferences {
       p.macroProteinPct != null
         ? { proteinPct: p.macroProteinPct, carbsPct: p.macroCarbsPct, fatPct: p.macroFatPct }
         : null,
+    emailReminders: p.emailReminders,
   };
 }
 

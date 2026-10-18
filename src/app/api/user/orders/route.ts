@@ -108,3 +108,13 @@ function dbOrderToClient(o: any): Order {
     confirmationNumber: o.confirmationNumber ?? undefined,
   };
 }
+
+// "Clear order history": orders only — carts stay as plan snapshots.
+export async function DELETE() {
+  const { userId: clerkId } = await auth();
+  const userId = await getPrismaUserId(clerkId);
+  if (!userId) return unauthorized();
+
+  await prisma.order.deleteMany({ where: { userId } });
+  return NextResponse.json({ ok: true });
+}

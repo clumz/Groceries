@@ -98,6 +98,20 @@ export const PantryPostSchema = z.union([
   }),
 ]);
 
+export const PantryPutSchema = z.object({
+  pantryItems: z
+    .array(
+      z.object({
+        ingredientName: shortText.min(1),
+        quantity: z.number().min(0).max(100000),
+        unit: z.string().max(40),
+        addedAt: z.number().optional(),
+        sourceOrderId: z.string().max(200).optional(),
+      })
+    )
+    .max(1000),
+});
+
 export const PantryDeleteSchema = z.object({
   ingredientName: shortText.min(1),
   unit: z.string().max(40),

@@ -10,12 +10,9 @@ import type {
   Order,
   FeedbackHistory,
   RecipeFeedback,
-  FeedbackType,
   PlannedMeal,
   Retailer,
   CartItem,
-  Product,
-  PantryItem,
 } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
 import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
@@ -286,7 +283,10 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      clearOrderHistory: () => set({ orderHistory: [] }),
+      clearOrderHistory: () => {
+        set({ orderHistory: [] });
+        bgSync("/api/user/orders", { method: "DELETE" });
+      },
 
       toggleItemHave: (cartItemId) =>
         set((s) => {
@@ -385,10 +385,17 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      setPantryFromOrder: (orderId, cartItems) =>
+      setPantryFromOrder: (orderId, cartItems) => {
         set((s) => ({
           pantryItems: updatePantryAfterOrder(cartItems, s.pantryItems, orderId),
-        })),
+        }));
+        // Many items change at once, so replace the server copy wholesale —
+        // otherwise the next hydration restores the pre-order pantry.
+        bgSync("/api/user/pantry", {
+          method: "PUT",
+          body: JSON.stringify({ pantryItems: get().pantryItems }),
+        });
+      },
 
       reset: () =>
         set({

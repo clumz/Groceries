@@ -81,3 +81,14 @@ export async function ownedMealPlanId(userId: string, mealPlanId: string | null 
   const plan = await prisma.mealPlan.findFirst({ where: { id: mealPlanId, userId }, select: { id: true } });
   return plan?.id ?? null;
 }
+
+/** Delete a user's DB data. Carts aren't linked to users by a FK, so they go explicitly. */
+export async function deleteUserByClerkId(clerkId: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+  if (!user) return;
+  await prisma.$transaction([
+    prisma.order.deleteMany({ where: { userId: user.id } }),
+    prisma.cart.deleteMany({ where: { userId: user.id } }),
+    prisma.user.delete({ where: { id: user.id } }),
+  ]);
+}

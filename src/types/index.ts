@@ -61,6 +61,7 @@ export interface UserPreferences {
   includeSnacks: boolean;
   calorieGoal?: number | null;
   macroGoal?: MacroGoal | null;
+  emailReminders?: boolean;   // weekly reminder email; server-side only via PATCH
 }
 
 // ─── Feedback & Learning ───────────────────────────────────────────────────────
