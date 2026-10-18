@@ -1,18 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { toast } from "@/lib/toast";
 import { Flag, X } from "lucide-react";
 
+const OPEN_EVENT = "plate:open-feedback";
+
+/** Open the feedback sheet from anywhere (e.g. Settings > Help & feedback). */
+export function openFeedback() {
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
 export function FeedbackWidget() {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Don't show on landing / auth pages
-  if (pathname === "/" || pathname.startsWith("/auth")) return null;
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
+
+  // Reports need an account (the endpoint is auth-only); also hide on landing / auth pages
+  if (!isSignedIn || pathname === "/" || pathname.startsWith("/auth")) return null;
 
   async function submit() {
     if (!message.trim() || submitting) return;
