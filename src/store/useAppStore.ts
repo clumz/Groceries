@@ -15,6 +15,7 @@ import type {
   CartItem,
 } from "@/types";
 import { computePreferenceEvolution } from "@/lib/feedbackEvolution";
+import { estimateCartTotal } from "@/lib/cartAggregator";
 import { DEFAULT_STAPLES, updatePantryAfterOrder } from "@/lib/pantryManager";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/analytics";
@@ -24,6 +25,11 @@ const EMPTY_FEEDBACK: FeedbackHistory = {
   servingAdjustments: [],
   substituteDecisions: [],
 };
+
+/** Recompute a cart's estimated total after its items change. */
+function withTotal(cart: Cart): Cart {
+  return { ...cart, estimatedTotal: estimateCartTotal(cart.items) };
+}
 
 // ─── Background server sync helpers ────────────────────────────────────────────
 
@@ -241,12 +247,12 @@ export const useAppStore = create<Store>()(
         set((s) => {
           if (!s.currentCart) return s;
           return {
-            currentCart: {
+            currentCart: withTotal({
               ...s.currentCart,
               items: s.currentCart.items.map((item) =>
                 item.id === cartItemId ? { ...item, substituteApproved: true } : item
               ),
-            },
+            }),
             feedbackHistory: {
               ...s.feedbackHistory,
               substituteDecisions: [
@@ -261,12 +267,12 @@ export const useAppStore = create<Store>()(
         set((s) => {
           if (!s.currentCart) return s;
           return {
-            currentCart: {
+            currentCart: withTotal({
               ...s.currentCart,
               items: s.currentCart.items.map((item) =>
                 item.id === cartItemId ? { ...item, substituteApproved: false } : item
               ),
-            },
+            }),
             feedbackHistory: {
               ...s.feedbackHistory,
               substituteDecisions: [
@@ -298,12 +304,12 @@ export const useAppStore = create<Store>()(
         set((s) => {
           if (!s.currentCart) return s;
           return {
-            currentCart: {
+            currentCart: withTotal({
               ...s.currentCart,
               items: s.currentCart.items.map((item) =>
                 item.id === cartItemId ? { ...item, markedAsHave: !item.markedAsHave } : item
               ),
-            },
+            }),
           };
         }),
 

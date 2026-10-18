@@ -1,5 +1,6 @@
 import type { PlannedMeal, SnackItem, CartItem, Product, PantryItem } from "@/types";
 import { isStaple, checkPantryContribution } from "@/lib/pantryManager";
+import { packsNeeded } from "@/lib/units";
 
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -31,6 +32,15 @@ function normalizeUnit(unit: string): string {
     portions: "portion",
   };
   return map[unit.toLowerCase()] ?? unit.toLowerCase();
+}
+
+/** What a cart line costs: the product actually being bought, how many packs, and the total. */
+export function cartItemCost(item: CartItem): { product: Product | null; packs: number; total: number } {
+  const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+  const net = item.totalQuantity - (item.pantryContribution ?? 0);
+  if (!product || item.isStaple || item.markedAsHave || net <= 0) return { product, packs: 0, total: 0 };
+  const packs = packsNeeded(net, item.unit, product);
+  return { product, packs, total: product.price * packs };
 }
 
 function normalizeIngredientName(name: string): string {
@@ -89,7 +99,8 @@ export function aggregateIngredients(
 
   totals.forEach((total) => {
     const normalizedName = normalizeIngredientName(total.name);
-    const mapping = productMappings.get(normalizedName);
+    // Matchers key by the plain lowercased name; accept either form.
+    const mapping = productMappings.get(normalizedName) ?? productMappings.get(total.name.toLowerCase().trim());
     const product = mapping?.product ?? null;
     const confidence = mapping?.confidence ?? 0;
 
@@ -121,22 +132,26 @@ export function aggregateIngredients(
   });
 }
 
-export function estimateCartTotal(items: CartItem[]): number {
-  return items.reduce((sum, item) => {
-    if (item.isStaple) return sum;
-    const net = item.totalQuantity - (item.pantryContribution ?? 0);
-    if (net <= 0) return sum;
-    if (!item.matchedProduct) return sum;
-    const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
-    return sum + product.price;
-  }, 0);
+/** Display price for a cart line, e.g. "A$4.50" or "3 × A$1.50"; null when nothing is bought. */
+export function formatItemCost(item: CartItem): string | null {
+  const { product, packs } = cartItemCost(item);
+  if (!product || packs === 0) return null;
+  const each = `A$${product.price.toFixed(2)}`;
+  return packs > 1 ? `${packs} × ${each}` : each;
 }
 
+export function estimateCartTotal(items: CartItem[]): number {
+  return items.reduce((sum, item) => sum + cartItemCost(item).total, 0);
+}
+
+/**
+ * What pantry stock saves: the packs you'd have bought without it, minus what you
+ * do buy. Staples and "I've got this" items aren't pantry stock, so they don't count.
+ */
 export function estimatePantrySavings(items: CartItem[]): number {
   return items.reduce((sum, item) => {
-    if (!item.matchedProduct) return sum;
-    const covered = item.isStaple || (item.pantryContribution ?? 0) >= item.totalQuantity;
-    if (!covered) return sum;
-    return sum + item.matchedProduct.price;
+    if (!item.matchedProduct || item.isStaple || item.markedAsHave || !item.pantryContribution) return sum;
+    const withoutPantry = packsNeeded(item.totalQuantity, item.unit, item.matchedProduct) * item.matchedProduct.price;
+    return sum + Math.max(0, withoutPantry - cartItemCost(item).total);
   }, 0);
 }
