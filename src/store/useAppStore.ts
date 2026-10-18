@@ -40,6 +40,12 @@ async function bgSync(url: string, opts: RequestInit = {}): Promise<void> {
 }
 
 let prefsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Drop a queued preference save (e.g. before wiping the user's server data). */
+export function cancelPendingPreferenceSync() {
+  if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
+  prefsDebounceTimer = null;
+}
 function syncPrefsDebounced(preferences: UserPreferences) {
   if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
   prefsDebounceTimer = setTimeout(() => {
@@ -397,7 +403,9 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      reset: () =>
+      reset: () => {
+        // A queued preference save would otherwise recreate the prefs we just wiped.
+        cancelPendingPreferenceSync();
         set({
           isOnboarded: false,
           hasSeenWelcome: false,
@@ -409,7 +417,8 @@ export const useAppStore = create<Store>()(
           pantryItems: [],
           stapleIngredients: DEFAULT_STAPLES,
           theme: "system",
-        }),
+        });
+      },
     }),
     {
       name: "plate-app-storage",

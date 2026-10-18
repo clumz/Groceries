@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { useAppStore, clearLocalUserData } from "@/store/useAppStore";
+import { useAppStore, clearLocalUserData, cancelPendingPreferenceSync } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   ChevronRight, Leaf, MapPin,
@@ -133,6 +133,8 @@ export default function SettingsPage() {
 
   async function handleReset() {
     // Clear the server first; a local-only reset is undone by the next hydration.
+    // Drop any queued preference save so it can't recreate prefs after the wipe.
+    cancelPendingPreferenceSync();
     setBusy(true);
     const res = await fetch("/api/user/data", { method: "DELETE" }).catch(() => null);
     setBusy(false);

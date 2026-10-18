@@ -16,9 +16,20 @@ export function StoreHydration() {
   // Then, once we know who's signed in, drop another account's local data and
   // pull this user's server state.
   useEffect(() => {
-    if (!isLoaded || !userId || hydratedFor.current === userId) return;
+    if (!isLoaded) return;
+    // Signed out: forget who we hydrated for, so in-flight responses are dropped
+    // and the next sign-in (even the same account) hydrates again.
+    if (!userId) {
+      hydratedFor.current = null;
+      return;
+    }
+    if (hydratedFor.current === userId) return;
     hydratedFor.current = userId;
     claimLocalDataFor(userId);
+
+    // Ignore responses that land after a different account has signed in.
+    const fetchedFor = userId;
+    const stillCurrent = () => hydratedFor.current === fetchedFor;
 
     async function hydrateFromServer() {
       try {
@@ -29,9 +40,11 @@ export function StoreHydration() {
           fetch("/api/user/pantry"),
           fetch("/api/user/orders?limit=10"),
         ]);
+        if (!stillCurrent()) return;
 
         if (prefsRes.ok) {
           const { preferences } = await prefsRes.json();
+          if (!stillCurrent()) return;
           if (preferences) {
             useAppStore.setState({ preferences, isOnboarded: true });
           }
@@ -39,6 +52,7 @@ export function StoreHydration() {
 
         if (feedbackRes.ok) {
           const data = await feedbackRes.json();
+          if (!stillCurrent()) return;
           if (data.feedbackHistory) {
             useAppStore.setState({ feedbackHistory: data.feedbackHistory });
           }
@@ -46,6 +60,7 @@ export function StoreHydration() {
 
         if (planRes.ok) {
           const data = await planRes.json();
+          if (!stillCurrent()) return;
           if (data.mealPlan) {
             useAppStore.setState({ currentMealPlan: data.mealPlan, currentCart: null });
           }
@@ -53,6 +68,7 @@ export function StoreHydration() {
 
         if (pantryRes.ok) {
           const data = await pantryRes.json();
+          if (!stillCurrent()) return;
           if (data.pantryItems) {
             useAppStore.setState({
               pantryItems: data.pantryItems,
@@ -63,6 +79,7 @@ export function StoreHydration() {
 
         if (ordersRes.ok) {
           const data = await ordersRes.json();
+          if (!stillCurrent()) return;
           if (data.orders?.length > 0) {
             useAppStore.setState({ orderHistory: data.orders });
           }
