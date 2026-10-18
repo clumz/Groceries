@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { matchAllIngredients, findSubstitute } from "@/lib/skuMatcher";
+import { matchAllIngredients, findSubstitute, scoreIngredientProduct, MIN_MATCH_CONFIDENCE } from "@/lib/skuMatcher";
 import type { MapIngredientsRequest, Product } from "@/types";
 import { mapIngredientsLimiter, cacheGet, cacheSet, rateLimitKey } from "@/lib/upstash";
 import { auth } from "@clerk/nextjs/server";
@@ -33,13 +33,12 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // Try DB-backed trigram matching first
+      // Trigram search narrows the catalogue to candidates; the shared scorer
+      // picks the winner so DB and in-memory matching agree.
       const results = await Promise.all(
         ingredients.map(async (ingredient) => {
           const name = ingredient.name;
-
-          // Use pg_trgm similarity + tsvector ranking
-          const matches = await prisma.$queryRaw<{
+          const candidates = await prisma.$queryRaw<{
             id: string;
             name: string;
             brand: string | null;
@@ -51,27 +50,31 @@ export async function POST(req: NextRequest) {
             available: boolean;
             image_url: string | null;
             barcode: string | null;
-            similarity: number;
           }[]>`
-            SELECT
-              id, name, brand, category, price, unit,
-              unit_size, unit_of_measure, available,
-              image_url, barcode,
-              similarity(name, ${name}) as similarity
+            SELECT id, name, brand, category, price, unit,
+                   unit_size, unit_of_measure, available, image_url, barcode
             FROM products
             WHERE retailer = ${retailer}
               AND available = true
             ORDER BY
-              similarity(name, ${name}) DESC,
+              similarity(regexp_replace(name, '^(woolworths|coles)[[:space:]]+', '', 'i'), ${name}) DESC,
               ts_rank(search_vector, plainto_tsquery('english', ${name})) DESC
-            LIMIT 3
+            LIMIT 10
           `;
 
-          if (matches.length === 0 || matches[0].similarity < 0.12) {
+          let best: (typeof candidates)[number] | null = null;
+          let bestScore = 0;
+          for (const c of candidates) {
+            const score = scoreIngredientProduct(name, c);
+            if (score > bestScore) {
+              bestScore = score;
+              best = c;
+            }
+          }
+          if (!best || bestScore < MIN_MATCH_CONFIDENCE) {
             return { ingredientName: name, product: null, confidence: 0, substitute: null };
           }
 
-          const best = matches[0];
           const product: Product = {
             id: best.id,
             retailer: retailer as "woolworths" | "coles",
@@ -86,35 +89,7 @@ export async function POST(req: NextRequest) {
             imageUrl: best.image_url ?? undefined,
             barcode: best.barcode ?? undefined,
           };
-
-          // If best match is unavailable, find a substitute
-          let substitute: Product | null = null;
-          if (!product.available && matches.length > 1) {
-            const sub = matches.find((m) => m.available);
-            if (sub) {
-              substitute = {
-                id: sub.id,
-                retailer: retailer as "woolworths" | "coles",
-                name: sub.name,
-                brand: sub.brand ?? undefined,
-                category: sub.category as Product["category"],
-                price: sub.price,
-                unit: sub.unit,
-                unitSize: sub.unit_size,
-                unitOfMeasure: sub.unit_of_measure,
-                available: sub.available,
-                imageUrl: sub.image_url ?? undefined,
-                barcode: sub.barcode ?? undefined,
-              };
-            }
-          }
-
-          return {
-            ingredientName: name,
-            product: product.available ? product : null,
-            confidence: Math.min(best.similarity, 1),
-            substitute,
-          };
+          return { ingredientName: name, product, confidence: Math.min(bestScore, 1), substitute: null };
         })
       );
 
