@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type {
   WeeklyMealPlan,
@@ -48,12 +48,10 @@ export async function generateAiMealPlan(
   // timeout is per attempt, so no retries: one attempt must leave room inside the
   // route's 60s maxDuration for the caller's deterministic fallback and DB save.
   const client = new Anthropic({ timeout: 45_000, maxRetries: 0 });
-  const response = await client.beta.messages.parse({
+  const response = await client.messages.parse({
     model: MODEL,
     max_tokens: 16000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "medium", format: betaZodOutputFormat(PlanSelection) },
+    output_config: { effort: "medium", format: zodOutputFormat(PlanSelection) },
     system: buildMealPlanSystemPrompt(preferences, feedbackHistory, evolution),
     messages: [
       {
@@ -66,6 +64,7 @@ export async function generateAiMealPlan(
     ],
   });
 
+  // No model fallback: a declined request goes to the deterministic planner (caller's catch).
   if (response.stop_reason === "refusal") throw new Error("Meal plan request was declined");
   if (!response.parsed_output) throw new Error(`No parseable plan (stop_reason: ${response.stop_reason})`);
 

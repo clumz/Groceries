@@ -143,3 +143,29 @@
     font-size: 16px !important;
   }
 }
+
+/* Legal pages (privacy, terms) */
+.legal-copy {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.legal-copy h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 28px 0 8px;
+}
+.legal-copy p,
+.legal-copy ul {
+  margin: 0 0 12px;
+}
+.legal-copy ul {
+  padding-left: 20px;
+  list-style: disc;
+}
+.legal-copy li {
+  margin-bottom: 6px;
+}
+.legal-copy a {
+  text-decoration: underline;
+}

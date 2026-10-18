@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser, useSignIn } from "@clerk/nextjs";
 import { useAppStore } from "@/store/useAppStore";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function RootPage() {
   const router = useRouter();
@@ -191,6 +192,11 @@ export default function RootPage() {
                     Send magic link
                   </button>
                 </form>
+                <p style={{ fontSize: 12, color: "rgba(26,20,16,0.55)", textAlign: "center", margin: "14px 0 0", lineHeight: 1.5 }}>
+                  By continuing you agree to our{" "}
+                  <Link href="/terms" style={{ textDecoration: "underline", color: "inherit" }}>Terms</Link> and{" "}
+                  <Link href="/privacy" style={{ textDecoration: "underline", color: "inherit" }}>Privacy Policy</Link>.
+                </p>
               </>
             )}
           </div>

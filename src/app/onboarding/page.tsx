@@ -212,6 +212,8 @@ export default function OnboardingPage() {
   const [cookTime, setCookTime] = useState<CookTimePreference>("20-40");
   const [includeLunches, setIncludeLunches] = useState(false);
   const [includeSnacks, setIncludeSnacks] = useState(true);
+  // Reminder emails are opt-in: off until the user turns them on.
+  const [emailReminders, setEmailReminders] = useState(false);
   const [trackNutrition, setTrackNutrition] = useState(false);
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [proteinPct, setProteinPct] = useState(30);
@@ -281,6 +283,7 @@ export default function OnboardingPage() {
       cookTimePreference: cookTime,
       includeLunches,
       includeSnacks,
+      emailReminders,
       calorieGoal: trackNutrition ? calorieGoal : null,
       macroGoal: trackNutrition ? { proteinPct, carbsPct, fatPct } : null,
     };
@@ -559,6 +562,7 @@ export default function OnboardingPage() {
           {[
             { label: "Include weekday lunches", value: includeLunches, set: setIncludeLunches },
             { label: "Include a snacks section", value: includeSnacks, set: setIncludeSnacks },
+            { label: "Weekly planning reminder email", value: emailReminders, set: setEmailReminders },
           ].map(({ label, value, set }) => (
             <div key={label} style={{ background: "#FFFFFF", border: "1.5px solid #1A1410", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1410" }}>{label}</span>

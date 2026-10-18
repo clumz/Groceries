@@ -2,12 +2,14 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 import { useAppStore, clearLocalUserData, cancelPendingPreferenceSync } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { openFeedback } from "@/components/ui/FeedbackWidget";
 import {
   ChevronRight, Leaf, MapPin,
-  Trash2, RotateCcw, ExternalLink, Users, Clock, DollarSign,
+  Trash2, RotateCcw, Users, Clock, DollarSign,
   UtensilsCrossed, ChevronDown, Check, Flame, X, LogOut, Mail, UserX
 } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -475,7 +477,7 @@ export default function SettingsPage() {
               <Mail size={16} color="#1A1410" />
             </div>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Weekly reminder email</span>
-            <Toggle checked={preferences.emailReminders ?? true} onChange={setEmailReminders} />
+            <Toggle checked={preferences.emailReminders ?? false} onChange={setEmailReminders} />
           </RowItem>
 
           <Divider />
@@ -688,15 +690,23 @@ export default function SettingsPage() {
             <span style={{ marginLeft: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 10, background: "#FF6B4A", color: "#FFF8EE", padding: "2px 7px", borderRadius: 999 }}>Beta</span>
           </div>
           <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
-          <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+          <Link href="/privacy" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Privacy policy</span>
-            <ExternalLink size={14} color="#1A1410" style={{ opacity: 0.4 }} />
-          </a>
+            <ChevronRight size={14} color="#1A1410" style={{ opacity: 0.4 }} />
+          </Link>
           <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
-          <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+          <Link href="/terms" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Terms of service</span>
+            <ChevronRight size={14} color="#1A1410" style={{ opacity: 0.4 }} />
+          </Link>
+          <div style={{ height: 1, background: "#E8E0D5", margin: "0 18px" }} />
+          <button
+            onClick={openFeedback}
+            style={{ width: "100%", background: "none", border: "none", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}
+          >
             <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Help &amp; feedback</span>
-            <ExternalLink size={14} color="#1A1410" style={{ opacity: 0.4 }} />
-          </a>
+            <ChevronRight size={14} color="#1A1410" style={{ opacity: 0.4 }} />
+          </button>
         </div>
 
         {/* Danger zone */}

@@ -90,7 +90,7 @@ model UserPreferences {
   cookTimePreference  String   @default("20-40") @map("cook_time_preference")
   includeLunches      Boolean  @default(false) @map("include_lunches")
   includeSnacks       Boolean  @default(true) @map("include_snacks")
-  emailReminders      Boolean  @default(true) @map("email_reminders")
+  emailReminders      Boolean  @default(false) @map("email_reminders")
   calorieGoal         Int?     @map("calorie_goal")
   macroProteinPct     Int?     @map("macro_protein_pct")
   macroCarbsPct       Int?     @map("macro_carbs_pct")

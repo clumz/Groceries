@@ -48,6 +48,8 @@ export const PreferencesSchema = z.object({
 
 export const PreferencesPutSchema = PreferencesSchema.extend({
   isOnboarded: z.boolean().optional(),
+  // Opt-in reminder emails; left unchanged when omitted.
+  emailReminders: z.boolean().optional(),
 });
 
 // No defaults here: a PATCH must only touch the fields it sends.
