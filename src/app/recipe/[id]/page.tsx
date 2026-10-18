@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
@@ -117,7 +118,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ id: str
     <div className="min-h-screen bg-plate-surface pb-8">
       {/* Hero Image */}
       <div className="relative h-72">
-        <img src={imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
+        <Image src={imageUrl} alt={recipe.name} fill priority sizes="(max-width: 430px) 100vw, 430px" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         <button

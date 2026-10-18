@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
@@ -491,11 +492,12 @@ export default function OnboardingPage() {
               }}
             >
               <div style={{ position: "relative", height: 112 }}>
-                <img
+                <Image
                   src={recipe.image}
                   alt={recipe.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  loading="lazy"
+                  fill
+                  sizes="215px"
+                  style={{ objectFit: "cover" }}
                 />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)" }} />
 

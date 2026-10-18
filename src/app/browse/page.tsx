@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Recipe } from "@/types";
@@ -236,7 +237,7 @@ function RecipeBrowseCard({ recipe, onClick }: { recipe: Recipe; onClick: () => 
   return (
     <button onClick={onClick} className="bg-plate-surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow text-left">
       <div className="relative h-32 overflow-hidden">
-        <img src={image} alt={recipe.name} className="w-full h-full object-cover" loading="lazy" />
+        <Image src={image} alt={recipe.name} fill sizes="215px" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="absolute bottom-2 left-2">
           <Badge variant={recipe.difficulty === "easy" ? "green" : recipe.difficulty === "medium" ? "orange" : "red"} className="text-[10px] capitalize">
