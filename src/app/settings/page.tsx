@@ -477,7 +477,7 @@ export default function SettingsPage() {
               <Mail size={16} color="#1A1410" />
             </div>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1A1410" }}>Weekly reminder email</span>
-            <Toggle checked={preferences.emailReminders ?? true} onChange={setEmailReminders} />
+            <Toggle checked={preferences.emailReminders ?? false} onChange={setEmailReminders} />
           </RowItem>
 
           <Divider />

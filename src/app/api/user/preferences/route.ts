@@ -33,7 +33,10 @@ export async function PUT(req: NextRequest) {
   if (parsed.error) return parsed.error;
   const body = parsed.data;
 
-  const data = prefsToDb(body, userId);
+  const data = {
+    ...prefsToDb(body, userId),
+    ...(body.emailReminders !== undefined ? { emailReminders: body.emailReminders } : {}),
+  };
   const prefs = await prisma.userPreferences.upsert({
     where: { userId },
     create: { ...data, isOnboarded: body.isOnboarded ?? true },
