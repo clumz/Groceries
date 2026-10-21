@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Recipe } from "@/types";
+import type { DietaryRequirement, Recipe } from "@/types";
 import { recipeMeetsDiets, SUPPORTED_DIETS } from "@/lib/dietCompliance";
 import { getCandidatePool } from "@/lib/mealPlanAlgorithm";
 import { plans, prefs } from "./helpers";
@@ -64,7 +64,7 @@ for (const diet of SUPPORTED_DIETS) {
 }
 
 test("combined diets are never silently relaxed (vegan + gluten-free + nut-free)", () => {
-  const diets = ["vegan", "gluten-free", "nut-free"];
+  const diets: DietaryRequirement[] = ["vegan", "gluten-free", "nut-free"];
   for (const p of plans(prefs({ dietaryRequirements: diets, includeLunches: true }))) {
     for (const m of p.meals) assert.ok(recipeMeetsDiets(m.recipe, diets), m.recipe.name);
   }
@@ -79,7 +79,7 @@ test("a diet with too few recipes gives fewer meals rather than unsuitable ones"
 });
 
 test("common diets still fill a full week with lunches", () => {
-  for (const diet of ["vegetarian", "gluten-free", "dairy-free", "halal"]) {
+  for (const diet of ["vegetarian", "gluten-free", "dairy-free", "halal"] as DietaryRequirement[]) {
     const p = plans(prefs({ dietaryRequirements: [diet], includeLunches: true }), 3);
     for (const pl of p) assert.equal(pl.meals.length, 12, `${diet}: ${pl.meals.length} meals`);
   }

@@ -27,7 +27,7 @@ test("avoids modifier-only false matches", () => {
 test("the cart keeps every product the matcher found", () => {
   const p = prefs({ householdSize: 4, defaultServings: 4, includeLunches: true });
   const pl = plan(p);
-  const names = [...new Set(pl.meals.flatMap((m) => m.recipe.ingredients.map((i) => i.name)))];
+  const names = Array.from(new Set(pl.meals.flatMap((m) => m.recipe.ingredients.map((i) => i.name))));
   const mappings = matchAllIngredients(names, "woolworths");
   const items = aggregateIngredients(pl.meals, pl.snacks, mappings, DEFAULT_STAPLES, []);
   const lost = items.filter((i) => !i.isStaple && !i.matchedProduct && mappings.get(i.ingredientName.toLowerCase().trim())?.product);
