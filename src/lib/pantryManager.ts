@@ -1,4 +1,5 @@
 import type { CartItem, PantryItem } from "@/types";
+import { convertQuantity, packsNeeded } from "@/lib/units";
 
 export const DEFAULT_STAPLES: string[] = [
   // Oils & fats
@@ -70,13 +71,24 @@ export function updatePantryAfterOrder(
     const pantryContribution = item.pantryContribution ?? 0;
     const netNeeded = item.totalQuantity - pantryContribution;
 
-    if (netNeeded > 0 && item.matchedProduct) {
-      // Item was purchased — add product.unitSize worth to pantry
+    const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+    // "I've got this" items weren't bought, so nothing is added for them.
+    if (netNeeded > 0 && product && !item.markedAsHave) {
+      // This week's recipes use netNeeded; only what's left of the packs bought
+      // goes into the pantry, in the recipe's unit. If the pack size can't be
+      // converted to that unit we can't tell what's left, so record nothing.
+      const bought = convertQuantity(
+        packsNeeded(netNeeded, item.unit, product) * product.unitSize,
+        product.unitOfMeasure,
+        item.unit
+      );
+      const addedQty = bought == null ? 0 : Math.round((bought - netNeeded) * 100) / 100;
       const existing = updated.find(
         (p) => normalize(p.ingredientName) === norm && p.unit === item.unit
       );
-      const addedQty = item.matchedProduct.unitSize > 0 ? item.matchedProduct.unitSize : item.totalQuantity;
-      if (existing) {
+      if (addedQty <= 0) {
+        // Nothing left over
+      } else if (existing) {
         existing.quantity += addedQty;
       } else {
         updated.push({

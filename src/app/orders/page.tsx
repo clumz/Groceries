@@ -1,5 +1,6 @@
 "use client";
 
+import { formatItemCost } from "@/lib/cartAggregator";
 import { useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -156,12 +157,12 @@ function OrderRow({ order, expanded, onToggle }: { order: Order; expanded: boole
       {expanded && (
         <div className="border-t border-plate-line px-4 pb-4 pt-3 space-y-2">
           {confirmedItems.slice(0, 15).map((item) => {
-            const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
+            const cost = formatItemCost(item);
             return (
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="text-plate-ink-2 truncate flex-1 mr-3">{item.ingredientName}</span>
                 <span className="text-plate-ink font-medium flex-shrink-0">
-                  {product ? `A$${product.price.toFixed(2)}` : "—"}
+                  {cost ?? "—"}
                 </span>
               </div>
             );

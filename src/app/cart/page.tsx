@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { aggregateIngredients, estimateCartTotal, estimatePantrySavings } from "@/lib/cartAggregator";
+import { aggregateIngredients, estimateCartTotal, estimatePantrySavings, formatItemCost } from "@/lib/cartAggregator";
 import { matchAllIngredients, findSubstitute } from "@/lib/skuMatcher";
 import type { Cart, CartItem } from "@/types";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -134,7 +134,8 @@ export default function CartPage() {
     const lines = toBuyItems.map((item) => {
       const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
       const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
-      return `${item.ingredientName} — ${net} ${item.unit}${product ? ` (A$${product.price.toFixed(2)})` : ""}`;
+      const cost = product ? formatItemCost(item) : null;
+      return `${item.ingredientName} — ${net} ${item.unit}${cost ? ` (${cost})` : ""}`;
     });
     navigator.clipboard.writeText(lines.join("\n")).then(() => {
       setCopied(true);
@@ -467,8 +468,8 @@ function CartItemRow({ item, onToggleHave }: { item: CartItem; onToggleHave: () 
       </div>
       <div className="text-right flex-shrink-0">
         <p className="text-xs text-plate-ink-3">{netQty.toFixed(1)} {item.unit}</p>
-        {activeProduct && (
-          <p className="text-sm font-semibold text-plate-ink">A${activeProduct.price.toFixed(2)}</p>
+        {activeProduct && formatItemCost(item) && (
+          <p className="text-sm font-semibold text-plate-ink">{formatItemCost(item)}</p>
         )}
       </div>
       {item.substituteApproved === true && (

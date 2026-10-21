@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { estimatePantrySavings } from "@/lib/cartAggregator";
+import { estimatePantrySavings, formatItemCost } from "@/lib/cartAggregator";
 import type { CartItem, Order } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -43,7 +43,8 @@ function buildShareText(
     const lines = grouped[cat].map((item) => {
       const product = item.substituteApproved && item.substitute ? item.substitute : item.matchedProduct;
       const net = (item.totalQuantity - (item.pantryContribution ?? 0)).toFixed(1);
-      return `☐ ${item.ingredientName} (${net} ${item.unit})${product ? ` — A$${product.price.toFixed(2)}` : ""}`;
+      const cost = product ? formatItemCost(item) : null;
+      return `☐ ${item.ingredientName} (${net} ${item.unit})${cost ? ` — ${cost}` : ""}`;
     });
     return `${label}\n${lines.join("\n")}`;
   });
@@ -224,9 +225,9 @@ export default function CheckoutPage() {
                         <p className={clsx("text-xs transition-colors", isChecked ? "text-slate-300" : "text-plate-ink-3")}>
                           {net} {item.unit}
                         </p>
-                        {product && (
+                        {product && formatItemCost(item) && (
                           <p className={clsx("text-sm font-semibold transition-colors", isChecked ? "text-slate-300" : "text-plate-ink")}>
-                            A${product.price.toFixed(2)}
+                            {formatItemCost(item)}
                           </p>
                         )}
                       </div>
@@ -339,7 +340,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="text-xs text-plate-ink-3">{net} {item.unit}</p>
-                      {product && <p className="text-sm font-semibold text-plate-ink">A${product.price.toFixed(2)}</p>}
+                      {product && formatItemCost(item) && <p className="text-sm font-semibold text-plate-ink">{formatItemCost(item)}</p>}
                     </div>
                   </div>
                 );

@@ -8,6 +8,7 @@ import type {
   PreferenceEvolution,
 } from "@/types";
 import { filterSnacksByDiet } from "@/data/snacks";
+import { recipeMeetsDiets } from "@/lib/dietCompliance";
 
 // ─── PRNG utilities ────────────────────────────────────────────────────────────
 
@@ -140,7 +141,7 @@ function scoreRecipe(
 
 // ─── Candidate pool ────────────────────────────────────────────────────────────
 
-/** Recipes eligible for this user: never-show removed, then dietary/cuisine/protein filters. */
+/** Recipes eligible for this user: never-show removed, diets enforced, then cuisine/protein preferred. */
 export function getCandidatePool(
   preferences: UserPreferences,
   feedbackHistory?: FeedbackHistory,
@@ -155,28 +156,9 @@ export function getCandidatePool(
   );
   pool = pool.filter((r) => !neverShowIds.has(r.id));
 
-  // Dietary hard constraints
-  const diets = preferences.dietaryRequirements;
-  if (diets.includes("vegan")) {
-    const f = pool.filter((r) => r.tags.includes("vegan") || r.primaryProtein === "tofu");
-    if (f.length >= 4) pool = f;
-  } else if (diets.includes("vegetarian")) {
-    const f = pool.filter((r) => r.tags.includes("vegan") || r.tags.includes("vegetarian") || r.primaryProtein === "tofu");
-    if (f.length >= 4) pool = f;
-  }
-  if (diets.includes("gluten-free")) {
-    const f = pool.filter((r) => r.tags.includes("gluten-free"));
-    if (f.length >= 4) pool = f;
-  }
-  if (diets.includes("dairy-free")) {
-    const f = pool.filter((r) => r.tags.includes("dairy-free"));
-    if (f.length >= 4) pool = f;
-  }
-  if (diets.includes("pescatarian")) {
-    const pescProteins = new Set(["seafood", "tofu", "eggs", null, undefined]);
-    const f = pool.filter((r) => pescProteins.has(r.primaryProtein ?? null));
-    if (f.length >= 4) pool = f;
-  }
+  // Dietary requirements are hard constraints: never relaxed, even if that
+  // leaves too few recipes for a full week (the plan then has fewer meals).
+  pool = pool.filter((r) => recipeMeetsDiets(r, preferences.dietaryRequirements));
 
   // Cuisine soft filter
   if (preferences.cuisinePreferences.length > 0) {
