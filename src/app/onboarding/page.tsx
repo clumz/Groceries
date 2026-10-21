@@ -36,8 +36,7 @@ const DIETARY_OPTIONS: { value: DietaryRequirement; label: string }[] = [
   { value: "halal", label: "Halal" },
   { value: "kosher", label: "Kosher" },
   { value: "nut-free", label: "Nut-Free" },
-  { value: "low-fodmap", label: "Low-FODMAP" },
-  { value: "diabetic-friendly", label: "Diabetic-Friendly" },
+  // Low-FODMAP and diabetic-friendly aren't offered: recipes can't be checked for them yet.
 ];
 
 const CUISINE_OPTIONS: { value: CuisinePreference; label: string; emoji: string }[] = [

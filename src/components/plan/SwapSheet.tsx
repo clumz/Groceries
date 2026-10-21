@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
+import { recipeMeetsDiets } from "@/lib/dietCompliance";
 import type { PlannedMeal, Recipe } from "@/types";
 import { X, Clock, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
@@ -43,6 +44,7 @@ interface SwapSheetProps {
 export function SwapSheet({ meal, onClose }: SwapSheetProps) {
   const swapMeal = useAppStore((s) => s.swapMeal);
   const addFeedback = useAppStore((s) => s.addFeedback);
+  const diets = useAppStore((s) => s.preferences?.dietaryRequirements ?? []);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,13 +58,15 @@ export function SwapSheet({ meal, onClose }: SwapSheetProps) {
     }
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: "40", exclude: meal.recipe.id });
+      // Fetch extra: alternatives that don't suit the user's diet are filtered out below.
+      const params = new URLSearchParams({ limit: "100", exclude: meal.recipe.id });
       if (cuisine) params.set("cuisine", cuisine);
       const res = await fetch(`/api/recipes?${params}`);
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
-      cache.current.set(cacheKey, data.recipes);
-      setRecipes(data.recipes);
+      const suitable = (data.recipes as Recipe[]).filter((r) => recipeMeetsDiets(r, diets)).slice(0, 40);
+      cache.current.set(cacheKey, suitable);
+      setRecipes(suitable);
     } catch {
       setRecipes([]);
     } finally {

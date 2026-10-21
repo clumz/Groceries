@@ -1,5 +1,6 @@
 "use client";
 
+import { SUPPORTED_DIETS } from "@/lib/dietCompliance";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
@@ -16,7 +17,8 @@ const DIETARY_LABELS: Record<DietaryRequirement, string> = {
   "kosher": "Kosher", "nut-free": "Nut-Free", "low-fodmap": "Low-FODMAP",
   "diabetic-friendly": "Diabetic-Friendly",
 };
-const ALL_DIETARY: DietaryRequirement[] = Object.keys(DIETARY_LABELS) as DietaryRequirement[];
+// Only diets the planner can enforce are offered; labels stay for anyone who chose others earlier.
+const ALL_DIETARY: DietaryRequirement[] = SUPPORTED_DIETS;
 
 const CUISINE_LABELS: Record<CuisinePreference, string> = {
   "italian": "Italian", "asian": "Asian", "mediterranean": "Mediterranean",
@@ -147,7 +149,8 @@ export default function ProfilePage() {
         <Section title="Dietary Requirements">
           {editing ? (
             <div className="flex flex-wrap gap-2">
-              {ALL_DIETARY.map((d) => (
+              {/* Unsupported diets someone already chose stay listed so they can be removed. */}
+              {[...ALL_DIETARY, ...draft.dietaryRequirements.filter((d) => !ALL_DIETARY.includes(d))].map((d) => (
                 <button
                   key={d}
                   onClick={() => toggleDietary(d)}

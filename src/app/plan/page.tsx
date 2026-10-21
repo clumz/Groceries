@@ -14,6 +14,7 @@ import { SwapSheet } from "@/components/plan/SwapSheet";
 import { SnacksSection } from "@/components/plan/SnacksSection";
 import { PlanSkeleton } from "@/components/ui/Skeleton";
 import { MigrationBanner } from "@/components/ui/MigrationBanner";
+import { DietNotice } from "@/components/plan/DietNotice";
 import { WelcomeModal } from "@/components/ui/WelcomeModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "@/lib/toast";
@@ -190,6 +191,10 @@ export default function PlanPage() {
       </div>
 
       <MigrationBanner />
+
+      {currentMealPlan && preferences && !isGeneratingPlan && (
+        <DietNotice plan={currentMealPlan} preferences={preferences} />
+      )}
 
       {/* Hero macro card */}
       {currentMealPlan && calorieGoal && dayTotals && !isGeneratingPlan && (
